@@ -54,3 +54,5 @@ MQTT 数据格式见 [项目设计说明](docs/project-design.md)。
 ## 项目文档
 
 文档索引见 [docs/README.md](docs/README.md)，当前进度见 [docs/project-status.md](docs/project-status.md)。
+
+项目使用 Git `main` 分支进行版本管理。
