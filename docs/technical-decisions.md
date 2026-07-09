@@ -1,0 +1,555 @@
+# AIoT 智能设备运行日志管理系统 - 技术决策记录
+
+## 1. 后端 Java 版本
+
+最终选择：
+
+- JDK 17
+
+原因：
+
+- 本机已安装 JDK 17，路径为 `C:\Program Files\Java\jdk-17`。
+- Spring Boot 3 要求 Java 17 或更高版本。
+- JDK 17 是长期支持版本，适合课程项目、简历项目和后续扩展。
+
+本机检查结果：
+
+```text
+java version "17.0.12" 2024-07-16 LTS
+javac 17.0.12
+```
+
+注意：
+
+- 当前系统默认 `java` 命令仍指向 Java 8。
+- 如需运行 Spring Boot 3 后端，需要将 `JAVA_HOME` 指向 JDK 17。
+
+PowerShell 临时切换方式：
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-17'
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+java -version
+```
+
+## 2. 后端 Spring Boot 版本
+
+最终选择：
+
+- Spring Boot 3.3.5
+
+原因：
+
+- Spring Boot 3 是当前更现代的主流版本。
+- 项目刚开始，切换成本低。
+- 配合 JDK 17 更适合长期维护和简历展示。
+
+影响：
+
+- 校验相关包使用 `jakarta.validation.*`。
+- 不再使用 Spring Boot 2 中常见的 `javax.validation.*`。
+
+示例：
+
+```java
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+```
+
+## 3. 后端 ORM 方案
+
+最终选择：
+
+- MyBatis Plus
+- `mybatis-plus-spring-boot3-starter`
+
+原因：
+
+- 适合 Spring Boot + MySQL 项目。
+- 能减少基础 CRUD 代码。
+- 国内课程、实习和企业项目中比较常见。
+
+## 4. 数据库
+
+最终选择：
+
+- MySQL 8.x
+
+原因：
+
+- 与项目规划一致。
+- 适合设备、日志、标签这类结构化业务数据。
+- 与 Spring Boot、MyBatis Plus 配合成熟。
+
+数据库名：
+
+```text
+aiot_log_system
+```
+
+## 5. 后端项目结构
+
+当前结构：
+
+```text
+backend
+├── src/main/java/com/aiot/log
+│   ├── common
+│   ├── config
+│   ├── controller
+│   ├── dto
+│   ├── entity
+│   ├── enums
+│   ├── exception
+│   ├── mapper
+│   ├── service
+│   └── vo
+└── src/main/resources
+```
+
+说明：
+
+- `controller`：REST API 入口。
+- `service`：业务逻辑。
+- `mapper`：数据库访问。
+- `entity`：数据库实体。
+- `dto`：请求参数对象。
+- `vo`：响应对象。
+- `common`：统一响应、分页结果等公共结构。
+- `exception`：业务异常和全局异常处理。
+- `config`：框架配置。
+
+## 6. Maven 状态
+
+当前状态：
+
+- 已在项目目录安装 Maven 3.9.16。
+
+安装位置：
+
+```text
+D:\AI\IOT\tools\apache-maven-3.9.16
+```
+
+验证结果：
+
+```text
+Apache Maven 3.9.16
+Maven home: D:\AI\IOT\tools\apache-maven-3.9.16
+Java version: 17.0.12
+```
+
+说明：
+
+- Maven 没有安装到系统全局目录。
+- 当前采用项目本地 Maven，避免修改系统环境变量。
+- 每次命令行运行后端时，需要临时把 JDK 17 和 Maven 加入当前 PowerShell 会话的 `Path`。
+
+推荐：
+
+- 后续如果想全局使用 `mvn`，可以再配置系统环境变量。
+
+运行命令：
+
+```powershell
+cd D:\AI\IOT\backend
+$env:JAVA_HOME='C:\Program Files\Java\jdk-17'
+$env:Path="$env:JAVA_HOME\bin;D:\AI\IOT\tools\apache-maven-3.9.16\bin;$env:Path"
+mvn spring-boot:run
+```
+
+## 7. 当前已实现范围
+
+已完成：
+
+- Spring Boot 3 后端基础项目
+- MySQL 连接配置
+- MyBatis Plus 配置
+- 跨域配置
+- 统一 API 响应
+- 全局异常处理
+- 设备管理接口
+- 后端首次编译验证通过
+
+已实现设备接口：
+
+```text
+GET    /api/devices
+GET    /api/devices/{id}
+POST   /api/devices
+PUT    /api/devices/{id}
+DELETE /api/devices/{id}
+```
+
+未完成：
+
+- 日志管理接口
+- 标签管理接口
+- 首页统计接口
+- 枚举接口
+- 前端项目
+
+## 8. 编译验证记录
+
+2026-07-06 首次后端编译通过。
+
+编译命令：
+
+```powershell
+cd D:\AI\IOT\backend
+$env:JAVA_HOME='C:\Program Files\Java\jdk-17'
+$env:Path="$env:JAVA_HOME\bin;D:\AI\IOT\tools\apache-maven-3.9.16\bin;$env:Path"
+mvn -s D:\AI\IOT\tools\maven-settings.xml clean compile
+```
+
+结果：
+
+```text
+BUILD SUCCESS
+Compiling 19 source files with javac [debug parameters release 17]
+```
+
+详细开发过程、报错和修复记录见：
+
+```text
+docs/development-log.md
+```
+
+早期后端实现顺序已完成，历史原文保存在：
+
+```text
+history/docs-before-consolidation-2026-07-09.zip
+```
+
+## 9. 2026-07-07 本地运行决策补充
+
+### 9.1 MySQL 本地运行方式
+
+当前采用本机 MySQL Server 8.4.9。
+
+安装目录：
+
+```text
+C:\Program Files\MySQL\MySQL Server 8.4
+```
+
+项目本地数据目录：
+
+```text
+D:\AI\IOT\mysql-data
+```
+
+原因：
+
+- 数据库文件放在项目目录下，便于记录和迁移当前实验环境。
+- 不依赖 Windows 服务注册，适合开发阶段快速启动和停止。
+
+当前启动命令：
+
+```powershell
+Start-Process -FilePath 'C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe' -ArgumentList '--basedir="C:\Program Files\MySQL\MySQL Server 8.4" --datadir="D:\AI\IOT\mysql-data" --port=3306 --bind-address=127.0.0.1' -WindowStyle Hidden
+```
+
+### 9.2 JDBC URL 参数
+
+当前 Spring Boot 数据库连接 URL：
+
+```text
+jdbc:mysql://localhost:3306/aiot_log_system?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+```
+
+新增 `allowPublicKeyRetrieval=true` 的原因：
+
+- MySQL 8 默认认证方式使用 `caching_sha2_password`。
+- 本地开发环境使用 root/root 连接时，JDBC 可能报错 `Public Key Retrieval is not allowed`。
+- 加上该参数后，数据库接口可以正常连接。
+
+### 9.3 后端启动方式
+
+当前真实联调优先使用：
+
+```powershell
+mvn -s D:\AI\IOT\tools\maven-settings.xml spring-boot:run
+```
+
+说明：
+
+- `spring-boot:run` 是长驻命令，启动成功后不会自动退出。
+- 在工具环境中应使用后台进程启动，并通过日志和端口判断状态。
+- `mvn package` 当前在 Windows 上遇到 jar 重命名失败，暂不作为主要启动路径。
+
+### 9.4 当前后端接口状态
+
+截至 2026-07-07，以下接口已完成真实 MySQL 联调：
+
+```text
+GET  /api/enums
+GET  /api/dashboard/summary
+GET  /api/logs?page=1&pageSize=3
+GET  /api/tags
+POST /api/tags
+```
+
+结果均为：
+
+```text
+HTTP 200 / code 200
+```
+
+## 10. 2026-07-07 前端技术决策
+
+前端采用：
+
+```text
+Vue 3 + TypeScript + Vite
+Vue Router
+Pinia
+Element Plus
+Axios
+@element-plus/icons-vue
+```
+
+原因：
+
+- 与项目文档中的前端设计一致。
+- Vue 3 + Vite 适合快速搭建管理系统。
+- Element Plus 提供表格、表单、弹窗、标签、分页等后台管理常用组件。
+- Axios 统一封装后端 API 调用。
+- Pinia 当前用于维护枚举缓存，后续可以扩展用户、权限或全局配置状态。
+
+本地开发端口：
+
+```text
+5173
+```
+
+后端代理：
+
+```text
+/api -> http://127.0.0.1:8080
+```
+
+当前构建命令：
+
+```powershell
+cd D:\AI\IOT\frontend
+npm run build
+```
+
+验证结果：
+
+```text
+BUILD SUCCESS
+```
+
+## 11. 2026-07-07 一键启动方式
+
+当前采用根目录脚本统一启动开发环境：
+
+```text
+start-all.ps1
+start-all.cmd
+```
+
+选择原因：
+
+- 开发阶段需要同时启动 MySQL、后端和前端。
+- 手动分别输入三组命令容易出错。
+- 一键脚本可以先检查端口，避免重复启动服务。
+- 当前不改变前后端项目结构，适合开发联调阶段。
+
+脚本检查端口：
+
+```text
+MySQL   3306
+Backend 8080
+Frontend 5173
+```
+
+脚本最终打开：
+
+```text
+http://127.0.0.1:5173/
+```
+
+后续如果进入部署阶段，可以再改成：
+
+```text
+前端 build 后放入后端静态资源，只启动一个 Spring Boot 服务。
+```
+
+## 12. 2026-07-08 当前技术栈展示判断
+
+当前技术栈：
+
+```text
+前端：Vue 3 + TypeScript + Vite + Element Plus
+后端：Spring Boot 3.3.5 + MyBatis Plus
+数据库：MySQL 8.4
+设备上报：HTTP + MQTT
+MQTT Broker：Mosquitto
+```
+
+判断：
+
+- 该技术栈不落后，适合作为 Java 后端、全栈或 IoT 管理系统作品展示。
+- Spring Boot 3 + Java 17 是现代 Java 后端组合。
+- Vue 3 + TypeScript + Element Plus 适合后台管理系统。
+- MySQL、MyBatis Plus、Docker、Redis、Nginx、JWT 等是国内 Java 岗位常见组合。
+- MQTT / Mosquitto 能体现 IoT 场景，不是普通 CRUD 项目的重复堆叠。
+
+后续补强项不在本文档展开，统一归档到：
+
+```text
+docs/future-development-backlog.md
+```
+
+## 13. 2026-07-09 Docker Compose 部署架构
+
+决定：
+
+- 使用 Docker Compose 编排前端、后端、MySQL 和 Mosquitto。
+- 前端采用多阶段构建，最终由 Nginx 提供静态页面并代理 `/api`。
+- 后端采用 Maven 构建镜像和 JRE 运行镜像分离的多阶段构建。
+- MySQL 与 Mosquitto 数据使用 Docker 命名卷持久化。
+
+原因：
+
+- 用户只需安装 Docker，不需要分别配置 Java、Node.js、MySQL 和 Mosquitto。
+- 开发环境与部署环境隔离，减少机器差异。
+- Nginx 统一提供网页和 API 入口，符合常见部署方式。
+- 命名卷允许容器重建后继续保留数据。
+
+## 14. 2026-07-09 Docker 启动与更新脚本分离
+
+决定：
+
+```text
+docker-start.cmd   只启动已有容器和镜像
+docker-update.cmd  代码更新后重新构建并启动
+docker-stop.cmd    停止容器但保留数据
+```
+
+原因：
+
+- 日常启动不需要重复执行 Maven 和 npm 构建。
+- 首次构建耗时较长，启动与更新混在一个脚本中会影响使用体验。
+- 启动脚本必须等待后端 API 和前端都可用后再打开浏览器，避免页面初始请求返回 `502`。
+
+## 15. 2026-07-09 Docker 构建网络策略
+
+决定：
+
+- 基础镜像仍优先使用官方镜像。
+- 后端 Maven 构建使用 `backend/maven-settings-docker.xml` 国内公共镜像。
+- Maven 下载增加重试，并使用 BuildKit 缓存本地依赖。
+- 正式发布时构建前端、后端成品镜像，并评估国内容器镜像仓库。
+
+原因：
+
+- 当前网络访问 Docker Hub 和 Maven Central 存在 TLS 超时、下载中断和 OAuth 鉴权失败。
+- 官方基础镜像来源明确，但首次拉取可能需要稳定代理。
+- 国内 Maven 镜像和依赖缓存可以显著减少后端重复下载。
+- 成品镜像可以避免使用者现场安装 Node、Maven 和 JDK。
+
+## 16. 2026-07-09 中文编码策略
+
+决定：
+
+- 源码、Markdown 和 SQL 文件统一保存为 UTF-8。
+- MySQL 数据库和表使用 `utf8mb4`。
+- 初始化 SQL 显式执行 `SET NAMES utf8mb4`。
+- JDBC 使用 Java `UTF-8` 字符集。
+- Spring Boot Servlet 响应强制 UTF-8。
+
+原因：
+
+- Docker 首次初始化时曾出现中文被按单字节编码解释后存入数据库的问题。
+- 仅设置数据库表字符集不足以保证 SQL 客户端、JDBC 和 HTTP 响应链路一致。
+
+## 17. 2026-07-09 交付方式选择
+
+当前决定：
+
+- 开发者本地部署使用 Docker Compose。
+- 普通用户后续优先使用在线网页。
+- 桌面安装包暂不作为当前开发目标。
+
+原因：
+
+- 桌面应用不仅要包装 Vue 页面，还要管理 Java 后端、数据库、Mosquitto、端口和数据目录，改造成本较高。
+- Docker Compose 更适合当前 Java + MySQL + MQTT 的多服务架构。
+- 在线部署对普通用户最简单，不需要安装 Docker 或其他依赖。
+
+## 18. 2026-07-09 文档维护结构
+
+决定：
+
+- `PROJECT_CONTEXT.md` 作为新对话的项目交接入口。
+- `docs` 只维护项目设计、当前状态、开发记录、后续计划、技术决策和文档导航。
+- 合并前的原始文档统一保存在 `history/`。
+- 不再为每个小功能创建新的 Markdown。
+
+原因：
+
+- 原文档存在状态、计划和开发记录重复，查找成本较高。
+- 固定文档职责后，新对话和人工查阅都能快速定位信息。
+- 历史原文仍然保留，不因精简当前文档而丢失。
+
+## 19. 技术选型对比与边界
+
+### MyBatis Plus 与 JPA
+
+选择 MyBatis Plus：
+
+- 国内 Java 项目常见，CRUD 开发直接。
+- SQL 行为更容易观察，适合学习数据库和后台管理系统。
+- 当前业务查询复杂度不高。
+
+没有选择 JPA 的原因：
+
+- JPA 更强调对象关系映射和实体关系管理，当前项目收益有限。
+- 学习成本和隐式行为更多。
+
+边界：如果后续领域关系复杂、需要丰富的实体生命周期管理，可以重新评估 JPA；如果 SQL 越来越复杂，应补充 XML 或自定义 SQL，而不是强行依赖通用 CRUD。
+
+### MySQL 与 SQLite
+
+选择 MySQL：
+
+- 更接近企业 Java 后端岗位和多用户服务部署。
+- 适合持续增长的设备、日志和上报数据。
+- Docker 和服务器部署成熟。
+
+没有选择 SQLite 的原因：
+
+- SQLite 更适合单机嵌入式应用，不适合作为当前网络服务的主要数据库。
+
+边界：如果未来制作完全离线的单机桌面版，SQLite 会比捆绑 MySQL 更合适。
+
+### HTTP 与 MQTT
+
+同时保留：
+
+- HTTP 调试简单，设备可以直接请求后端。
+- MQTT 消息开销小，支持发布订阅、QoS 和断线重连，更适合持续上报。
+
+边界：HTTP 与 MQTT 不是必须同时使用。真实设备确定后可选择主协议，但后端应继续复用统一上报服务。
+
+### Mosquitto 与大型消息平台
+
+选择 Mosquitto：
+
+- 轻量、标准 MQTT、安装和 Docker 部署简单。
+- 足够支持当前单机和局域网项目。
+
+边界：大规模设备集群、规则引擎和高可用场景可评估 EMQX 等平台，当前没有必要增加复杂度。
+
+### Docker Compose 与桌面安装包
+
+选择 Docker Compose：
+
+- 当前系统由四个服务组成，容器编排能保持结构清晰。
+- 更符合服务器部署和工程展示。
+
+边界：Docker 面向开发者和部署人员，不是普通用户零安装方案。普通用户最终更适合在线网页；真正离线桌面版需要重新设计数据库和服务生命周期。

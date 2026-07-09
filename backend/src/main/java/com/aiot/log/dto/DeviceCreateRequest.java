@@ -1,0 +1,67 @@
+package com.aiot.log.dto;
+
+import jakarta.validation.constraints.NotBlank;
+
+public class DeviceCreateRequest {
+
+    @NotBlank(message = "设备名称不能为空")
+    private String name;
+
+    @NotBlank(message = "设备编号不能为空")
+    private String deviceCode;
+
+    @NotBlank(message = "设备类型不能为空")
+    private String type;
+
+    private String location;
+    private String status;
+    private String description;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDeviceCode() {
+        return deviceCode;
+    }
+
+    public void setDeviceCode(String deviceCode) {
+        this.deviceCode = deviceCode;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+}

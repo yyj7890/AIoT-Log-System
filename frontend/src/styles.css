@@ -1,0 +1,132 @@
+:root {
+  color: #18202f;
+  background: #f4f6f8;
+  font-family:
+    Inter, "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --app-border: #d9dee8;
+  --app-muted: #667085;
+  --app-panel: #ffffff;
+  --app-sidebar: #202a39;
+  --app-sidebar-active: #2f855a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow: hidden;
+}
+
+#app {
+  height: 100vh;
+}
+
+.page-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.table-actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-panel);
+  padding: 16px;
+}
+
+.stat-label {
+  color: var(--app-muted);
+  font-size: 13px;
+}
+
+.stat-value {
+  margin-top: 8px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.content-section {
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-panel);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--app-border);
+  font-weight: 700;
+}
+
+.section-body {
+  padding: 16px;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.empty-text {
+  color: var(--app-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 1180px) {
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(130px, 1fr));
+  }
+
+  .filter-bar {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .stat-grid,
+  .filter-bar {
+    grid-template-columns: 1fr;
+  }
+}
