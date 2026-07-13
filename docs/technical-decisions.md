@@ -58,7 +58,7 @@
 
 ## 0.5 Docker 私有配置引导（2026-07-13）
 
-最终选择：Docker 首次部署不再从公开仓库的默认密码或匿名 MQTT 启动。`docker-update.cmd` 和 `docker-start.cmd` 先执行 `tools/initialize-docker-config.ps1`，在 Git 忽略的 `.env` 与 `docker/local/` 自动生成或复用数据库密码、全局 MQTT 凭证、发现 Token、Mosquitto 密码文件、ACL 和 Spring Boot MQTT 属性；Docker 仅挂载该私有目录，Mosquitto 固定关闭匿名访问。
+最终选择：Docker 首次部署不再从公开仓库的默认密码或匿名 MQTT 启动。`docker-update.cmd` 和 `docker-start.cmd` 先执行 `tools/initialize-docker-config.ps1`，在 Git 忽略的 `.env` 与 `docker/local/` 自动生成或复用数据库密码、全局 MQTT 凭证、Mosquitto 密码文件、ACL 和 Spring Boot MQTT 属性；Docker 仅挂载该私有目录，Mosquitto 固定关闭匿名访问。UDP 发现 Token 默认留空，只有设备固件也已预置同一 Token 时才由部署者手动启用。
 
 原因：公开 Docker Compose 若携带 `root/root`、空密码或 `allow_anonymous true`，使用者一键启动后容易在不知情下获得不安全的 Broker，也会诱导把真实配置写回仓库。私有初始化同时保留一键部署体验和 GitHub 可公开性。脚本在每次启动时刷新用于 UDP `19830` 响应的宿主机局域网 IPv4，以适应 Wi-Fi、网线和手机热点切换。
 

@@ -1,6 +1,6 @@
 # AIoT 项目上下文
 
-更新时间：2026-07-13
+更新时间：2026-07-14
 
 这是新对话继续项目时的首要阅读文件。
 
@@ -46,7 +46,7 @@
 
 ## 4. 当前状态
 
-Docker 联调已通过：
+Docker 联调与群晖 NAS 成品镜像部署已通过：
 
 - frontend、backend、mysql、mosquitto 四容器正常运行
 - MySQL 健康检查通过
@@ -54,6 +54,7 @@ Docker 联调已通过：
 - MQTT 后端连接正常
 - Docker 初始化数据中文乱码已修复
 - Docker 启动脚本会等待后端和前端就绪后再打开浏览器
+- 2026-07-14 已在群晖 DSM Container Manager 完成 GHCR 前后端成品镜像、离线导入 MySQL/Mosquitto 基础镜像、私有配置初始化、端口冲突调整、Mosquitto 权限修复和 UDP `19830` 自动发现实机验收；详见 `docs/synology-nas-deployment.md`
 
 当前以小智 AI 真实硬件作为设备接入示例，已完成本地与官方 AI 双通道实机验证：本地服务可用时，设备经局域网发现、OTA 配置下发和 WebSocket 会话实际使用本地 AI；本地服务不可用时回退官方 AI。独立 MQTT 日志通道已接入本地日志系统，`XIAOZHI-001` 可持续发布状态和运行事件。其他设备仍可通过通用 MQTT、HTTP 或协议适配器接入。
 
@@ -72,9 +73,9 @@ GitHub 展示与交付材料已整理：根目录 `README.md` 已覆盖项目说
 
 公开发布配置策略：仓库提交 `backend/src/main/resources/application.example.yml`、`config/mosquitto-lan.example.conf`、`config/mosquitto-acl.example.conf` 与 `config/mqtt-credentials.env.example`；实际本地配置与凭证保留在原位置并忽略。注意：`.gitignore` 不会移除已有 Git 历史中的文件，首次公开推送前必须确认历史不包含本地配置或改用干净公开历史。
 
-Docker 公开部署策略：`docker-update.cmd`/`docker-start.cmd` 会调用 `tools/initialize-docker-config.ps1`，在被忽略的 `.env` 和 `docker/local/` 生成或复用数据库密码、MQTT 凭证、发现 Token、Mosquitto 密码/ACL 和当前局域网 IPv4。Docker Mosquitto 关闭匿名访问，后端从该私有目录读取 MQTT 凭证，并发布 UDP `19830` 供局域网设备发现；没有可用局域网 IPv4 时仍可启动，但会暂时关闭发现。该更新尚未在本机重新构建验收；不能与本地开发版同时启动，也不得暴露至公网。
+Docker 公开部署策略：`docker-update.cmd`/`docker-start.cmd` 会调用 `tools/initialize-docker-config.ps1`，在被忽略的 `.env` 和 `docker/local/` 生成或复用数据库密码、MQTT 凭证、Mosquitto 密码/ACL 和当前局域网 IPv4。Docker Mosquitto 关闭匿名访问，后端从该私有目录读取 MQTT 凭证，并发布 UDP `19830` 供局域网设备发现；发现 Token 默认留空，确保未预置 Token 的设备可自动发现，固件已配置同一 Token 时才在私有 `.env` 手动启用。没有可用局域网 IPv4 时仍可启动，但会暂时关闭发现。新用户 Docker 首次启动仅执行 `sql/schema.sql`，不再自动导入 `sql/init-data.sql` 的演示设备/日志/标签。新增 `tools/initialize-synology-docker-config.sh` 供群晖 DSM SSH 首次初始化；Container Manager 不会执行 Windows 脚本。群晖脚本会将 Mosquitto 密码哈希和 ACL 设为容器 UID/GID `1883` 所有、权限 `0600`，否则 Broker 无法读取安全文件；Docker 后端从页面更新全局凭证时也会保持这一权限。已拉取 GHCR 前后端成品镜像时，可用 `tools/create-synology-image-deploy.ps1` 生成只含 Compose、表结构 SQL 与初始化脚本的群晖部署包，无须上传 `backend/`/`frontend/` 源码。该更新尚待在本机或群晖重新构建验收；不能与本地开发版同时启动，也不得暴露至公网。
 
-GHCR 成品镜像策略：`.github/workflows/publish-ghcr.yml` 在 `main` 推送、版本标签或手动触发时构建并推送后端、前端镜像到 `ghcr.io/yyj7890/aiot-log-backend` 与 `ghcr.io/yyj7890/aiot-log-frontend`。`docker-compose.ghcr.yml` 和 `docker-ghcr-*.cmd` 仅拉取成品镜像，使用者无需本机编译源码；首次成功发布后仍需仓库维护者在 GitHub Packages 将两个包设为 Public，其他人才能匿名拉取。尚未实际推送工作流，因此镜像尚未生成。
+GHCR 成品镜像策略：`.github/workflows/publish-ghcr.yml` 在 `main` 推送、版本标签或手动触发时构建并推送后端、前端镜像到 `ghcr.io/yyj7890/aiot-log-backend` 与 `ghcr.io/yyj7890/aiot-log-frontend`。`docker-compose.ghcr.yml` 和 `docker-ghcr-*.cmd` 仅拉取成品镜像，使用者无需本机编译源码。2026-07-14 已在群晖拉取并运行这两个成品镜像；基础 MySQL/Mosquitto 镜像因 Docker Hub 网络不稳改由本地导出后导入 NAS。包仍应保持 Public，便于其他用户匿名拉取。
 
 ## 5. 启动方式
 

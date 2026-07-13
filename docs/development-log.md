@@ -4,7 +4,37 @@
 
 完整早期过程保存在 `../history/docs-before-consolidation-2026-07-09.zip`，包括原始命令、长篇报错和逐步搭建过程。
 
+## 2026-07-14
+
+### 群晖 NAS 成品镜像实机部署验收
+
+- 已在 DSM Container Manager 通过 GHCR 前端、后端成品镜像完成部署；MySQL、Mosquitto 因 Docker Hub TLS 握手超时和 EOF 改由本地导出后导入 NAS。
+- 已处理 NAS 现有服务造成的网页/后端端口冲突，使用私有 `.env` 调整宿主机端口，不改变容器间服务名通信。
+- 已修复 Mosquitto 绑定密码文件/ACL 的 UID/GID `1883` 读取权限，四容器启动正常。
+- 已将发现 Token 改为空默认值并重新创建后端配置；设备已通过 UDP `19830` 自动发现 Broker 并连接成功。
+- 详细可复用流程、限制和排障见 `synology-nas-deployment.md`；未记录真实网络标识或凭证。
+
 ## 2026-07-13
+
+### Docker 新用户空白数据库
+
+- 问题：新用户首次创建 Docker 数据卷时，Compose 会自动挂载 `sql/init-data.sql`，导致管理页面出现演示设备、日志和标签，不符合正式新用户应从空白数据开始的要求。
+- 处理：源码构建和 GHCR 成品镜像 Compose 均只挂载 `sql/schema.sql`；群晖镜像部署包生成脚本不再复制演示 SQL。`init-data.sql` 保留供本地开发演示使用，但不自动执行。
+- 影响：已有命名卷的数据不会被修改；希望清空已有演示数据时，需由部署者明确删除数据卷后再创建项目。
+
+### Docker UDP 自动发现默认配置
+
+- 问题：Docker 初始化脚本自动生成发现 Token，但常规设备固件没有该 Token，服务端会以 `token mismatch` 拒绝 UDP `19830` 自动发现；手动填写 Broker 地址仍可连接。
+- 处理：发现 Token 改为默认留空，Compose 允许空值；设备自动发现 Broker 地址后仍需使用已配置的 MQTT 账号密码连接。只有设备端也预置同一 Token 时才允许部署者手动在私有 `.env` 启用。
+
+### 群晖 DSM / Container Manager 初始化
+
+- 问题：Container Manager 只读取 Compose，不会执行 Windows 的 `docker-update.cmd` 和 PowerShell 初始化脚本；仅上传 Compose 后会依次缺少 MySQL 初始化 SQL 和 `docker/local/` 私有 Mosquitto 挂载文件。
+- 处理：新增 POSIX `tools/initialize-synology-docker-config.sh`，通过 DSM SSH 在项目根目录运行一次即可生成并复用私有 `.env`、Mosquitto 配置/密码哈希/ACL、后端 MQTT 凭证和局域网发现地址；README 与部署设计补充完整源码上传和执行顺序。
+- 补充：新增 `tools/create-synology-image-deploy.ps1`，将 GHCR Compose、两份 SQL 和 NAS 初始化脚本整理为无前后端源码的部署包；NAS 已拉取 `aiot-log-backend`、`aiot-log-frontend` 时应使用此包而不是源码构建 Compose。
+- 修正：DSM 绑定挂载中，`mosquitto-passwords` 若仅归 root 所有，Mosquitto 容器内的 UID/GID `1883` 无法读取而持续退出；群晖初始化脚本改为将密码哈希和 ACL 均设为 UID/GID `1883` 所有、权限 `0600`。
+- 修正：Docker 后端从 MQTT 状态页保存新全局凭证时会重写密码哈希和 ACL；现会在 Docker 配置目录中立即恢复 UID/GID `1883` 与 `0600`，避免下次重启 Broker 无法读取更新后的凭证。
+- 验证：脚本逻辑已完成静态检查；尚待目标群晖完成首次端到端构建验收。
 
 ### GHCR 成品镜像发布与部署入口
 
