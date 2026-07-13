@@ -60,6 +60,7 @@ public class MqttCredentialServiceImpl implements MqttCredentialService {
                     "# Local runtime credential for Spring Boot. Do not commit or share this file.\n"
                             + "mqtt.username=" + request.getUsername() + "\n"
                             + "mqtt.password=" + escapePropertiesValue(request.getPassword()) + "\n", StandardCharsets.UTF_8);
+            secureDockerMosquittoFiles();
             return getGlobalCredentialStatus();
         } catch (IOException exception) {
             throw new BusinessException(500, "保存 MQTT 全局凭证失败：" + exception.getMessage());
@@ -112,6 +113,23 @@ public class MqttCredentialServiceImpl implements MqttCredentialService {
                     .noneMatch(line -> line.trim().equalsIgnoreCase("allow_anonymous false"));
         } catch (IOException exception) {
             return true;
+        }
+    }
+
+    private void secureDockerMosquittoFiles() throws IOException, InterruptedException {
+        if (!"/app/config".equals(configDirectory.toString())) return;
+        runCommand("chown", "1883:1883",
+                configDirectory.resolve("mosquitto-passwords").toString(),
+                configDirectory.resolve("mosquitto-acl.conf").toString());
+        runCommand("chmod", "600",
+                configDirectory.resolve("mosquitto-passwords").toString(),
+                configDirectory.resolve("mosquitto-acl.conf").toString());
+    }
+
+    private void runCommand(String... command) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        if (process.waitFor() != 0) {
+            throw new IOException("无法更新 Docker Mosquitto 安全文件权限");
         }
     }
 

@@ -11,7 +11,6 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./sql/init-data.sql:/docker-entrypoint-initdb.d/02-init-data.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -43,7 +42,7 @@ services:
       MQTT_DISCOVERY_PORT: "${MQTT_DISCOVERY_PORT:-19830}"
       MQTT_DISCOVERY_BROKER_HOST: "${MQTT_DISCOVERY_BROKER_HOST:-}"
       MQTT_DISCOVERY_BROKER_PORT: "${MQTT_PORT:-1883}"
-      MQTT_DISCOVERY_TOKEN: "${MQTT_DISCOVERY_TOKEN:?Run docker-ghcr-update.cmd or create a private .env first}"
+      MQTT_DISCOVERY_TOKEN: "${MQTT_DISCOVERY_TOKEN:-}"
       SPRING_CONFIG_IMPORT: optional:file:/app/config/mqtt-credentials.properties
       IOT_CONFIG_DIR: /app/config
       MOSQUITTO_PASSWD_EXECUTABLE: /usr/bin/mosquitto_passwd

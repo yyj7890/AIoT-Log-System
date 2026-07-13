@@ -1,6 +1,6 @@
 # 项目文档
 
-项目只维护以下 6 份当前文档：
+项目维护以下当前文档和已验收的专题部署记录：
 
 | 文档 | 内容 |
 | --- | --- |
@@ -10,6 +10,7 @@
 | `future-development-backlog.md` | 后续开发计划和优先级 |
 | `technical-decisions.md` | 技术选型、版本及选择原因 |
 | `README.md` | 本导航 |
+| `synology-nas-deployment.md` | 群晖 DSM Container Manager 实际部署、故障处理和验收记录 |
 
 项目展示与发布辅助材料位于仓库根目录与 `screenshots/`：根目录 `README.md` 面向 GitHub 读者，`docs/architecture.mmd` 是可维护的 Mermaid 架构图源文件，`screenshots/README.md` 规定截图准备与脱敏要求，`SECURITY-CHECKLIST.md` 用于发布前安全复核。这些材料不替代上表六份项目事实文档。
 
@@ -30,6 +31,7 @@
 - 想查看报错与解决方法：`development-log.md`
 - 想知道下一步做什么：`future-development-backlog.md`
 - 想知道为什么选择这些技术：`technical-decisions.md`
+- 想在群晖部署或排查群晖部署：`synology-nas-deployment.md`
 
 ## 原始历史
 

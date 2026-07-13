@@ -82,7 +82,7 @@ docker-stop.cmd     停止容器并保留数据
 
 本地开发版和 Docker 版会同时使用 `3306`、`8080`、`1883`，**不能同时启动**。Docker 数据保存在命名卷中；不要在不了解影响时执行会删除数据卷的命令。
 
-Docker 首次运行 `docker-update.cmd` 时会在本机生成 `.env` 和 `docker/local/`：其中包含随机数据库密码、MQTT 凭证、发现 Token、Mosquitto 密码文件及当前局域网 IPv4。这些文件均已被 `.gitignore` 忽略，**不要打开、复制、提交或上传**。脚本不会覆盖已存在的凭证；在切换 Wi-Fi、网线或热点后再次运行 `docker-start.cmd`，会更新仅供 UDP 发现使用的本机局域网地址。若电脑当前没有可用局域网 IPv4，Docker 仍可启动，但会暂时关闭 UDP 发现；联网后再次运行启动脚本即可恢复。Docker 也会使用 TCP `1883` 和 UDP `19830`，不要与本地开发版同时运行。
+Docker 首次运行 `docker-update.cmd` 时会在本机生成 `.env` 和 `docker/local/`：其中包含随机数据库密码、MQTT 凭证、Mosquitto 密码文件及当前局域网 IPv4。这些文件均已被 `.gitignore` 忽略，**不要打开、复制、提交或上传**。局域网 UDP 自动发现默认不要求 Token，以便未预置 Token 的设备可自动获取 Broker 地址；如设备固件支持并配置了同一 Token，可在私有 `.env` 中手动设置 `MQTT_DISCOVERY_TOKEN`。脚本不会覆盖已存在的凭证；在切换 Wi-Fi、网线或热点后再次运行 `docker-start.cmd`，会更新仅供 UDP 发现使用的本机局域网地址。若电脑当前没有可用局域网 IPv4，Docker 仍可启动，但会暂时关闭 UDP 发现；联网后再次运行启动脚本即可恢复。Docker 也会使用 TCP `1883` 和 UDP `19830`，不要与本地开发版同时运行。
 
 ### 首次本地配置（公开模板）
 
@@ -98,6 +98,23 @@ Docker 首次运行 `docker-update.cmd` 时会在本机生成 `.env` 和 `docker
 请勿把模板直接用于生产，也不要把真实值写回模板。Mosquitto 密码文件始终仅保留在本机。
 
 Docker 使用独立的 `docker/local/` 私有配置，不会修改上述本地开发配置。公开仓库中的 `.env.example` 仅说明变量名；如使用 Docker 脚本，无需手工填写真实值。
+
+### 群晖 DSM / Container Manager 部署
+
+当前 `docker-compose.yml` 是源码构建编排，不是只引用现成前后端镜像的清单。因此只有使用这份编排时，才需上传项目根目录（至少包含 `docker-compose.yml`、`backend/`、`frontend/`、`sql/`、`docker/`、`tools/`）。首次启动只执行 `sql/schema.sql` 创建空白表结构；`sql/init-data.sql` 仅保留为本地演示数据，不会自动导入新用户数据库。
+
+Container Manager 不会执行 Windows 的 `.cmd` / PowerShell 初始化脚本。首次创建项目之前，在 DSM 中启用 SSH，以管理员身份登录后先执行 `sudo -i`，再运行一次：
+
+```sh
+cd /volume1/docker/iot
+sh tools/initialize-synology-docker-config.sh
+```
+
+脚本会在 NAS 上生成并复用私有 `.env` 与 `docker/local/`，包括随机数据库密码、MQTT 凭证、Mosquitto 密码哈希、ACL 和当前局域网 IPv4；不会输出密码。完成后，在 Container Manager 的“项目”中选择该目录的 `docker-compose.yml` 构建并启动。若 NAS 访问 Docker Hub 不稳定，可先在“注册表”拉取 `mysql:8.4`、`eclipse-mosquitto:2` 及前后端构建所需的基础镜像，再重新构建。
+
+NAS 上同样只限可信局域网使用：不要将 `3306`、`1883`、`19830/UDP` 或管理网页端口转发到公网，也不要上传或共享生成的 `.env`、`docker/local/`。
+
+如已在 Container Manager 拉取 `aiot-log-backend` 和 `aiot-log-frontend` 成品镜像，无需上传前后端源码。Windows 上运行 `tools/create-synology-image-deploy.ps1` 会生成一个只含成品镜像 Compose、两份 SQL 和 NAS 初始化脚本的 `dist/synology-image-deploy/`，以及兼容 DSM 文件路径的 `dist/aiot-synology-image-deploy.zip`；将其上传到 NAS 后按其中 `README.txt` 初始化，再用其 `docker-compose.yml` 创建项目。
 
 ### 成品镜像部署（推荐给其他使用者）
 

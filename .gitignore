@@ -31,6 +31,7 @@ config/mosquitto-acl.conf
 !config/mosquitto-lan.example.conf
 !config/mosquitto-acl.example.conf
 docker/local/
+dist/
 
 # Local captures, private screenshots and database exports must never be published.
 screenshots/raw/

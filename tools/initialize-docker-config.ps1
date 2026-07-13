@@ -63,7 +63,6 @@ if (Test-Path -LiteralPath $envFile) {
 $mysqlPassword = Ensure-EnvValue 'MYSQL_ROOT_PASSWORD' { New-RandomSecret }
 $mqttUsername = Ensure-EnvValue 'MQTT_USERNAME' { 'aiot-device' }
 $mqttPassword = Ensure-EnvValue 'MQTT_PASSWORD' { New-RandomSecret }
-$discoveryToken = Ensure-EnvValue 'MQTT_DISCOVERY_TOKEN' { New-RandomSecret }
 Ensure-EnvValue 'MYSQL_PORT' { '3306' } | Out-Null
 Ensure-EnvValue 'MQTT_PORT' { '1883' } | Out-Null
 Ensure-EnvValue 'MQTT_DISCOVERY_PORT' { '19830' } | Out-Null
