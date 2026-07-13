@@ -259,7 +259,11 @@ http://127.0.0.1/
 
 Docker 包含前端/Nginx、Spring Boot、MySQL 和 Mosquitto。Docker 不负责设备连接 WiFi；设备仍需配置部署电脑或服务器的可访问 IP。
 
-本地版和 Docker 版会争用 `3306`、`8080`、`1883`，不可同时运行。
+首次运行 `docker-update.cmd`（或后续运行 `docker-start.cmd`）会调用 `tools/initialize-docker-config.ps1`，在本机被忽略的 `.env` 和 `docker/local/` 中生成或复用数据库密码、MQTT 用户名密码、发现 Token、Mosquitto 密码文件和 ACL。Docker Mosquitto 使用这些私有文件关闭匿名访问；后端挂载同一私有目录，通过 `mqtt-credentials.properties` 读取凭证。脚本会更新当前宿主机的局域网 IPv4，并由后端对外发布 UDP `19830` 自动发现响应；没有可用局域网 IPv4 时仍可运行管理系统，但自动发现会暂时关闭。不得提交 `.env`、`docker/local/` 或其中任何内容；此方案仅适用于可信局域网，不得直接暴露公网。
+
+本地版和 Docker 版会争用 `3306`、`8080`、`1883`、UDP `19830`，不可同时运行。
+
+成品镜像部署使用 `docker-compose.ghcr.yml` 与 `docker-ghcr-start.cmd`、`docker-ghcr-update.cmd`、`docker-ghcr-stop.cmd`。该编排仅引用 GHCR 的前端和后端镜像，MySQL、Mosquitto、命名卷及私有 `.env`/`docker/local/` 生成策略与源码构建版一致。仓库内 GitHub Actions 在 `main` 或版本标签推送后构建镜像；首次发布后必须将 GitHub Packages 可见性设为 Public，才能作为公开部署入口。源码构建版和 GHCR 成品镜像版不得同时运行。
 
 ## 10. 验收标准
 

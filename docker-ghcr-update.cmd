@@ -17,13 +17,13 @@ if errorlevel 1 (
   exit /b 1
 )
 
-docker compose up -d --build
+docker compose -f docker-compose.ghcr.yml pull
 if errorlevel 1 (
   echo.
-  echo Docker update failed. Review the error above.
+  echo Could not pull GHCR images. Confirm that the packages have been published and made public.
   pause
   exit /b 1
 )
 
-call "%~dp0docker-start.cmd"
+call "%~dp0docker-ghcr-start.cmd"
 exit /b %errorlevel%

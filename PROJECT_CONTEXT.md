@@ -42,7 +42,7 @@
 - 左侧菜单固定、内容区独立滚动
 - 本地一键启动/停止
 - 本地启动脚本端口就绪轮询间隔已优化为 200 毫秒；后端 Java 初始化通常仍需约 2 秒，这是正常启动时间。
-- Docker Compose 四服务部署
+- Docker Compose 四服务部署；2026-07-13 已更新为首次运行自动生成本机私有 `.env` 与 `docker/local/`，不再使用公开默认数据库密码或匿名 MQTT
 
 ## 4. 当前状态
 
@@ -72,6 +72,10 @@ GitHub 展示与交付材料已整理：根目录 `README.md` 已覆盖项目说
 
 公开发布配置策略：仓库提交 `backend/src/main/resources/application.example.yml`、`config/mosquitto-lan.example.conf`、`config/mosquitto-acl.example.conf` 与 `config/mqtt-credentials.env.example`；实际本地配置与凭证保留在原位置并忽略。注意：`.gitignore` 不会移除已有 Git 历史中的文件，首次公开推送前必须确认历史不包含本地配置或改用干净公开历史。
 
+Docker 公开部署策略：`docker-update.cmd`/`docker-start.cmd` 会调用 `tools/initialize-docker-config.ps1`，在被忽略的 `.env` 和 `docker/local/` 生成或复用数据库密码、MQTT 凭证、发现 Token、Mosquitto 密码/ACL 和当前局域网 IPv4。Docker Mosquitto 关闭匿名访问，后端从该私有目录读取 MQTT 凭证，并发布 UDP `19830` 供局域网设备发现；没有可用局域网 IPv4 时仍可启动，但会暂时关闭发现。该更新尚未在本机重新构建验收；不能与本地开发版同时启动，也不得暴露至公网。
+
+GHCR 成品镜像策略：`.github/workflows/publish-ghcr.yml` 在 `main` 推送、版本标签或手动触发时构建并推送后端、前端镜像到 `ghcr.io/yyj7890/aiot-log-backend` 与 `ghcr.io/yyj7890/aiot-log-frontend`。`docker-compose.ghcr.yml` 和 `docker-ghcr-*.cmd` 仅拉取成品镜像，使用者无需本机编译源码；首次成功发布后仍需仓库维护者在 GitHub Packages 将两个包设为 Public，其他人才能匿名拉取。尚未实际推送工作流，因此镜像尚未生成。
+
 ## 5. 启动方式
 
 本地开发版：
@@ -91,7 +95,7 @@ docker-stop.cmd    停止并保留数据
 网页：http://127.0.0.1/
 ```
 
-本地版和 Docker 版会争用 `3306`、`8080`、`1883`，不要同时启动。
+本地版和 Docker 版会争用 `3306`、`8080`、`1883`、UDP `19830`，不要同时启动。
 
 ## 6. 关键路径
 

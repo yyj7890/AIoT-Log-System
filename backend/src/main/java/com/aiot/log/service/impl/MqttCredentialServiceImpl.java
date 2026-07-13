@@ -56,6 +56,10 @@ public class MqttCredentialServiceImpl implements MqttCredentialService {
                     "# Local global MQTT credential. Do not commit or share this file.\n"
                             + "MQTT_USERNAME=" + request.getUsername() + "\n"
                             + "MQTT_PASSWORD=" + request.getPassword() + "\n", StandardCharsets.UTF_8);
+            Files.writeString(configDirectory.resolve("mqtt-credentials.properties"),
+                    "# Local runtime credential for Spring Boot. Do not commit or share this file.\n"
+                            + "mqtt.username=" + request.getUsername() + "\n"
+                            + "mqtt.password=" + escapePropertiesValue(request.getPassword()) + "\n", StandardCharsets.UTF_8);
             return getGlobalCredentialStatus();
         } catch (IOException exception) {
             throw new BusinessException(500, "保存 MQTT 全局凭证失败：" + exception.getMessage());
@@ -109,6 +113,12 @@ public class MqttCredentialServiceImpl implements MqttCredentialService {
         } catch (IOException exception) {
             return true;
         }
+    }
+
+    private String escapePropertiesValue(String value) {
+        return value.replace("\\", "\\\\")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n");
     }
 
     private Path resolveConfigDirectory() {

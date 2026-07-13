@@ -32,10 +32,11 @@
 
 ## P2 发布与展示
 
-状态（2026-07-13）：GitHub README、可维护 Mermaid 架构图、截图准备规范和发布前安全检查清单已完成。仍需人工按脱敏规范准备五类界面截图，并在发布前进行凭证和运行数据复核。
+状态（2026-07-13）：GitHub README、可维护 Mermaid 架构图、截图准备规范和发布前安全检查清单已完成。Docker 已改为自动生成本机私有凭证并关闭匿名 MQTT；GHCR 前后端成品镜像工作流和拉取式部署脚本已准备，尚未首次实际发布与拉取验收。仍需人工按脱敏规范准备五类界面截图，并在发布前进行凭证和运行数据复核。
 
 - 发布前建立不含本地配置历史的公开 Git 提交历史，并复核 `application.yml`、Mosquitto 本地配置与真实凭证均未进入待推送内容
-
+- 停止本地开发版后运行 `docker-update.cmd`，验证 Docker 私有 `.env`/`docker/local/` 自动生成、MQTT 认证和 UDP `19830` 自动发现；生成文件不得提交
+- 推送 GHCR 工作流后，在 GitHub Packages 将后端和前端镜像设为 Public；在一台未配置 Java/Node/Maven 的电脑上执行 `docker-ghcr-update.cmd` 完成拉取式部署验收
 - 准备并脱敏首页统计、`XIAOZHI-001` 设备详情、中文运行日志、MQTT 认证状态和批量删除模式截图
 - 将通过检查的精选截图加入 GitHub README
 - 构建前端、后端成品镜像

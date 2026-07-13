@@ -56,6 +56,22 @@
 
 公开仓库使用 `*.example.*` 作为可提交模板，本地运行文件保留真实路径和凭证但必须忽略。模板只展示键名、协议、端口、Topic 和占位符；不得保留真实账户、密码、Token、MAC、IP 或个人目录。由于 `.gitignore` 只影响未跟踪文件，任何已进入 Git 历史的本地配置必须在首次公开推送前通过干净历史另行处理。
 
+## 0.5 Docker 私有配置引导（2026-07-13）
+
+最终选择：Docker 首次部署不再从公开仓库的默认密码或匿名 MQTT 启动。`docker-update.cmd` 和 `docker-start.cmd` 先执行 `tools/initialize-docker-config.ps1`，在 Git 忽略的 `.env` 与 `docker/local/` 自动生成或复用数据库密码、全局 MQTT 凭证、发现 Token、Mosquitto 密码文件、ACL 和 Spring Boot MQTT 属性；Docker 仅挂载该私有目录，Mosquitto 固定关闭匿名访问。
+
+原因：公开 Docker Compose 若携带 `root/root`、空密码或 `allow_anonymous true`，使用者一键启动后容易在不知情下获得不安全的 Broker，也会诱导把真实配置写回仓库。私有初始化同时保留一键部署体验和 GitHub 可公开性。脚本在每次启动时刷新用于 UDP `19830` 响应的宿主机局域网 IPv4，以适应 Wi-Fi、网线和手机热点切换。
+
+边界：初始化文件只允许存放在本机，不得查看、复制、提交或上传。该方案仍是可信局域网方案，不能替代 TLS、每设备凭证、最小 ACL、管理登录或公网访问控制。更新 MQTT 凭证后需要重启 Docker 相关容器使 Broker 与后端重新加载配置。
+
+## 0.6 GHCR 成品镜像发布（2026-07-13）
+
+最终选择：源码构建版继续保留给开发者；同时使用 GitHub Actions 构建前端、后端成品镜像并推送 GitHub Container Registry。使用者通过 `docker-compose.ghcr.yml` 和 `docker-ghcr-*.cmd` 拉取镜像，不在本机运行 Maven 或 npm 构建。
+
+原因：Docker Compose 本地构建虽不要求预装 Java/Node，但第一次下载依赖、构建镜像耗时长，也更容易受网络和环境差异影响。成品镜像让部署者只需 Docker Desktop，并仍由本机生成私有数据库/MQTT 配置，兼顾易用性与凭证隔离。
+
+边界：GitHub Actions 使用工作流 `GITHUB_TOKEN` 写入包，不把个人 Token 写入仓库。首次发布后，维护者必须在 GitHub Packages 手动将两个镜像设为 Public；镜像公开不代表 MQTT 可暴露公网，运行服务仍限可信局域网。`latest` 供体验使用，演示和生产复现应固定 `AIOT_IMAGE_TAG` 到版本标签或提交 SHA。
+
 ## 1. 后端 Java 版本
 
 最终选择：

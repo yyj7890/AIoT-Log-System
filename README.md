@@ -74,13 +74,15 @@ stop-all.cmd        停止本地开发环境
 Docker 版需要 Docker Desktop：
 
 ```text
-docker-start.cmd    日常启动已有容器
+docker-start.cmd    日常启动；同时更新当前局域网发现地址
 docker-update.cmd   首次部署或代码更新后构建并启动
 docker-stop.cmd     停止容器并保留数据
 访问地址：http://127.0.0.1/
 ```
 
 本地开发版和 Docker 版会同时使用 `3306`、`8080`、`1883`，**不能同时启动**。Docker 数据保存在命名卷中；不要在不了解影响时执行会删除数据卷的命令。
+
+Docker 首次运行 `docker-update.cmd` 时会在本机生成 `.env` 和 `docker/local/`：其中包含随机数据库密码、MQTT 凭证、发现 Token、Mosquitto 密码文件及当前局域网 IPv4。这些文件均已被 `.gitignore` 忽略，**不要打开、复制、提交或上传**。脚本不会覆盖已存在的凭证；在切换 Wi-Fi、网线或热点后再次运行 `docker-start.cmd`，会更新仅供 UDP 发现使用的本机局域网地址。若电脑当前没有可用局域网 IPv4，Docker 仍可启动，但会暂时关闭 UDP 发现；联网后再次运行启动脚本即可恢复。Docker 也会使用 TCP `1883` 和 UDP `19830`，不要与本地开发版同时运行。
 
 ### 首次本地配置（公开模板）
 
@@ -94,6 +96,22 @@ docker-stop.cmd     停止容器并保留数据
 | `config/mqtt-credentials.env.example` | `config/mqtt-credentials.env` |
 
 请勿把模板直接用于生产，也不要把真实值写回模板。Mosquitto 密码文件始终仅保留在本机。
+
+Docker 使用独立的 `docker/local/` 私有配置，不会修改上述本地开发配置。公开仓库中的 `.env.example` 仅说明变量名；如使用 Docker 脚本，无需手工填写真实值。
+
+### 成品镜像部署（推荐给其他使用者）
+
+当项目发布 GHCR 成品镜像后，使用者不需要 Java、Node.js、Maven，也不需要在本机编译前后端源码。安装 Docker Desktop、下载本仓库后，双击：
+
+```text
+docker-ghcr-update.cmd  首次拉取或更新 GHCR 成品镜像
+docker-ghcr-start.cmd   日常启动已拉取的镜像
+docker-ghcr-stop.cmd    停止 GHCR 部署并保留数据
+```
+
+这三个脚本会拉取 `ghcr.io/yyj7890/aiot-log-backend` 与 `ghcr.io/yyj7890/aiot-log-frontend`，其余 MySQL、Mosquitto 和本机私有配置仍由 Docker Compose 自动管理。首次发布后，仓库维护者必须在 GitHub 的 **Packages → 对应镜像 → Package settings** 将两个镜像设为 **Public**；否则其他人拉取时会被拒绝。使用者只能选择一套 Docker 脚本：源码构建版 `docker-*.cmd` 与成品镜像版 `docker-ghcr-*.cmd` 不要同时运行。
+
+发布者向 `main` 推送后，GitHub Actions 会构建并推送 `latest` 与提交 SHA 标签；推送 `v1.0.0` 这类标签还会生成对应版本标签。需要固定版本时，在本机忽略的 `.env` 设置 `AIOT_IMAGE_TAG=v1.0.0`，不要把该私有 `.env` 上传。
 
 ## 真实设备接入示例：小智 ESP32-S3
 
@@ -113,6 +131,7 @@ docker-stop.cmd     停止容器并保留数据
 - 自动发现仅面向设备与服务主机可互访的同一局域网。服务端只返回私有 IPv4；手机热点需关闭客户端隔离，否则 UDP 发现可能失败。
 - 当前 Broker 使用一套全局设备用户名密码，匿名访问已关闭，并设置了通用 `report` / `log` Topic ACL。该方案适合家庭与开发联调，不等同于生产级设备隔离。
 - 当前版本**不适合公网直接部署**：尚未启用 TLS，也尚未为每台设备分配独立凭证与最小权限 ACL。
+- Docker 部署同样仅限可信局域网：首次启动自动生成并复用私有 MQTT 凭证，关闭匿名访问，同时发布 UDP `19830` 供局域网设备自动发现。不要在路由器或云安全组中将 `1883`、`19830`、`3306` 暴露到公网。
 - 不提交真实 MQTT 用户名、密码、Token、Mosquitto 密码文件、真实 MAC/IP、运行日志、数据库数据或未脱敏截图。发布前逐项执行[安全检查清单](SECURITY-CHECKLIST.md)。
 
 ## 已完成的实机验证

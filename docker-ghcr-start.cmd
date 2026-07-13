@@ -17,10 +17,10 @@ if errorlevel 1 (
   exit /b 1
 )
 
-docker compose up -d
+docker compose -f docker-compose.ghcr.yml up -d
 if errorlevel 1 (
   echo.
-  echo Docker startup failed. Run docker-update.cmd once to build or update the project.
+  echo GHCR image startup failed. Run docker-ghcr-update.cmd to pull the latest images.
   pause
   exit /b 1
 )
@@ -33,7 +33,7 @@ for /l %%i in (1,1,60) do (
 )
 
 echo Backend service did not become ready within 120 seconds.
-echo Run "docker compose ps" and "docker compose logs backend" to inspect it.
+echo Run "docker compose -f docker-compose.ghcr.yml ps" to inspect it.
 pause
 exit /b 1
 
@@ -45,12 +45,12 @@ for /l %%i in (1,1,30) do (
 )
 
 echo Web service did not become ready within 30 seconds.
-echo Run "docker compose ps" and "docker compose logs frontend" to inspect it.
+echo Run "docker compose -f docker-compose.ghcr.yml ps" to inspect it.
 pause
 exit /b 1
 
 :ready
-echo AIoT Log System is ready.
+echo AIoT Log System is ready from GHCR images.
 echo Web:     http://127.0.0.1/
 echo Backend: http://127.0.0.1:8080/
 echo MQTT:    127.0.0.1:1883

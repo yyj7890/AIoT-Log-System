@@ -6,6 +6,20 @@
 
 ## 2026-07-13
 
+### GHCR 成品镜像发布与部署入口
+
+- 新增 GitHub Actions 工作流：向 `main` 推送、推送 `v*` 版本标签或手动触发时，构建前端和后端镜像并推送至 GHCR。
+- 新增 `docker-compose.ghcr.yml` 与 `docker-ghcr-start.cmd`、`docker-ghcr-update.cmd`、`docker-ghcr-stop.cmd`；使用者仅拉取成品镜像，不再本地构建 Java/Vue 源码。
+- GHCR 部署继续使用现有私有 `.env` 和 `docker/local/` 自动生成机制，镜像不携带真实数据库密码、MQTT 凭证、Token、MAC/IP 或运行数据。
+- GitHub CLI 未安装，未直接操作远程 Package；首次推送工作流并成功构建后，需在 GitHub Packages 手动将两个镜像设为 Public，随后才能进行真实拉取验收。
+
+### Docker 私有配置与 MQTT 安全更新
+
+- Docker Compose 移除公开默认数据库密码和匿名 Mosquitto，改为要求私有环境变量，并挂载被忽略的 `docker/local/` 目录。
+- 新增 `tools/initialize-docker-config.ps1`：首次运行 Docker 脚本时自动生成或复用本机 `.env`、MQTT 凭证、Mosquitto 密码/ACL、Spring Boot MQTT 属性和 UDP 发现地址；不读取、不打印真实值。
+- Docker 后端安装 `mosquitto_passwd`，MQTT 状态页更新凭证时会同步写入仅本机使用的 Spring Boot 属性文件，重启相关容器后生效。
+- Docker 启动/更新脚本均会执行初始化；切换 Wi-Fi、网线或热点后再次启动会刷新局域网发现地址。未启动服务；需在停止本地开发版后执行 `docker-update.cmd` 完成重新构建验收。
+
 ### GitHub 展示与交付材料整理
 
 - 新增面向公开展示的根目录 README：说明项目范围、技术栈、两种启动方式、真实小智接入、MQTT 安全边界、实机验证和已知限制。
