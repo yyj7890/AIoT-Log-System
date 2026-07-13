@@ -1,0 +1,46 @@
+# Public configuration template. Copy to application.yml locally and provide
+# real values through environment variables; never commit local credentials.
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: aiot-log-backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:<jdbc-url>}
+    username: ${DB_USERNAME:<database-username>}
+    password: ${DB_PASSWORD:<database-password>}
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+mqtt:
+  enabled: ${MQTT_ENABLED:true}
+  broker-url: ${MQTT_BROKER_URL:tcp://127.0.0.1:1883}
+  client-id: ${MQTT_CLIENT_ID:aiot-log-backend}
+  username: ${MQTT_USERNAME:<mqtt-username>}
+  password: ${MQTT_PASSWORD:<mqtt-password>}
+  topic: ${MQTT_TOPIC:aiot/device/+/report}
+  log-topic: ${MQTT_LOG_TOPIC:aiot/device/+/log}
+  runtime-log-merge-window-seconds: ${MQTT_RUNTIME_LOG_MERGE_WINDOW_SECONDS:30}
+  qos: ${MQTT_QOS:1}
+  discovery:
+    enabled: ${MQTT_DISCOVERY_ENABLED:true}
+    port: ${MQTT_DISCOVERY_PORT:19830}
+    broker-host: ${MQTT_DISCOVERY_BROKER_HOST:}
+    broker-port: ${MQTT_DISCOVERY_BROKER_PORT:1883}
+    tls: ${MQTT_DISCOVERY_TLS:false}
+    token: ${MQTT_DISCOVERY_TOKEN:}

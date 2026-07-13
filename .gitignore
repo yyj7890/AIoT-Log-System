@@ -3,6 +3,7 @@
 *.iml
 
 backend/target/
+backend/src/main/resources/application.yml
 frontend/node_modules/
 frontend/dist/
 .m2/
@@ -11,6 +12,30 @@ tools/apache-maven-*/
 tools/*.zip
 
 *.log
+logs/
+runtime-logs/
 *.pid
 .env
 .env.local
+*.env
+!.env.example
+!backend/src/main/resources/application.example.yml
+config/mqtt-credentials.env
+config/mosquitto-passwords
+config/mosquitto-passwords.*
+config/*credentials*
+config/*password*
+!config/mqtt-credentials.env.example
+config/mosquitto-lan.conf
+config/mosquitto-acl.conf
+!config/mosquitto-lan.example.conf
+!config/mosquitto-acl.example.conf
+
+# Local captures, private screenshots and database exports must never be published.
+screenshots/raw/
+screenshots/private/
+captures/
+*.pcap
+*.har
+*.dump
+*.sql.gz

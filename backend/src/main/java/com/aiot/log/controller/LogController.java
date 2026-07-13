@@ -3,6 +3,7 @@ package com.aiot.log.controller;
 import com.aiot.log.common.ApiResponse;
 import com.aiot.log.common.PageResult;
 import com.aiot.log.dto.LogCreateRequest;
+import com.aiot.log.dto.LogBatchDeleteRequest;
 import com.aiot.log.dto.LogStatusUpdateRequest;
 import com.aiot.log.dto.LogUpdateRequest;
 import com.aiot.log.service.LogService;
@@ -76,6 +77,12 @@ public class LogController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteLog(@PathVariable Long id) {
         logService.deleteLog(id);
+        return ApiResponse.success();
+    }
+
+    @DeleteMapping
+    public ApiResponse<Void> deleteLogs(@Valid @RequestBody LogBatchDeleteRequest request) {
+        logService.deleteLogs(request.getIds());
         return ApiResponse.success();
     }
 }

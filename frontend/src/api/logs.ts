@@ -25,3 +25,7 @@ export function updateLogStatus(id: number, status: LogStatus) {
 export function deleteLog(id: number) {
   return request<void>({ url: `/logs/${id}`, method: 'DELETE' })
 }
+
+export function deleteLogs(ids: number[]) {
+  return request<void>({ url: '/logs', method: 'DELETE', data: { ids } })
+}

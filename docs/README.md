@@ -11,6 +11,8 @@
 | `technical-decisions.md` | 技术选型、版本及选择原因 |
 | `README.md` | 本导航 |
 
+项目展示与发布辅助材料位于仓库根目录与 `screenshots/`：根目录 `README.md` 面向 GitHub 读者，`docs/architecture.mmd` 是可维护的 Mermaid 架构图源文件，`screenshots/README.md` 规定截图准备与脱敏要求，`SECURITY-CHECKLIST.md` 用于发布前安全复核。这些材料不替代上表六份项目事实文档。
+
 ## 阅读方式
 
 新对话：

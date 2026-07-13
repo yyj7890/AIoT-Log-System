@@ -36,7 +36,8 @@ function Wait-Port {
         [string]$Name,
         [string]$HostName,
         [int]$Port,
-        [int]$TimeoutSeconds = 45
+        [int]$TimeoutSeconds = 45,
+        [int]$PollIntervalMilliseconds = 200
     )
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -45,7 +46,7 @@ function Wait-Port {
             Write-Host "$Name is ready on $HostName`:$Port"
             return
         }
-        Start-Sleep -Seconds 1
+        Start-Sleep -Milliseconds $PollIntervalMilliseconds
     }
 
     throw "$Name did not become ready on $HostName`:$Port within $TimeoutSeconds seconds."
@@ -90,6 +91,17 @@ function Start-Backend {
     }
 
     $backendDir = Join-Path $Root "backend"
+    $credentialsFile = Join-Path $Root "config\mqtt-credentials.env"
+    if (Test-Path $credentialsFile) {
+        Get-Content $credentialsFile | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -and -not $line.StartsWith("#") -and $line.Contains("=")) {
+                $parts = $line.Split("=", 2)
+                [Environment]::SetEnvironmentVariable($parts[0].Trim(), $parts[1], "Process")
+            }
+        }
+        Write-Host "Loaded local MQTT credentials for backend."
+    }
     $stdout = Join-Path $backendDir "backend-run.log"
     $stderr = Join-Path $backendDir "backend-run.err.log"
 
@@ -135,8 +147,13 @@ function Start-MqttBroker {
         return
     }
 
+    $mosquittoConfig = Join-Path $Root "config\mosquitto-lan.conf"
+    if (-not (Test-Path $mosquittoConfig)) {
+        throw "Mosquitto LAN config not found: $mosquittoConfig"
+    }
+
     Write-Host "Starting MQTT broker..."
-    Start-Process -FilePath $mosquitto -WindowStyle Hidden | Out-Null
+    Start-Process -FilePath $mosquitto -ArgumentList @("-c", $mosquittoConfig) -WindowStyle Hidden | Out-Null
     Wait-Port -Name "MQTT broker" -HostName "127.0.0.1" -Port 1883 -TimeoutSeconds 20
 }
 

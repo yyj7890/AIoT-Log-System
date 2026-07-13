@@ -1,7 +1,9 @@
 package com.aiot.log.config;
 
 import com.aiot.log.dto.DeviceReportCreateRequest;
+import com.aiot.log.dto.DeviceRuntimeLogCreateRequest;
 import com.aiot.log.service.DeviceReportService;
+import com.aiot.log.service.LogService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -30,6 +33,7 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
 
     private final MqttProperties mqttProperties;
     private final DeviceReportService deviceReportService;
+    private final LogService logService;
     private final ObjectMapper objectMapper;
     private final Validator validator;
     private MqttClient mqttClient;
@@ -46,10 +50,12 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
     public MqttDeviceReportSubscriber(
             MqttProperties mqttProperties,
             DeviceReportService deviceReportService,
+            LogService logService,
             ObjectMapper objectMapper,
             Validator validator) {
         this.mqttProperties = mqttProperties;
         this.deviceReportService = deviceReportService;
+        this.logService = logService;
         this.objectMapper = objectMapper;
         this.validator = validator;
     }
@@ -73,6 +79,11 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
             options.setAutomaticReconnect(true);
             options.setConnectionTimeout(10);
             options.setKeepAliveInterval(30);
+            if (StringUtils.hasText(mqttProperties.getUsername())) {
+                options.setUserName(mqttProperties.getUsername());
+                options.setPassword((mqttProperties.getPassword() == null ? "" : mqttProperties.getPassword())
+                        .toCharArray());
+            }
 
             mqttClient.connect(options);
             connected = mqttClient.isConnected();
@@ -80,7 +91,7 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
                 lastConnectedAt = LocalDateTime.now();
                 lastError = null;
             }
-            subscribeReportTopic();
+            subscribeTopics();
         } catch (MqttException exception) {
             connected = false;
             lastError = exception.getMessage();
@@ -96,7 +107,7 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
         lastError = null;
         if (reconnect) {
             log.info("MQTT reconnected to {}", serverURI);
-            subscribeReportTopic();
+            subscribeTopics();
         }
     }
 
@@ -115,12 +126,19 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
         lastMessageAt = LocalDateTime.now();
         lastMessageTopic = topic;
         try {
-            DeviceReportCreateRequest request = objectMapper.readValue(payload, DeviceReportCreateRequest.class);
-            validateRequest(request);
-            deviceReportService.createReport(request);
+            if (isRuntimeLogTopic(topic)) {
+                DeviceRuntimeLogCreateRequest request = objectMapper.readValue(payload, DeviceRuntimeLogCreateRequest.class);
+                validateRequest(request);
+                logService.createDeviceRuntimeLog(request);
+                log.info("MQTT device runtime log handled. topic={}, qos={}", topic, message.getQos());
+            } else {
+                DeviceReportCreateRequest request = objectMapper.readValue(payload, DeviceReportCreateRequest.class);
+                validateRequest(request);
+                deviceReportService.createReport(request);
+                log.info("MQTT device report handled. topic={}, qos={}", topic, message.getQos());
+            }
             handledCount.incrementAndGet();
             lastError = null;
-            log.info("MQTT device report handled. topic={}, qos={}", topic, message.getQos());
         } catch (Exception exception) {
             failedCount.incrementAndGet();
             lastError = exception.getMessage();
@@ -133,28 +151,35 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
         // This backend only subscribes to device reports.
     }
 
-    private void subscribeReportTopic() {
+    private void subscribeTopics() {
         if (mqttClient == null || !mqttClient.isConnected()) {
             return;
         }
         try {
             int qos = mqttProperties.getQos() == null ? 1 : mqttProperties.getQos();
             mqttClient.subscribe(mqttProperties.getTopic(), qos);
-            log.info("MQTT subscribed topic={}, qos={}", mqttProperties.getTopic(), qos);
+            mqttClient.subscribe(mqttProperties.getLogTopic(), qos);
+            log.info("MQTT subscribed reportTopic={}, logTopic={}, qos={}",
+                    mqttProperties.getTopic(), mqttProperties.getLogTopic(), qos);
         } catch (MqttException exception) {
             lastError = exception.getMessage();
-            log.warn("MQTT subscribe failed. topic={}", mqttProperties.getTopic(), exception);
+            log.warn("MQTT subscribe failed. reportTopic={}, logTopic={}",
+                    mqttProperties.getTopic(), mqttProperties.getLogTopic(), exception);
         }
     }
 
-    private void validateRequest(DeviceReportCreateRequest request) {
-        Set<ConstraintViolation<DeviceReportCreateRequest>> violations = validator.validate(request);
+    private boolean isRuntimeLogTopic(String topic) {
+        return topic != null && topic.endsWith("/log");
+    }
+
+    private void validateRequest(Object request) {
+        Set<ConstraintViolation<Object>> violations = validator.validate(request);
         if (violations.isEmpty()) {
             return;
         }
         StringBuilder builder = new StringBuilder("MQTT payload validation failed: ");
         int index = 0;
-        for (ConstraintViolation<DeviceReportCreateRequest> violation : violations) {
+        for (ConstraintViolation<Object> violation : violations) {
             if (index > 0) {
                 builder.append("; ");
             }

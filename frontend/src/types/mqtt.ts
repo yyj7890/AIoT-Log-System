@@ -3,6 +3,7 @@ export interface MqttStatus {
   brokerUrl: string
   clientId: string
   topic: string
+  logTopic: string
   qos: number
   connected: boolean
   lastConnectedAt?: string
@@ -13,4 +14,11 @@ export interface MqttStatus {
   handledCount: number
   failedCount: number
   lastError?: string
+}
+
+export interface MqttGlobalCredentialStatus {
+  username: string
+  passwordConfigured: boolean
+  anonymousAccessEnabled: boolean
+  activationPending: boolean
 }

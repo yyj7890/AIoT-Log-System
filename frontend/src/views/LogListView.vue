@@ -38,14 +38,24 @@
           </div>
           <div class="page-actions">
             <el-button :icon="Refresh" @click="reset">重置</el-button>
+            <template v-if="selectionMode">
+              <el-button @click="exitSelectionMode">取消</el-button>
+              <el-button type="danger" :icon="Delete" :disabled="!selectedLogs.length" @click="batchRemove">删除选中（{{ selectedLogs.length }}）</el-button>
+            </template>
+            <el-button v-else type="danger" :icon="Delete" @click="enterSelectionMode">批量删除</el-button>
           </div>
         </div>
       </div>
     </div>
 
     <div class="content-section">
-      <el-table v-loading="loading" :data="logs" row-key="id">
-        <el-table-column prop="title" label="日志标题" min-width="180" />
+      <el-table ref="logTableRef" v-loading="loading" :data="logs" row-key="id" @selection-change="handleSelectionChange">
+        <el-table-column v-if="selectionMode" type="selection" width="52" reserve-selection />
+        <el-table-column label="日志标题" min-width="210" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="log-title-cell">{{ displayRuntimeTitle(row.title) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="deviceName" label="所属设备" min-width="150" />
         <el-table-column label="类型" width="110"><template #default="{ row }"><StatusTag group="logType" :value="row.logType" /></template></el-table-column>
         <el-table-column label="等级" width="100"><template #default="{ row }"><StatusTag group="logLevel" :value="row.level" /></template></el-table-column>
@@ -85,27 +95,27 @@
     <LogFormDialog :visible="dialogVisible" :mode="dialogMode" :log="currentLog" @cancel="dialogVisible = false" @success="afterSaved" />
     <el-dialog v-model="detailVisible" title="日志详情" width="640px">
       <el-descriptions :column="1" border>
-        <el-descriptions-item label="标题">{{ currentLog?.title }}</el-descriptions-item>
+        <el-descriptions-item label="标题">{{ currentLog ? displayRuntimeTitle(currentLog.title) : '-' }}</el-descriptions-item>
         <el-descriptions-item label="设备">{{ currentLog?.deviceName }} / {{ currentLog?.deviceCode }}</el-descriptions-item>
         <el-descriptions-item label="类型"><StatusTag group="logType" :value="currentLog?.logType" /></el-descriptions-item>
         <el-descriptions-item label="等级"><StatusTag group="logLevel" :value="currentLog?.level" /></el-descriptions-item>
         <el-descriptions-item label="状态"><StatusTag group="logStatus" :value="currentLog?.status" /></el-descriptions-item>
         <el-descriptions-item label="来源"><StatusTag group="logSource" :value="currentLog?.source" /></el-descriptions-item>
-        <el-descriptions-item label="内容">{{ currentLog?.content }}</el-descriptions-item>
+        <el-descriptions-item label="内容">{{ currentLog ? displayRuntimeContent(currentLog.content) : '-' }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Delete, Edit, Plus, Refresh, Switch, View } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import PageContainer from '@/components/PageContainer.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import LogFormDialog from '@/components/LogFormDialog.vue'
-import { deleteLog, getLogList, updateLogStatus } from '@/api/logs'
+import { deleteLog, deleteLogs, getLogList, updateLogStatus } from '@/api/logs'
 import { getDeviceList } from '@/api/devices'
 import { getTagList } from '@/api/tags'
 import { useEnumStore } from '@/stores/enumStore'
@@ -117,9 +127,12 @@ const route = useRoute()
 const enumStore = useEnumStore()
 const loading = ref(false)
 const logs = ref<LogRecord[]>([])
+const logTableRef = ref<{ clearSelection: () => void } | null>(null)
 const devices = ref<Device[]>([])
 const tags = ref<Tag[]>([])
 const total = ref(0)
+const selectedLogs = ref<LogRecord[]>([])
+const selectionMode = ref(false)
 const dialogVisible = ref(false)
 const detailVisible = ref(false)
 const dialogMode = ref<'create' | 'edit'>('create')
@@ -127,6 +140,8 @@ const currentLog = ref<LogRecord | null>(null)
 const timeRange = ref<[string, string] | null>(null)
 const autoSearchReady = ref(false)
 let autoSearchTimer: ReturnType<typeof setTimeout> | undefined
+let autoRefreshTimer: ReturnType<typeof setInterval> | undefined
+const AUTO_REFRESH_INTERVAL_MS = 5000
 const query = reactive<LogQuery>({
   page: 1,
   pageSize: 10,
@@ -138,6 +153,65 @@ const query = reactive<LogQuery>({
   tagId: undefined,
   keyword: ''
 })
+
+const runtimeTitleMap: Record<string, string> = {
+  '设备运行事件：startup': '设备启动',
+  '设备运行事件：firmware_started': '固件启动',
+  '设备运行事件：wifi_connected': 'Wi-Fi 已连接',
+  '设备运行事件：wifi_disconnected': 'Wi-Fi 已断开',
+  '设备运行事件：mqtt_connected': '日志 MQTT 已连接',
+  '设备运行事件：mqtt_connect_failed': '日志 MQTT 连接失败',
+  '设备运行事件：mqtt_connection_failed': '日志 MQTT 连接失败',
+  '设备运行事件：mqtt_reconnected': '日志 MQTT 连接已恢复',
+  '设备运行事件：mqtt_connection_recovered': '日志 MQTT 连接已恢复',
+  '设备运行事件：local_ai_server_discovered': '已发现本地 AI 服务',
+  '设备运行事件：local_ai_connected': '已连接本地 AI 服务',
+  '设备运行事件：local_ai_connection_failed': '本地 AI 服务连接失败',
+  '设备运行事件：local_ai_websocket_hello_completed': '本地 AI WebSocket 握手完成',
+  '设备运行事件：local_mqtt_broker_discovered': '已发现本地日志 MQTT 服务',
+  '设备运行事件：mqtt_disconnected': '日志 MQTT 已断开',
+  '设备运行事件：official_protocol_connected': '官方 AI 协议已连接',
+  '设备运行事件：official_protocol_disconnected': '官方 AI 协议已断开',
+  '设备运行事件：official_protocol_error': '官方 AI 协议异常'
+}
+
+const runtimeContentMap: Record<string, string> = {
+  'Firmware initialization started': '固件开始初始化',
+  'Firmware initialization completed': '固件初始化完成',
+  'Wi-Fi connected': 'Wi-Fi 已连接',
+  'Log MQTT connected': '日志 MQTT 已连接',
+  'Log MQTT connection failed and was retried': '日志 MQTT 连接失败，正在重试',
+  'Log MQTT connection recovered': '日志 MQTT 连接已恢复',
+  'Local AI server discovered': '已发现本地 AI 服务',
+  'Local AI server connected': '已连接本地 AI 服务',
+  'Local AI server connection failed': '本地 AI 服务连接失败',
+  'Local AI WebSocket hello completed': '本地 AI WebSocket 握手完成',
+  'Official AI protocol connected': '官方 AI 协议已连接',
+  'Official AI protocol connected or reconnected': '官方 AI 协议已连接或重连'
+}
+
+function displayRuntimeTitle(title: string) {
+  return runtimeTitleMap[title] ?? title
+}
+
+function displayRuntimeContent(content: string) {
+  const localizedContent = runtimeContentMap[content] ?? content
+  const eventSummaries = localizedContent
+    .split(/\r?\n/)
+    .map(compactRuntimeEvent)
+    .filter(Boolean)
+
+  return eventSummaries.length > 1 ? eventSummaries.join(' → ') : (eventSummaries[0] ?? localizedContent)
+}
+
+function compactRuntimeEvent(line: string) {
+  const match = line.match(/^【(.+?)】\s*(.*)$/)
+  if (!match) return line.trim()
+
+  const eventTitle = match[1].trim()
+  const eventContent = runtimeContentMap[match[2].trim()] ?? match[2].trim()
+  return !eventContent || eventContent === eventTitle ? eventTitle : eventContent
+}
 
 async function loadOptions() {
   const [devicePage, tagList] = await Promise.all([getDeviceList({ page: 1, pageSize: 100 }), getTagList()])
@@ -167,6 +241,28 @@ function scheduleAutoSearch() {
     query.page = 1
     loadData()
   }, 300)
+}
+
+function refreshCurrentPage() {
+  if (document.hidden || loading.value) return
+  loadData()
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh()
+  autoRefreshTimer = setInterval(refreshCurrentPage, AUTO_REFRESH_INTERVAL_MS)
+}
+
+function stopAutoRefresh() {
+  if (!autoRefreshTimer) return
+  clearInterval(autoRefreshTimer)
+  autoRefreshTimer = undefined
+}
+
+function handleVisibilityChange() {
+  if (!document.hidden) {
+    refreshCurrentPage()
+  }
 }
 
 function reset() {
@@ -208,6 +304,35 @@ async function remove(id: number) {
   loadData()
 }
 
+function handleSelectionChange(selection: LogRecord[]) {
+  selectedLogs.value = selectionMode.value ? selection : []
+}
+
+function enterSelectionMode() {
+  selectionMode.value = true
+}
+
+function exitSelectionMode() {
+  logTableRef.value?.clearSelection()
+  selectedLogs.value = []
+  selectionMode.value = false
+}
+
+async function batchRemove() {
+  const ids = selectedLogs.value.map((log) => log.id)
+  if (!ids.length) return
+
+  await ElMessageBox.confirm(`确定删除选中的 ${ids.length} 条日志吗？此操作不可恢复。`, '批量删除日志', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+  await deleteLogs(ids)
+  exitSelectionMode()
+  ElMessage.success(`已删除 ${ids.length} 条日志`)
+  loadData()
+}
+
 function afterSaved() {
   dialogVisible.value = false
   loadData()
@@ -217,6 +342,16 @@ onMounted(async () => {
   await loadOptions()
   await loadData()
   autoSearchReady.value = true
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  startAutoRefresh()
+})
+
+onBeforeUnmount(() => {
+  if (autoSearchTimer) {
+    clearTimeout(autoSearchTimer)
+  }
+  stopAutoRefresh()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
 watch(
@@ -242,6 +377,13 @@ watch(
 
 .time-range-picker :deep(.el-range-input) {
   min-width: 0;
+}
+
+.log-title-cell {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 1180px) {

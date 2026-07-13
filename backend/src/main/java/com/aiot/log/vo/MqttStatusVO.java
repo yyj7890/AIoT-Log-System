@@ -8,6 +8,7 @@ public class MqttStatusVO {
     private String brokerUrl;
     private String clientId;
     private String topic;
+    private String logTopic;
     private Integer qos;
     private Boolean connected;
     private LocalDateTime lastConnectedAt;
@@ -49,6 +50,14 @@ public class MqttStatusVO {
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    public String getLogTopic() {
+        return logTopic;
+    }
+
+    public void setLogTopic(String logTopic) {
+        this.logTopic = logTopic;
     }
 
     public Integer getQos() {

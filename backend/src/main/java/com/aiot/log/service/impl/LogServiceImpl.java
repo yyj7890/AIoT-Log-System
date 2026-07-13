@@ -1,7 +1,9 @@
 package com.aiot.log.service.impl;
 
 import com.aiot.log.common.PageResult;
+import com.aiot.log.config.MqttProperties;
 import com.aiot.log.dto.LogCreateRequest;
+import com.aiot.log.dto.DeviceRuntimeLogCreateRequest;
 import com.aiot.log.dto.LogStatusUpdateRequest;
 import com.aiot.log.dto.LogUpdateRequest;
 import com.aiot.log.entity.Device;
@@ -23,6 +25,7 @@ import com.aiot.log.vo.TagVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -38,16 +41,19 @@ public class LogServiceImpl implements LogService {
     private static final String DEFAULT_SOURCE = "MANUAL";
 
     private final LogRecordMapper logRecordMapper;
+    private final MqttProperties mqttProperties;
     private final DeviceMapper deviceMapper;
     private final TagMapper tagMapper;
     private final LogTagMapper logTagMapper;
 
     public LogServiceImpl(
             LogRecordMapper logRecordMapper,
+            MqttProperties mqttProperties,
             DeviceMapper deviceMapper,
             TagMapper tagMapper,
             LogTagMapper logTagMapper) {
         this.logRecordMapper = logRecordMapper;
+        this.mqttProperties = mqttProperties;
         this.deviceMapper = deviceMapper;
         this.tagMapper = tagMapper;
         this.logTagMapper = logTagMapper;
@@ -144,6 +150,48 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
+    public synchronized LogVO createDeviceRuntimeLog(DeviceRuntimeLogCreateRequest request) {
+        Device device = getDeviceByCode(request.getDeviceCode());
+        String level = StringUtils.hasText(request.getLevel()) ? request.getLevel() : LogLevel.INFO;
+        validateLevel(level);
+
+        String logType = StringUtils.hasText(request.getLogType())
+                ? request.getLogType()
+                : (LogLevel.INFO.equals(level) ? LogType.RUNNING : LogType.ERROR);
+        validateLogType(logType);
+
+        String eventTitle = resolveDeviceRuntimeTitle(request);
+        String eventContent = resolveDeviceRuntimeContent(request);
+        // A startup event starts a new firmware boot sequence. It must never be merged
+        // into the tail of the previous sequence, even when the reset happens within
+        // the normal runtime-event merge window.
+        LogRecord logRecord = isStartupEvent(request) ? null : findRecentRuntimeLog(device.getId());
+        if (logRecord != null) {
+            logRecord.setContent(logRecord.getContent() + "\n" + summarizeRuntimeEvent(eventTitle, eventContent));
+            logRecord.setTitle(buildRuntimeLogTitle(countRuntimeEvents(logRecord.getContent())));
+            if (levelPriority(level) > levelPriority(logRecord.getLevel())) {
+                logRecord.setLevel(level);
+                logRecord.setLogType(logType);
+                logRecord.setStatus(LogLevel.INFO.equals(level) ? LogStatus.RESOLVED : LogStatus.PENDING);
+            }
+            logRecordMapper.updateById(logRecord);
+            return toVO(logRecordMapper.selectById(logRecord.getId()));
+        }
+
+        logRecord = new LogRecord();
+        logRecord.setDeviceId(device.getId());
+        logRecord.setTitle(buildRuntimeLogTitle(1));
+        logRecord.setContent(summarizeRuntimeEvent(eventTitle, eventContent));
+        logRecord.setLogType(logType);
+        logRecord.setLevel(level);
+        logRecord.setStatus(LogLevel.INFO.equals(level) ? LogStatus.RESOLVED : LogStatus.PENDING);
+        logRecord.setSource(LogSource.DEVICE);
+        // The ESP32 may not have synchronized its clock during startup. The database receive time is more reliable here.
+        logRecordMapper.insert(logRecord);
+        return toVO(logRecordMapper.selectById(logRecord.getId()));
+    }
+
+    @Override
     public LogVO updateLog(Long id, LogUpdateRequest request) {
         validateLogType(request.getLogType());
         validateLevelOrDefault(request.getLevel());
@@ -172,9 +220,25 @@ public class LogServiceImpl implements LogService {
 
     @Override
     public void deleteLog(Long id) {
-        getExistingLog(id);
-        logTagMapper.delete(new LambdaQueryWrapper<LogTag>().eq(LogTag::getLogId, id));
-        logRecordMapper.deleteById(id);
+        deleteLogs(List.of(id));
+    }
+
+    @Override
+    @Transactional
+    public void deleteLogs(List<Long> ids) {
+        Set<Long> uniqueIds = new LinkedHashSet<Long>(ids);
+        if (uniqueIds.isEmpty() || uniqueIds.contains(null)) {
+            throw new BusinessException(400, "日志编号不能为空");
+        }
+
+        List<LogRecord> existingLogs = logRecordMapper.selectList(new LambdaQueryWrapper<LogRecord>()
+                .in(LogRecord::getId, uniqueIds));
+        if (existingLogs.size() != uniqueIds.size()) {
+            throw new BusinessException(404, "部分日志不存在");
+        }
+
+        logTagMapper.delete(new LambdaQueryWrapper<LogTag>().in(LogTag::getLogId, uniqueIds));
+        logRecordMapper.delete(new LambdaQueryWrapper<LogRecord>().in(LogRecord::getId, uniqueIds));
     }
 
     private void updateLogTags(Long logId, List<Long> tagIds) {
@@ -279,6 +343,142 @@ public class LogServiceImpl implements LogService {
             throw new BusinessException(404, "设备不存在");
         }
         return device;
+    }
+
+    private Device getDeviceByCode(String deviceCode) {
+        Device device = deviceMapper.selectOne(new LambdaQueryWrapper<Device>()
+                .eq(Device::getDeviceCode, deviceCode));
+        if (device == null) {
+            throw new BusinessException(404, "设备编号不存在");
+        }
+        return device;
+    }
+
+    private LogRecord findRecentRuntimeLog(Long deviceId) {
+        int windowSeconds = mqttProperties.getRuntimeLogMergeWindowSeconds() == null
+                ? 30
+                : Math.max(1, mqttProperties.getRuntimeLogMergeWindowSeconds());
+        return logRecordMapper.selectOne(new LambdaQueryWrapper<LogRecord>()
+                .eq(LogRecord::getDeviceId, deviceId)
+                .eq(LogRecord::getSource, LogSource.DEVICE)
+                .likeRight(LogRecord::getTitle, "设备运行上报（")
+                .ge(LogRecord::getUpdatedAt, LocalDateTime.now().minusSeconds(windowSeconds))
+                .orderByDesc(LogRecord::getUpdatedAt)
+                .last("LIMIT 1"));
+    }
+
+    private String summarizeRuntimeEvent(String eventTitle, String eventContent) {
+        String normalizedContent = eventContent == null ? "" : eventContent.replace('\r', ' ').replace('\n', ' ');
+        if (!StringUtils.hasText(normalizedContent) || normalizedContent.equals(eventTitle)) {
+            return eventTitle;
+        }
+        return normalizedContent;
+    }
+
+    private String buildRuntimeLogTitle(int eventCount) {
+        return "设备运行上报（" + eventCount + " 条）";
+    }
+
+    private int countRuntimeEvents(String content) {
+        if (!StringUtils.hasText(content)) {
+            return 0;
+        }
+        return content.split("\\r?\\n").length;
+    }
+
+    private int levelPriority(String level) {
+        if (LogLevel.ERROR.equals(level)) {
+            return 2;
+        }
+        if (LogLevel.WARNING.equals(level)) {
+            return 1;
+        }
+        return 0;
+    }
+
+    private String resolveDeviceRuntimeTitle(DeviceRuntimeLogCreateRequest request) {
+        String localizedEvent = localizeRuntimeEvent(request.getEventType());
+        if (localizedEvent != null) {
+            return localizedEvent;
+        }
+        if (StringUtils.hasText(request.getTitle())) {
+            return request.getTitle();
+        }
+        if (StringUtils.hasText(request.getEventType())) {
+            return "设备运行事件：" + request.getEventType();
+        }
+        return "设备运行日志";
+    }
+
+    private String resolveDeviceRuntimeContent(DeviceRuntimeLogCreateRequest request) {
+        String message = request.getMessage();
+        if ("Firmware initialization started".equals(message)) {
+            return "固件开始初始化";
+        }
+        if ("Firmware initialization completed".equals(message)) {
+            return "固件初始化完成";
+        }
+        if ("Wi-Fi connected".equals(message)) {
+            return "Wi-Fi 已连接";
+        }
+        if ("Log MQTT connected".equals(message)) {
+            return "日志 MQTT 已连接";
+        }
+        if ("Log MQTT connection failed and was retried".equals(message)) {
+            return "日志 MQTT 连接失败，正在重试";
+        }
+        if ("Log MQTT connection recovered".equals(message)) {
+            return "日志 MQTT 连接已恢复";
+        }
+        if ("Local AI server discovered".equals(message)) {
+            return "已发现本地 AI 服务";
+        }
+        if ("Local AI server connected".equals(message)) {
+            return "已连接本地 AI 服务";
+        }
+        if ("Local AI server connection failed".equals(message)) {
+            return "本地 AI 服务连接失败";
+        }
+        if ("Local AI WebSocket hello completed".equals(message)) {
+            return "本地 AI WebSocket 握手完成";
+        }
+        if ("Official AI protocol connected or reconnected".equals(message)) {
+            return "官方 AI 协议已连接或重连";
+        }
+        if ("Official AI protocol connected".equals(message)) {
+            return "官方 AI 协议已连接";
+        }
+        return message;
+    }
+
+    private boolean isStartupEvent(DeviceRuntimeLogCreateRequest request) {
+        return "startup".equals(request.getEventType())
+                || "firmware_started".equals(request.getEventType());
+    }
+
+    private String localizeRuntimeEvent(String eventType) {
+        if (!StringUtils.hasText(eventType)) {
+            return null;
+        }
+        return switch (eventType) {
+            case "startup" -> "设备启动";
+            case "firmware_started" -> "固件启动";
+            case "wifi_connected" -> "Wi-Fi 已连接";
+            case "wifi_disconnected" -> "Wi-Fi 已断开";
+            case "mqtt_connected" -> "日志 MQTT 已连接";
+            case "mqtt_connect_failed", "mqtt_connection_failed" -> "日志 MQTT 连接失败";
+            case "mqtt_reconnected", "mqtt_connection_recovered" -> "日志 MQTT 连接已恢复";
+            case "mqtt_disconnected" -> "日志 MQTT 已断开";
+            case "local_ai_server_discovered" -> "已发现本地 AI 服务";
+            case "local_ai_connected" -> "已连接本地 AI 服务";
+            case "local_ai_connection_failed" -> "本地 AI 服务连接失败";
+            case "local_ai_websocket_hello_completed" -> "本地 AI WebSocket 握手完成";
+            case "local_mqtt_broker_discovered" -> "已发现本地日志 MQTT 服务";
+            case "official_protocol_connected" -> "官方 AI 协议已连接";
+            case "official_protocol_disconnected" -> "官方 AI 协议已断开";
+            case "official_protocol_error" -> "官方 AI 协议异常";
+            default -> null;
+        };
     }
 
     private void validateLogType(String logType) {

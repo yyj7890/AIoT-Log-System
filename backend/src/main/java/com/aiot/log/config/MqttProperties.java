@@ -10,7 +10,11 @@ public class MqttProperties {
     private Boolean enabled = false;
     private String brokerUrl = "tcp://127.0.0.1:1883";
     private String clientId = "aiot-log-backend";
+    private String username = "";
+    private String password = "";
     private String topic = "aiot/device/+/report";
+    private String logTopic = "aiot/device/+/log";
+    private Integer runtimeLogMergeWindowSeconds = 30;
     private Integer qos = 1;
 
     public Boolean getEnabled() {
@@ -37,12 +41,44 @@ public class MqttProperties {
         this.clientId = clientId;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public String getTopic() {
         return topic;
     }
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    public String getLogTopic() {
+        return logTopic;
+    }
+
+    public void setLogTopic(String logTopic) {
+        this.logTopic = logTopic;
+    }
+
+    public Integer getRuntimeLogMergeWindowSeconds() {
+        return runtimeLogMergeWindowSeconds;
+    }
+
+    public void setRuntimeLogMergeWindowSeconds(Integer runtimeLogMergeWindowSeconds) {
+        this.runtimeLogMergeWindowSeconds = runtimeLogMergeWindowSeconds;
     }
 
     public Integer getQos() {
