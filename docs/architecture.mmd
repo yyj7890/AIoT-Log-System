@@ -1,0 +1,17 @@
+flowchart LR
+    ESP["小智 ESP32-S3"]
+    LOCAL["本地 AI 语音通道\n局域网发现 / OTA / WebSocket"]
+    CLOUD["官方 AI 语音通道\nWebSocket / MQTT"]
+    DISCOVERY["UDP Broker 自动发现\n19830"]
+    LOG["独立 MQTT 日志通道\n/report 与 /log"]
+    MOSQ["Mosquitto\n全局认证 + Topic ACL"]
+    BACKEND["Spring Boot 后端\nREST API + MQTT 订阅"]
+    MYSQL[("MySQL")]
+    VUE["Vue 管理页面\nNginx"]
+
+    ESP --> LOCAL
+    ESP --> CLOUD
+    ESP --> DISCOVERY --> MOSQ
+    ESP --> LOG --> MOSQ
+    MOSQ --> BACKEND --> MYSQL
+    VUE -->|"/api"| BACKEND
