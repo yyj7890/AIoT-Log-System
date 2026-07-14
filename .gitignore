@@ -32,6 +32,7 @@ config/mosquitto-acl.conf
 !config/mosquitto-acl.example.conf
 docker/local/
 dist/
+aiot-base-images.tar
 
 # Local captures, private screenshots and database exports must never be published.
 screenshots/raw/
