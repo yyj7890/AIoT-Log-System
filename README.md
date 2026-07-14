@@ -169,7 +169,25 @@ docker-ghcr-stop.cmd    停止 GHCR 部署并保留数据
 
 ## 项目截图
 
-本仓库不包含真实运行截图，以避免泄露设备、网络与凭证信息。建议截图列表、用途与脱敏规则见 [screenshots/README.md](screenshots/README.md)。准备完成并脱敏后，可将精选截图放入 `screenshots/` 并在本节替换为图片链接。
+### 首页统计
+
+![首页统计](screenshots/01-dashboard.png)
+
+### 设备详情
+
+![设备详情](screenshots/02-device-xiaozhi-001.png)
+
+### 中文运行日志
+
+![中文运行日志](screenshots/03-runtime-logs-zh.png)
+
+### MQTT 认证状态
+
+![MQTT 认证状态](screenshots/04-mqtt-auth-status.png)
+
+### 批量删除模式
+
+![批量删除模式](screenshots/05-batch-delete-mode.png)
 
 ## 与官方小智固件项目的关系
 
