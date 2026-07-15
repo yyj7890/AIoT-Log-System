@@ -29,6 +29,7 @@ mybatis-plus:
 
 mqtt:
   enabled: ${MQTT_ENABLED:true}
+  mode: ${MQTT_MODE:lan}
   broker-url: ${MQTT_BROKER_URL:tcp://127.0.0.1:1883}
   client-id: ${MQTT_CLIENT_ID:aiot-log-backend}
   username: ${MQTT_USERNAME:<mqtt-username>}

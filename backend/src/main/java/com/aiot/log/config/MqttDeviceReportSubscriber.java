@@ -67,6 +67,10 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
             return;
         }
 
+        if (!hasValidModeConfiguration()) {
+            return;
+        }
+
         try {
             mqttClient = new MqttClient(
                     mqttProperties.getBrokerUrl(),
@@ -166,6 +170,24 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
             log.warn("MQTT subscribe failed. reportTopic={}, logTopic={}",
                     mqttProperties.getTopic(), mqttProperties.getLogTopic(), exception);
         }
+    }
+
+    private boolean hasValidModeConfiguration() {
+        if (!mqttProperties.isRemoteMode()) {
+            return true;
+        }
+        if (!StringUtils.hasText(mqttProperties.getBrokerUrl())
+                || !mqttProperties.getBrokerUrl().regionMatches(true, 0, "ssl://", 0, "ssl://".length())) {
+            lastError = "Remote MQTT mode requires an ssl:// broker URL.";
+            log.error("Remote MQTT subscriber is disabled because MQTT_BROKER_URL must use ssl://.");
+            return false;
+        }
+        if (!StringUtils.hasText(mqttProperties.getUsername()) || !StringUtils.hasText(mqttProperties.getPassword())) {
+            lastError = "Remote MQTT mode requires MQTT username and password.";
+            log.error("Remote MQTT subscriber is disabled because credentials are missing.");
+            return false;
+        }
+        return true;
     }
 
     private boolean isRuntimeLogTopic(String topic) {

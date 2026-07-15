@@ -1,0 +1,50 @@
+name: aiot-log-system-remote
+
+services:
+  mysql:
+    image: mysql:8.4
+    env_file:
+      - ./docker/local/hivemq-remote.env
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/yyj7890/aiot-log-backend:v1.1.0-remote-mqtt
+    env_file:
+      - ./docker/local/hivemq-remote.env
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/aiot_log_system?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      MQTT_ENABLED: "true"
+      MQTT_MODE: remote
+      MQTT_DISCOVERY_ENABLED: "false"
+      MQTT_CLIENT_ID: aiot-log-backend-remote
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/yyj7890/aiot-log-frontend:v1.1.0-remote-mqtt
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql-data:

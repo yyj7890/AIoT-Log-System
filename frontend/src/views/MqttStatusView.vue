@@ -34,6 +34,7 @@
       <div class="section-body">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="Broker">{{ status?.brokerUrl || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="连接模式">{{ status?.mode === 'remote' ? '远程 HiveMQ TLS' : '局域网 Mosquitto' }}</el-descriptions-item>
           <el-descriptions-item label="Client ID">{{ status?.clientId || '-' }}</el-descriptions-item>
           <el-descriptions-item label="上报 Topic">{{ status?.topic || '-' }}</el-descriptions-item>
           <el-descriptions-item label="日志 Topic">{{ status?.logTopic || '-' }}</el-descriptions-item>
@@ -55,7 +56,18 @@
       </div>
     </div>
 
-    <div class="content-section">
+    <div v-if="status?.mode === 'remote'" class="content-section">
+      <div class="section-title">远程 MQTT 凭证</div>
+      <div class="section-body">
+        <el-alert
+          type="info"
+          :closable="false"
+          title="远程 HiveMQ 凭证仅从部署环境的私有配置读取，管理页面不会显示、保存或修改它们。UDP 19830 自动发现已关闭。"
+        />
+      </div>
+    </div>
+
+    <div v-else class="content-section">
       <div class="section-title">全局设备 MQTT 凭证</div>
       <div class="section-body credential-body">
         <el-alert
@@ -99,8 +111,13 @@ const credentialForm = ref({ username: '', password: '' })
 async function loadStatus() {
   loading.value = true
   try {
-    const [mqttStatus, credentialStatus] = await Promise.all([getMqttStatus(), getMqttGlobalCredential()])
+    const mqttStatus = await getMqttStatus()
     status.value = mqttStatus
+    if (mqttStatus.mode === 'remote') {
+      credential.value = undefined
+      return
+    }
+    const credentialStatus = await getMqttGlobalCredential()
     credential.value = credentialStatus
     credentialForm.value.username = credentialStatus.username || 'aiot'
   } finally {

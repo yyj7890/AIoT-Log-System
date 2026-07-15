@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class MqttStatusVO {
 
     private Boolean enabled;
+    private String mode;
     private String brokerUrl;
     private String clientId;
     private String topic;
@@ -26,6 +27,14 @@ public class MqttStatusVO {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 
     public String getBrokerUrl() {

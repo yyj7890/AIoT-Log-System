@@ -4,6 +4,7 @@ import com.aiot.log.common.ApiResponse;
 import com.aiot.log.config.MqttDeviceReportSubscriber;
 import com.aiot.log.config.MqttProperties;
 import com.aiot.log.dto.MqttGlobalCredentialUpdateRequest;
+import com.aiot.log.exception.BusinessException;
 import com.aiot.log.service.MqttCredentialService;
 import com.aiot.log.vo.MqttGlobalCredentialStatusVO;
 import com.aiot.log.vo.MqttStatusVO;
@@ -34,7 +35,8 @@ public class MqttController {
     public ApiResponse<MqttStatusVO> status() {
         MqttStatusVO vo = new MqttStatusVO();
         vo.setEnabled(mqttProperties.getEnabled());
-        vo.setBrokerUrl(mqttProperties.getBrokerUrl());
+        vo.setMode(mqttProperties.isRemoteMode() ? "remote" : "lan");
+        vo.setBrokerUrl(mqttProperties.isRemoteMode() ? "ssl://<private-remote-broker>" : mqttProperties.getBrokerUrl());
         vo.setClientId(mqttProperties.getClientId());
         vo.setTopic(mqttProperties.getTopic());
         vo.setLogTopic(mqttProperties.getLogTopic());
@@ -53,18 +55,27 @@ public class MqttController {
 
     @GetMapping("/global-credential")
     public ApiResponse<MqttGlobalCredentialStatusVO> globalCredential() {
+        ensureLanCredentialManagement();
         return ApiResponse.success(mqttCredentialService.getGlobalCredentialStatus());
     }
 
     @PutMapping("/global-credential")
     public ApiResponse<MqttGlobalCredentialStatusVO> saveGlobalCredential(
             @Valid @RequestBody MqttGlobalCredentialUpdateRequest request) {
+        ensureLanCredentialManagement();
         return ApiResponse.success(mqttCredentialService.saveGlobalCredential(request));
     }
 
     @PutMapping("/global-credential/authentication")
     public ApiResponse<MqttGlobalCredentialStatusVO> setAuthenticationEnabled(
             @RequestParam boolean enabled) {
+        ensureLanCredentialManagement();
         return ApiResponse.success(mqttCredentialService.setAuthenticationEnabled(enabled));
+    }
+
+    private void ensureLanCredentialManagement() {
+        if (mqttProperties.isRemoteMode()) {
+            throw new BusinessException(400, "远程 MQTT 模式仅使用部署环境中的私有凭证，不能在页面修改本地 Mosquitto 凭证");
+        }
     }
 }

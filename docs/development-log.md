@@ -4,6 +4,23 @@
 
 完整早期过程保存在 `../history/docs-before-consolidation-2026-07-09.zip`，包括原始命令、长篇报错和逐步搭建过程。
 
+## 2026-07-15
+
+### HiveMQ 远程 Docker 端到端验收
+
+- 验证：Windows Docker 远程 Compose 已启动 MySQL、后端与前端；后端以 `MQTT_MODE=remote` 成功通过 TLS `8883` 订阅 HiveMQ，MQTTX 发布的测试日志已成功入库。
+- 问题：初次处理失败分别显示设备不存在、日志类型不合法。
+- 根因：测试 Topic、Payload 的 `deviceCode` 与管理端已创建的设备编号不一致；`SYSTEM` 不在后端 `logType` 枚举内。
+- 处理：统一使用同一设备编号；将 `logType` 改为允许值 `RUNNING`、`ERROR`、`MAINTENANCE` 或 `INSPECTION`。
+- 验证：使用 `RUNNING` 重新发布后，MQTT 状态页的处理成功计数增加。真实 HiveMQ 域名、用户名、密码与 Token 未写入文档或仓库。
+
+### Windows WSL、Docker Hub 与截图工具故障
+
+- 问题：异常重启后 Docker Desktop 停留在 “Starting the Docker Engine”，WSL 报 `system.vhd` 挂载的 `HCS/ERROR_NOT_SUPPORTED`；Docker Hub 匿名 Token 请求偶发超时；Windows 截图工具选区后卡死。
+- 处理：以管理员身份执行 `bcdedit /set hypervisorlaunchtype auto` 后重启，使用 `wsl -d Ubuntu-22.04 -- echo WSL_OK` 确认 WSL 恢复后再启动 Docker。Docker Hub 超时时先预拉取构建基础镜像；本机 localhost 代理场景使用 `%UserProfile%\.wslconfig` 的镜像网络与 `autoProxy=true`，随后 `wsl --shutdown` 并重启 Docker Desktop。
+- 验证：WSL 返回 `WSL_OK`、Docker Engine 恢复，基础镜像拉取及远程 Compose 构建启动成功。
+- 边界：上述均为 Windows 主机环境问题，不修改 AIoT 项目业务代码；不要删除/注销 WSL 发行版、`system.vhd`、Docker 数据卷或私有远程配置。截图工具问题应作为 Windows/显卡驱动问题单独处理。
+
 ## 2026-07-14
 
 ### 群晖 NAS 成品镜像实机部署验收

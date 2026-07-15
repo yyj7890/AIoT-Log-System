@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 public class MqttProperties {
 
     private Boolean enabled = false;
+    private String mode = "lan";
     private String brokerUrl = "tcp://127.0.0.1:1883";
     private String clientId = "aiot-log-backend";
     private String username = "";
@@ -23,6 +24,18 @@ public class MqttProperties {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public boolean isRemoteMode() {
+        return "remote".equalsIgnoreCase(mode);
     }
 
     public String getBrokerUrl() {

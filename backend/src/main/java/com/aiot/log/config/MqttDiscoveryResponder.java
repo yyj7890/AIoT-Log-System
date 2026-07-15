@@ -35,18 +35,25 @@ public class MqttDiscoveryResponder implements ApplicationRunner {
     private static final int MAX_PACKET_SIZE = 2048;
 
     private final MqttDiscoveryProperties properties;
+    private final MqttProperties mqttProperties;
     private final ObjectMapper objectMapper;
     private volatile boolean running;
     private DatagramSocket socket;
     private Thread worker;
 
-    public MqttDiscoveryResponder(MqttDiscoveryProperties properties, ObjectMapper objectMapper) {
+    public MqttDiscoveryResponder(MqttDiscoveryProperties properties, MqttProperties mqttProperties,
+                                 ObjectMapper objectMapper) {
         this.properties = properties;
+        this.mqttProperties = mqttProperties;
         this.objectMapper = objectMapper;
     }
 
     @Override
     public void run(ApplicationArguments args) {
+        if (mqttProperties.isRemoteMode()) {
+            log.info("MQTT discovery responder is disabled in remote MQTT mode.");
+            return;
+        }
         if (!Boolean.TRUE.equals(properties.getEnabled())) {
             log.info("MQTT discovery responder is disabled.");
             return;

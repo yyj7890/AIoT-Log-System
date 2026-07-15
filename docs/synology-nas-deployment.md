@@ -60,3 +60,22 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 - 长时间设备持续上报、断网恢复和多设备并发。
 - 固定 GHCR 版本标签、镜像签名和漏洞扫描。
 - TLS、每设备凭证及最小权限 ACL。
+
+## 7. HiveMQ 远程版本（待实机验收）
+
+`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。该编排固定拉取 GHCR 的 `v1.1.0-remote-mqtt` 镜像标签，只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。默认分支继续发布 `latest`，两种镜像不会混用。
+
+使用 Windows 上的以下命令生成远程成品镜像部署包：
+
+```powershell
+tools/create-synology-image-deploy.ps1 -Remote -OutputDirectory dist/synology-remote-image-deploy
+```
+
+将生成目录上传到 NAS 后，先在该目录执行：
+
+```sh
+sudo -i
+sh tools/initialize-synology-docker-config.sh
+```
+
+初始化器只会创建被忽略的 `docker/local/hivemq-remote.env`；在其中填写私有 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 与 `MQTT_PASSWORD` 后，再以 `docker-compose.yml` 创建 Container Manager 项目。不得上传、提交或截图展示该文件。该模式不需要群晖公网 IP 或路由器端口转发，管理网页如需外网访问应另行通过受认证的 VPN/反向代理规划，而不是暴露 MQTT 或数据库端口。

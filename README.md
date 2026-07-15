@@ -84,6 +84,21 @@ docker-stop.cmd     停止容器并保留数据
 
 Docker 首次运行 `docker-update.cmd` 时会在本机生成 `.env` 和 `docker/local/`：其中包含随机数据库密码、MQTT 凭证、Mosquitto 密码文件及当前局域网 IPv4。这些文件均已被 `.gitignore` 忽略，**不要打开、复制、提交或上传**。局域网 UDP 自动发现默认不要求 Token，以便未预置 Token 的设备可自动获取 Broker 地址；如设备固件支持并配置了同一 Token，可在私有 `.env` 中手动设置 `MQTT_DISCOVERY_TOKEN`。脚本不会覆盖已存在的凭证；在切换 Wi-Fi、网线或热点后再次运行 `docker-start.cmd`，会更新仅供 UDP 发现使用的本机局域网地址。若电脑当前没有可用局域网 IPv4，Docker 仍可启动，但会暂时关闭 UDP 发现；联网后再次运行启动脚本即可恢复。Docker 也会使用 TCP `1883` 和 UDP `19830`，不要与本地开发版同时运行。
 
+### HiveMQ Cloud 远程版本（`Remote-Hivemq` 分支）
+
+该分支保留上述局域网模式，并增加可选的远程日志接入：设备通过 HiveMQ Cloud 的 TLS `8883` 上报，家中群晖/电脑上的后端主动订阅并写入 MySQL。远程模式不需要群晖公网 IP，也不应开放家庭 `1883`、`8080`、`3306` 或 UDP `19830` 到公网。
+
+```text
+docker-remote-update.cmd        首次构建并启动远程源码版
+docker-remote-start.cmd         启动远程源码版
+docker-remote-stop.cmd          停止远程源码版
+docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
+```
+
+首次运行会由初始化器生成被忽略的 `docker/local/hivemq-remote.env`，用户只在该私有文件中填写 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 和 `MQTT_PASSWORD`；公开模板是 `config/hivemq-remote.env.example`。该文件与原局域网 Docker 的 `.env` 分离，切换模式不会覆盖原配置。远程 Compose 只运行 MySQL、后端和前端，不包含 Mosquitto、TCP `1883` 或 UDP `19830`。不要把私有配置、真实域名、凭证或设备数据提交、上传或截图公开。实现与验证状态见 [HiveMQ 远程版本记录](docs/hivemq-remote-mqtt-version.md)。
+
+远程版 GHCR 成品镜像使用固定标签 `v1.1.0-remote-mqtt`；远程 GHCR Compose 固定拉取该标签，默认分支的局域网镜像继续使用 `latest`。推送版本标签后，GitHub Actions 还会创建同名 Release，便于从仓库主页识别和进入远程版本。
+
 ### 首次本地配置（公开模板）
 
 本仓库不提交真实凭证或本机运行配置。新环境可参考以下模板创建本地文件；模板中的 `<...>` 必须替换为仅保存在本机的值。

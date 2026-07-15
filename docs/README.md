@@ -9,6 +9,7 @@
 | `development-log.md` | 开发过程、问题原因、修复方法和验证结果 |
 | `future-development-backlog.md` | 后续开发计划和优先级 |
 | `technical-decisions.md` | 技术选型、版本及选择原因 |
+| `hivemq-remote-mqtt-version.md` | HiveMQ Cloud 远程 MQTT 分支的实现、边界、部署方式和验收要求 |
 | `README.md` | 本导航 |
 | `synology-nas-deployment.md` | 群晖 DSM Container Manager 实际部署、故障处理和验收记录 |
 

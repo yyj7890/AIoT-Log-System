@@ -1,5 +1,6 @@
 export interface MqttStatus {
   enabled: boolean
+  mode: 'lan' | 'remote'
   brokerUrl: string
   clientId: string
   topic: string

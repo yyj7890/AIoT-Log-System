@@ -1,8 +1,18 @@
 # 当前项目状态
 
-更新时间：2026-07-14
+更新时间：2026-07-15
 
 ## 当前阶段
+
+2026-07-15：`Remote-Hivemq` 分支已实现 HiveMQ Cloud 远程 MQTT 模式，且未替换默认局域网模式。后端可通过 `MQTT_MODE=remote` 使用 Paho `ssl://` TLS 订阅原有 `report`/`log` Topic，远程时强制关闭 UDP `19830` 响应器、隐藏远程 Broker 地址并禁止页面修改本地 Mosquitto 凭证。新增源码/GHCR 远程 Compose、Windows 启停脚本、群晖私有 `docker/local/hivemq-remote.env` 初始化和远程镜像部署包生成选项；该文件与局域网 `.env` 分离。远程编排不包含 Mosquitto、不映射 `1883` 或 UDP `19830`。远程版以固定 GHCR 标签 `v1.1.0-remote-mqtt` 发布，避免群晖误拉默认分支的 `latest` 镜像或覆盖本次版本。小智独立日志客户端已增加持久化远程 TLS 配置、ESP-IDF CA bundle、域名验证/SNI 和跳过 UDP 发现，未修改官方 AI、OTA 或 WebSocket 通道。真实 HiveMQ 信息未读取或写入项目。
+
+远程版本已完成的外部前置验证：用户使用 MQTTX 成功验证 TLS `8883` 连接、`aiot/device/#`（QoS 1）订阅，以及向 `aiot/device/TEST-001/log`（QoS 1）发布并接收 JSON 测试日志；未记录真实域名或凭证。
+
+远程版本已完成 Windows 端到端验收：远程 Compose 的 MySQL、后端和前端均已启动，后端状态页显示远程 TLS 已连接。MQTTX 发布的有效 `/log` 消息已由 Spring Boot 成功处理并写入新建 MySQL 数据库；测试同时确认 Topic、Payload `deviceCode` 与已创建设备编号必须一致，`logType` 必须使用 `RUNNING`、`ERROR`、`MAINTENANCE` 或 `INSPECTION`。
+
+远程版本尚待验收：群晖远程 Docker 实际启动、不同网络下 ESP32 真机 TLS 日志上报、切回 `lan` 后的 UDP 本地模式回归。
+
+构建与静态验证：后端已在 JDK 17 下执行 `mvn -s maven-settings-docker.xml -DskipTests package` 并成功；前端生产构建、远程 Compose 解析、PowerShell 脚本语法、Markdown 本地链接与 `git diff --check` 均通过。ESP-IDF 完整构建仍待本机补齐其 Python 虚拟环境后执行。
 
 当前结论（2026-07-13）：真实小智已完成普通 Wi-Fi、手机热点、断网恢复、本地 MQTT 日志汇总、官方/本地 AI 动态切换和本地 AI WebSocket 实际对话验证。IoT 全局 MQTT 凭证已创建并启用：匿名访问已关闭，服务重启后小智使用配网页保存的同一套凭证完成日志上报验证。
 
