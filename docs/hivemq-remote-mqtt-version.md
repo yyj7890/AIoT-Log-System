@@ -77,7 +77,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 远程版以固定版本标签 `v1.1.0-remote-mqtt` 发布；远程群晖 Compose 固定拉取该标签，避免误用默认分支的 `latest` 局域网镜像，也避免后续构建覆盖本次版本。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
+- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是固定远程版。远程群晖 Compose 固定拉取远程标签，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件

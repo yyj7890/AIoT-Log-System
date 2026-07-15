@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-2026-07-15：`Remote-Hivemq` 分支已实现 HiveMQ Cloud 远程 MQTT 模式，且未替换默认局域网模式。后端可通过 `MQTT_MODE=remote` 使用 Paho `ssl://` TLS 订阅原有 `report`/`log` Topic，远程时强制关闭 UDP `19830` 响应器、隐藏远程 Broker 地址并禁止页面修改本地 Mosquitto 凭证。新增源码/GHCR 远程 Compose、Windows 启停脚本、群晖私有 `docker/local/hivemq-remote.env` 初始化和远程镜像部署包生成选项；该文件与局域网 `.env` 分离。远程编排不包含 Mosquitto、不映射 `1883` 或 UDP `19830`。远程版以固定 GHCR 标签 `v1.1.0-remote-mqtt` 发布，避免群晖误拉默认分支的 `latest` 镜像或覆盖本次版本。小智独立日志客户端已增加持久化远程 TLS 配置、ESP-IDF CA bundle、域名验证/SNI 和跳过 UDP 发现，未修改官方 AI、OTA 或 WebSocket 通道。真实 HiveMQ 信息未读取或写入项目。
+2026-07-15：`Remote-Hivemq` 分支已实现 HiveMQ Cloud 远程 MQTT 模式，且未替换默认局域网模式。后端可通过 `MQTT_MODE=remote` 使用 Paho `ssl://` TLS 订阅原有 `report`/`log` Topic，远程时强制关闭 UDP `19830` 响应器、隐藏远程 Broker 地址并禁止页面修改本地 Mosquitto 凭证。新增源码/GHCR 远程 Compose、Windows 启停脚本、群晖私有 `docker/local/hivemq-remote.env` 初始化和远程镜像部署包生成选项；该文件与局域网 `.env` 分离。远程编排不包含 Mosquitto、不映射 `1883` 或 UDP `19830`。远程版以固定 GHCR 标签 `v1.1.0-remote-mqtt` 发布，局域网版固定为 `v1.0.0-lan`；`latest` 保持局域网语义并只由 `main` 分支推送更新。小智独立日志客户端已增加持久化远程 TLS 配置、ESP-IDF CA bundle、域名验证/SNI 和跳过 UDP 发现，未修改官方 AI、OTA 或 WebSocket 通道。真实 HiveMQ 信息未读取或写入项目。
 
 远程版本已完成的外部前置验证：用户使用 MQTTX 成功验证 TLS `8883` 连接、`aiot/device/#`（QoS 1）订阅，以及向 `aiot/device/TEST-001/log`（QoS 1）发布并接收 JSON 测试日志；未记录真实域名或凭证。
 

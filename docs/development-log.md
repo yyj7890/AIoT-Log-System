@@ -6,6 +6,13 @@
 
 ## 2026-07-15
 
+### GHCR 局域网版与远程版标签隔离
+
+- 问题：发布 `v1.1.0-remote-mqtt` 时，GitHub Actions 同时把 `latest` 指向了远程镜像，导致页面无法直接通过稳定名称识别原局域网镜像。
+- 根因：工作流使用元数据动作的 `{{is_default_branch}}` 判断；版本标签事件没有按预期排除 `latest`。
+- 处理：将 `latest` 的生成条件改为明确匹配 `refs/heads/main`；原局域网镜像增加固定标签 `v1.0.0-lan` 并恢复 `latest`，远程镜像继续使用 `v1.1.0-remote-mqtt`。
+- 验证：两个 GHCR 包均应同时提供 `v1.0.0-lan` 和 `v1.1.0-remote-mqtt`；`latest` 与 `v1.0.0-lan` 指向局域网镜像，后续远程版本标签不得移动 `latest`。
+
 ### HiveMQ 远程 Docker 端到端验收
 
 - 验证：Windows Docker 远程 Compose 已启动 MySQL、后端与前端；后端以 `MQTT_MODE=remote` 成功通过 TLS `8883` 订阅 HiveMQ，MQTTX 发布的测试日志已成功入库。
