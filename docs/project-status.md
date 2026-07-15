@@ -10,7 +10,9 @@
 
 远程版本已完成 Windows 端到端验收：远程 Compose 的 MySQL、后端和前端均已启动，后端状态页显示远程 TLS 已连接。MQTTX 发布的有效 `/log` 消息已由 Spring Boot 成功处理并写入新建 MySQL 数据库；测试同时确认 Topic、Payload `deviceCode` 与已创建设备编号必须一致，`logType` 必须使用 `RUNNING`、`ERROR`、`MAINTENANCE` 或 `INSPECTION`。
 
-远程版本尚待验收：群晖远程 Docker 实际启动、不同网络下 ESP32 真机 TLS 日志上报、切回 `lan` 后的 UDP 本地模式回归。
+远程版本已完成群晖实机验收：使用固定标签 `v1.1.0-remote-mqtt` 在 DSM Container Manager 创建独立远程项目，MySQL、后端和前端启动成功，后端通过 HiveMQ TLS 连接后收到了 MQTTX 测试消息并处理成功。NAS 的 Docker CLI 不带 Compose V2 插件，因此通过 Container Manager 创建项目；宿主机 `8080` 被既有服务占用后，将远程后端和前端宿主机端口分别调整为 `18080` 和 `18000`，容器内部 `backend:8080` 通信不变。未记录真实 NAS 地址或 HiveMQ 凭证。
+
+远程版本尚待验收：不同网络下 ESP32 真机 TLS 日志上报，以及切回 `lan` 后的 UDP 本地模式回归。
 
 构建与静态验证：后端已在 JDK 17 下执行 `mvn -s maven-settings-docker.xml -DskipTests package` 并成功；前端生产构建、远程 Compose 解析、PowerShell 脚本语法、Markdown 本地链接与 `git diff --check` 均通过。ESP-IDF 完整构建仍待本机补齐其 Python 虚拟环境后执行。
 

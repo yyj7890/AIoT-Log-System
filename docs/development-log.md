@@ -6,6 +6,14 @@
 
 ## 2026-07-15
 
+### 群晖 HiveMQ 远程版实机部署验收
+
+- 验证：使用固定 GHCR 标签 `v1.1.0-remote-mqtt` 在 DSM Container Manager 创建独立远程项目；MySQL 健康，后端和前端启动，MQTTX 测试消息经 HiveMQ TLS 到达群晖后端并处理成功。
+- 问题：群晖 Docker CLI 不支持 `docker compose` V2 子命令；既有 NAS 服务占用宿主机 `8080`，后端首次启动时报 external connectivity。
+- 根因：DSM 通过 Container Manager 管理 Compose，而当前 Docker CLI 没有 Compose V2 插件；端口冲突只发生在宿主机映射，容器内部服务地址没有冲突。
+- 处理：使用 Container Manager 从部署目录创建项目；将远程后端宿主机端口改为 `18080`、前端改为 `18000`，保留容器内部 `backend:8080`。
+- 边界：原局域网项目和数据未删除，但两套项目不同时启动；未记录真实 NAS 地址、HiveMQ 域名或凭证，也未开放家庭 MQTT、数据库或后端端口到公网。
+
 ### GHCR 局域网版与远程版标签隔离
 
 - 问题：发布 `v1.1.0-remote-mqtt` 时，GitHub Actions 同时把 `latest` 指向了远程镜像，导致页面无法直接通过稳定名称识别原局域网镜像。

@@ -126,7 +126,15 @@ MQTT_PASSWORD=<private-password>
 - 处理：先预拉取 `maven:3.9.9-eclipse-temurin-17`、`node:22-alpine`、`eclipse-temurin:17-jre`、`nginx:1.27-alpine`；本机使用 localhost 系统代理时，在 `%UserProfile%\.wslconfig` 配置镜像网络与 `autoProxy=true`，然后执行 `wsl --shutdown` 并重启 Docker Desktop。该配置只处理 Windows/WSL 网络，不包含 HiveMQ 凭证。
 - 另有 Windows 截图工具在选区后卡死的现象；它与项目容器和 HiveMQ 链路无关，应按 Windows 应用/显卡驱动问题单独处理，项目验证可先使用终端输出而非截图。
 
-## 9. 实施涉及的主要文件
+## 9. 2026-07-15 群晖远程版实机验收
+
+- 使用 `tools/create-synology-image-deploy.ps1 -Remote` 生成无源码部署包，上传到独立 NAS 目录后，由 `initialize-synology-docker-config.sh` 创建权限为 `0600` 的私有 HiveMQ 配置；真实域名和凭证未进入仓库或文档。
+- 群晖 Docker CLI 不提供 `docker compose` V2 子命令，因此使用 DSM Container Manager 根据部署包中的 `docker-compose.yml` 创建远程项目；前后端固定拉取 `v1.1.0-remote-mqtt`。
+- 既有 NAS 服务占用了宿主机 `8080`，导致后端首次启动时报 external connectivity；将后端宿主机端口调整为 `18080`、前端调整为 `18000` 后重新创建，容器内部仍通过 `backend:8080` 通信。
+- MySQL 健康检查、后端和前端启动成功；管理端 MQTT 状态确认 HiveMQ TLS 已连接。创建匹配的测试设备后，MQTTX 发布的有效日志被后端收到并处理成功，完成 HiveMQ Cloud → 群晖 Spring Boot → MySQL 的实机验收。
+- 原局域网项目和数据未删除；由于两套编排默认端口重叠，验收时不同时启动。未开放家庭 MQTT、数据库或后端端口到公网。
+
+## 10. 实施涉及的主要文件
 
 - AIoT 后端 MQTT 配置、订阅客户端、示例配置、状态页和 Docker/GHCR 编排。
 - Windows Docker 私有配置初始化脚本、群晖初始化脚本和成品镜像包生成器。

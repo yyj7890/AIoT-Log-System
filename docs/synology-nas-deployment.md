@@ -61,7 +61,7 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 - 固定 GHCR 版本标签、镜像签名和漏洞扫描。
 - TLS、每设备凭证及最小权限 ACL。
 
-## 7. HiveMQ 远程版本（待实机验收）
+## 7. HiveMQ 远程版本（实机验收通过）
 
 `Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。该编排固定拉取 GHCR 的 `v1.1.0-remote-mqtt` 镜像标签，只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种镜像不会混用。
 
@@ -79,3 +79,5 @@ sh tools/initialize-synology-docker-config.sh
 ```
 
 初始化器只会创建被忽略的 `docker/local/hivemq-remote.env`；在其中填写私有 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 与 `MQTT_PASSWORD` 后，再以 `docker-compose.yml` 创建 Container Manager 项目。不得上传、提交或截图展示该文件。该模式不需要群晖公网 IP 或路由器端口转发，管理网页如需外网访问应另行通过受认证的 VPN/反向代理规划，而不是暴露 MQTT 或数据库端口。
+
+2026-07-15 已完成远程项目实机验收：群晖 Docker CLI 不带 Compose V2 插件，故通过 DSM Container Manager 创建项目。NAS 既有服务占用宿主机 `8080` 时，后端首次启动报 external connectivity；将后端映射改为 `18080:8080`、前端改为 `18000:80` 后启动成功，容器内部服务地址未改变。MySQL 健康，后端连接 HiveMQ TLS，MQTTX 测试日志的“收到消息”和“处理成功”计数均增加。原局域网项目及数据保留但未与远程项目同时运行；记录中不包含真实 NAS 地址或 HiveMQ 凭证。
