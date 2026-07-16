@@ -1,6 +1,6 @@
 # HiveMQ Cloud 远程 MQTT 接入版本
 
-更新时间：2026-07-16
+更新时间：2026-07-17
 
 ## 1. 目的与状态
 
@@ -77,7 +77,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，`v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新，当前 `v1.1.3-remote-mqtt` 增加 `WARN` 等级兼容并将状态页和日志管理页统一为 1 秒可靠刷新。远程群晖 Compose 固定拉取当前远程标签，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
+- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，`v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新，`v1.1.3-remote-mqtt` 增加 `WARN` 等级兼容并将状态页和日志管理页统一为 1 秒可靠刷新；当前代码准备以 `v1.1.4-remote-mqtt` 发布详情实时同步和本地 AI 回退事件中文化。远程群晖 Compose 已固定到待发布的 `v1.1.4-remote-mqtt`，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件
@@ -227,3 +227,31 @@ MQTT_PASSWORD=<private-password>
 - 本轮修复以独立标签 `v1.1.3-remote-mqtt` 发布前后端镜像，不覆盖或删除 `v1.1.2-remote-mqtt`、更早远程标签或局域网 `v1.0.0-lan`。
 - `docker-compose.remote.ghcr.yml` 固定引用 `v1.1.3-remote-mqtt`；群晖更新时继续复用现有数据库卷和私有 `docker/local/hivemq-remote.env`。
 - 小智固件无需为 `WARN` 兼容重新烧录；群晖必须更新后端镜像后，新的警告日志才会被规范化并成功入库。
+
+## 15. 2026-07-17 日志详情实时同步与本地 AI 回退中文化
+
+### 日志详情实时同步
+
+- 日志列表仍按页面可见时每 1 秒轮询，隐藏标签页时暂停，返回时立即更新。
+- 详情弹窗打开后，列表查询若返回同一日志 ID，会原位更新 `currentLog`，因此运行汇总在 30 秒窗口内追加的新事件会直接出现在已打开的弹窗中，不需要关闭后重新打开。
+- 原位更新不会关闭弹窗，也不会重置弹窗滚动、筛选、分页或批量选择状态。
+- 当前详情记录不在当前页时，使用 `GET /api/logs/{id}` 获取最新数据。详情请求带时间戳和禁止缓存头，并与列表接口一样受 Nginx `no-store` 保护。
+- 详情请求使用独立互斥和排队标志，且响应返回时再次核对日志 ID 和请求版本，避免每秒重复并发、快速切换详情时旧响应覆盖新详情。
+- 后台详情请求采用静默错误模式：临时网络失败不关闭详情、不阻断列表自动刷新，也不会每秒弹出错误。后端业务码为 `404` 时，页面安全关闭详情并提示“该日志已被删除”。
+
+### 本地 AI 回退事件
+
+- `local_ai_discovery_failed` 显示为“未发现本地 AI 服务”。
+- `No valid local AI discovery response this boot` 显示为“本次启动未发现本地 AI 服务”。
+- `local_ai_fallback_to_official` 显示为“已回退官方 AI”。
+- `Local AI unavailable; official AI connected` 显示为“本地 AI 不可用，已回退官方 AI”。
+- 后端负责新入库记录的中文化，前端同时兼容数据库中已有的英文标题和消息。
+- 这两类事件描述本地 AI 未发现后正常使用官方 AI，不属于远程日志 MQTT 故障；不修改官方 AI 协议、日志 MQTT 状态、QoS 1 或故障 `PENDING`/恢复 `RESOLVED` 流转。其日志状态仍由固件发送的等级决定。
+
+### 验证与版本边界
+
+- JDK 17 Maven 测试通过：12 项测试、0 失败，覆盖新增两类事件的标题/消息映射，以及原有远程 MQTT 三种映射、`WARN` 兼容、相邻重复抑制、启动批次和故障状态流转。
+- 前端 TypeScript 检查和 Vite 生产构建通过。
+- Markdown 本地链接检查、敏感信息扫描和 `git diff --check` 全部通过。
+- `docker-compose.remote.ghcr.yml` 已准备引用 `v1.1.4-remote-mqtt`；该标签和镜像当前尚未创建，群晖仍运行已部署的旧版本。
+- 本轮不修改小智固件，不读取真实 HiveMQ 配置，不部署群晖，不修改数据库数据。

@@ -93,7 +93,7 @@
     </div>
 
     <LogFormDialog :visible="dialogVisible" :mode="dialogMode" :log="currentLog" @cancel="dialogVisible = false" @success="afterSaved" />
-    <el-dialog v-model="detailVisible" title="日志详情" width="640px">
+    <el-dialog v-model="detailVisible" title="日志详情" width="640px" @closed="handleDetailClosed">
       <el-descriptions :column="1" border>
         <el-descriptions-item label="标题">{{ currentLog ? displayRuntimeTitle(currentLog.title) : '-' }}</el-descriptions-item>
         <el-descriptions-item label="设备">{{ currentLog?.deviceName }} / {{ currentLog?.deviceCode }}</el-descriptions-item>
@@ -115,7 +115,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import PageContainer from '@/components/PageContainer.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import LogFormDialog from '@/components/LogFormDialog.vue'
-import { deleteLog, deleteLogs, getLogList, updateLogStatus } from '@/api/logs'
+import { deleteLog, deleteLogs, getLogDetail, getLogList, updateLogStatus } from '@/api/logs'
+import { ApiRequestError } from '@/api/http'
 import { LIVE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
 import { getDeviceList } from '@/api/devices'
 import { getTagList } from '@/api/tags'
@@ -143,6 +144,10 @@ const autoSearchReady = ref(false)
 let autoSearchTimer: ReturnType<typeof setTimeout> | undefined
 let autoRefreshTimer: ReturnType<typeof setInterval> | undefined
 let logRequestPending = false
+let detailRequestPending = false
+let detailRequestLogId: number | null = null
+let detailRequestVersion = 0
+let detailRefreshQueued = false
 const query = reactive<LogQuery>({
   page: 1,
   pageSize: 10,
@@ -169,6 +174,8 @@ const runtimeTitleMap: Record<string, string> = {
   '设备运行事件：local_ai_connected': '已连接本地 AI 服务',
   '设备运行事件：local_ai_connection_failed': '本地 AI 服务连接失败',
   '设备运行事件：local_ai_websocket_hello_completed': '本地 AI WebSocket 握手完成',
+  '设备运行事件：local_ai_discovery_failed': '未发现本地 AI 服务',
+  '设备运行事件：local_ai_fallback_to_official': '已回退官方 AI',
   '设备运行事件：local_mqtt_broker_discovered': '已发现本地日志 MQTT 服务',
   '设备运行事件：mqtt_disconnected': '日志 MQTT 已断开',
   '设备运行事件：official_protocol_connected': '官方 AI 协议已连接',
@@ -190,6 +197,8 @@ const runtimeContentMap: Record<string, string> = {
   'Local AI server connected': '已连接本地 AI 服务',
   'Local AI server connection failed': '本地 AI 服务连接失败',
   'Local AI WebSocket hello completed': '本地 AI WebSocket 握手完成',
+  'No valid local AI discovery response this boot': '本次启动未发现本地 AI 服务',
+  'Local AI unavailable; official AI connected': '本地 AI 不可用，已回退官方 AI',
   'Official AI protocol connected': '官方 AI 协议已连接',
   'Official AI protocol connected or reconnected': '官方 AI 协议已连接或重连'
 }
@@ -238,6 +247,7 @@ async function loadData(showLoading = true) {
     const page = await getLogList(query)
     logs.value = page.records
     total.value = page.total
+    syncOpenDetail(page.records)
   } finally {
     logRequestPending = false
     if (showLoading) {
@@ -255,6 +265,70 @@ function scheduleAutoSearch() {
     query.page = 1
     void loadData()
   }, 300)
+}
+
+function updateCurrentLog(latestLog: LogRecord) {
+  if (!currentLog.value || currentLog.value.id !== latestLog.id) return
+  Object.assign(currentLog.value, latestLog)
+}
+
+function syncOpenDetail(latestRecords: LogRecord[]) {
+  if (!detailVisible.value || !currentLog.value) return
+
+  const currentId = currentLog.value.id
+  const latestLog = latestRecords.find((log) => log.id === currentId)
+  if (latestLog) {
+    detailRefreshQueued = false
+    detailRequestVersion += 1
+    updateCurrentLog(latestLog)
+    return
+  }
+
+  void refreshLogDetail(currentId, false)
+}
+
+async function refreshLogDetail(id: number, showError: boolean) {
+  if (detailRequestPending) {
+    detailRefreshQueued = true
+    return
+  }
+
+  detailRequestPending = true
+  detailRefreshQueued = false
+  detailRequestLogId = id
+  const requestVersion = ++detailRequestVersion
+  try {
+    const latestLog = await getLogDetail(id, true)
+    if (
+      detailVisible.value
+      && currentLog.value?.id === id
+      && detailRequestVersion === requestVersion
+    ) {
+      updateCurrentLog(latestLog)
+    }
+  } catch (error) {
+    if (
+      error instanceof ApiRequestError
+      && error.code === 404
+      && detailVisible.value
+      && currentLog.value?.id === id
+    ) {
+      detailVisible.value = false
+      ElMessage.warning('该日志已被删除')
+    } else if (showError) {
+      ElMessage.error('日志详情加载失败')
+    }
+  } finally {
+    if (detailRequestLogId === id) {
+      detailRequestPending = false
+      detailRequestLogId = null
+    }
+
+    const activeId = detailVisible.value ? currentLog.value?.id : undefined
+    if (activeId !== undefined && detailRefreshQueued && !detailRequestPending) {
+      void refreshLogDetail(activeId, false)
+    }
+  }
 }
 
 function refreshCurrentPage() {
@@ -300,6 +374,13 @@ function openEdit(log: LogRecord) {
 function showDetail(log: LogRecord) {
   currentLog.value = log
   detailVisible.value = true
+  detailRequestVersion += 1
+  void refreshLogDetail(log.id, true)
+}
+
+function handleDetailClosed() {
+  detailRefreshQueued = false
+  detailRequestVersion += 1
 }
 
 async function changeStatus(id: number, status: LogStatus) {

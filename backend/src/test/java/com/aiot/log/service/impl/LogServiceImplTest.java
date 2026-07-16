@@ -103,6 +103,46 @@ class LogServiceImplTest {
     }
 
     @Test
+    void mapsLocalAiDiscoveryFailedMessage() {
+        LogVO result = createNewRuntimeLog(runtimeRequest(
+                "local_ai_discovery_failed",
+                "No valid local AI discovery response this boot",
+                LogLevel.INFO,
+                LogType.RUNNING));
+        assertEquals("本次启动未发现本地 AI 服务", result.getContent());
+    }
+
+    @Test
+    void mapsLocalAiDiscoveryFailedTitle() {
+        LogVO result = createNewRuntimeLog(runtimeRequest(
+                "local_ai_discovery_failed",
+                null,
+                LogLevel.INFO,
+                LogType.RUNNING));
+        assertEquals("未发现本地 AI 服务", result.getContent());
+    }
+
+    @Test
+    void mapsLocalAiFallbackToOfficialMessage() {
+        LogVO result = createNewRuntimeLog(runtimeRequest(
+                "local_ai_fallback_to_official",
+                "Local AI unavailable; official AI connected",
+                LogLevel.INFO,
+                LogType.RUNNING));
+        assertEquals("本地 AI 不可用，已回退官方 AI", result.getContent());
+    }
+
+    @Test
+    void mapsLocalAiFallbackToOfficialTitle() {
+        LogVO result = createNewRuntimeLog(runtimeRequest(
+                "local_ai_fallback_to_official",
+                null,
+                LogLevel.INFO,
+                LogType.RUNNING));
+        assertEquals("已回退官方 AI", result.getContent());
+    }
+
+    @Test
     void normalizesFirmwareWarnLevelToWarning() {
         LogVO result = createNewRuntimeLog(runtimeRequest(
                 "wifi_disconnected",

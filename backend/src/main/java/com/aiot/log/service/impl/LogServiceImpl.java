@@ -484,6 +484,12 @@ public class LogServiceImpl implements LogService {
         if ("Local AI WebSocket hello completed".equals(message)) {
             return "本地 AI WebSocket 握手完成";
         }
+        if ("No valid local AI discovery response this boot".equals(message)) {
+            return "本次启动未发现本地 AI 服务";
+        }
+        if ("Local AI unavailable; official AI connected".equals(message)) {
+            return "本地 AI 不可用，已回退官方 AI";
+        }
         if ("Official AI protocol connected or reconnected".equals(message)) {
             return "官方 AI 协议已连接或重连";
         }
@@ -520,6 +526,8 @@ public class LogServiceImpl implements LogService {
             case "local_ai_connected" -> "已连接本地 AI 服务";
             case "local_ai_connection_failed" -> "本地 AI 服务连接失败";
             case "local_ai_websocket_hello_completed" -> "本地 AI WebSocket 握手完成";
+            case "local_ai_discovery_failed" -> "未发现本地 AI 服务";
+            case "local_ai_fallback_to_official" -> "已回退官方 AI";
             case "local_mqtt_broker_discovered" -> "已发现本地日志 MQTT 服务";
             case "official_protocol_connected" -> "官方 AI 协议已连接";
             case "official_protocol_disconnected" -> "官方 AI 协议已断开";

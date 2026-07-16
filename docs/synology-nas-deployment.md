@@ -1,6 +1,6 @@
 # 群晖 NAS 实际部署记录
 
-更新时间：2026-07-14
+更新时间：2026-07-17
 
 本文记录一次已完成的群晖 DSM Container Manager 实机部署，用于后续同类 NAS 部署排障。文中不包含真实 IP、域名、账号、密码、Token、设备 MAC 或运行数据。
 
@@ -63,7 +63,7 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 
 ## 7. HiveMQ 远程版本（实机验收通过）
 
-`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。该编排当前固定拉取 GHCR 的 `v1.1.3-remote-mqtt` 镜像标签，只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签 `v1.1.2-remote-mqtt`、`v1.1.1-remote-mqtt` 与 `v1.1.0-remote-mqtt` 保留用于回退；局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
+`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。该编排已准备固定拉取待发布的 GHCR `v1.1.4-remote-mqtt` 镜像标签，只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。在该标签完成发布前，群晖继续运行已部署版本；旧远程标签 `v1.1.3-remote-mqtt`、`v1.1.2-remote-mqtt`、`v1.1.1-remote-mqtt` 与 `v1.1.0-remote-mqtt` 保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 
 使用 Windows 上的以下命令生成远程成品镜像部署包：
 

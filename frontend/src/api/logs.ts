@@ -11,8 +11,14 @@ export function getLogList(params: LogQuery) {
   })
 }
 
-export function getLogDetail(id: number) {
-  return request<LogRecord>({ url: `/logs/${id}`, method: 'GET' })
+export function getLogDetail(id: number, silent = false) {
+  return request<LogRecord>({
+    url: `/logs/${id}`,
+    method: 'GET',
+    params: { _t: Date.now() },
+    headers: { 'Cache-Control': 'no-cache' },
+    silent
+  })
 }
 
 export function createLog(data: LogPayload) {

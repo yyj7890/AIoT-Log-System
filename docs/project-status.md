@@ -1,10 +1,10 @@
 # 当前项目状态
 
-更新时间：2026-07-16
+更新时间：2026-07-17
 
 ## 当前阶段
 
-2026-07-15：`Remote-Hivemq` 分支已实现 HiveMQ Cloud 远程 MQTT 模式，且未替换默认局域网模式。后端可通过 `MQTT_MODE=remote` 使用 Paho `ssl://` TLS 订阅原有 `report`/`log` Topic，远程时强制关闭 UDP `19830` 响应器、隐藏远程 Broker 地址并禁止页面修改本地 Mosquitto 凭证。新增源码/GHCR 远程 Compose、Windows 启停脚本、群晖私有 `docker/local/hivemq-remote.env` 初始化和远程镜像部署包生成选项；该文件与局域网 `.env` 分离。远程编排不包含 Mosquitto、不映射 `1883` 或 UDP `19830`。首个远程版以 GHCR 标签 `v1.1.0-remote-mqtt` 发布；2026-07-16 的状态中文文案和 QoS 1 相邻重投修复独立发布为 `v1.1.1-remote-mqtt`，MQTT 状态页自动刷新独立发布为 `v1.1.2-remote-mqtt`，`WARN` 等级兼容和状态/日志列表 1 秒刷新独立发布为 `v1.1.3-remote-mqtt`，旧版继续保留用于回退。局域网版固定为 `v1.0.0-lan`；`latest` 保持局域网语义并只由 `main` 分支推送更新。小智独立日志客户端已增加持久化远程 TLS 配置、ESP-IDF CA bundle、域名验证/SNI 和跳过 UDP 发现，未修改官方 AI、OTA 或 WebSocket 通道。真实 HiveMQ 信息未读取或写入项目。
+2026-07-15：`Remote-Hivemq` 分支已实现 HiveMQ Cloud 远程 MQTT 模式，且未替换默认局域网模式。后端可通过 `MQTT_MODE=remote` 使用 Paho `ssl://` TLS 订阅原有 `report`/`log` Topic，远程时强制关闭 UDP `19830` 响应器、隐藏远程 Broker 地址并禁止页面修改本地 Mosquitto 凭证。新增源码/GHCR 远程 Compose、Windows 启停脚本、群晖私有 `docker/local/hivemq-remote.env` 初始化和远程镜像部署包生成选项；该文件与局域网 `.env` 分离。远程编排不包含 Mosquitto、不映射 `1883` 或 UDP `19830`。首个远程版以 GHCR 标签 `v1.1.0-remote-mqtt` 发布；2026-07-16 的状态中文文案和 QoS 1 相邻重投修复独立发布为 `v1.1.1-remote-mqtt`，MQTT 状态页自动刷新独立发布为 `v1.1.2-remote-mqtt`，`WARN` 等级兼容和状态/日志列表 1 秒刷新独立发布为 `v1.1.3-remote-mqtt`；待发布的 `v1.1.4-remote-mqtt` 增加详情弹窗实时同步和本地 AI 回退事件中文化。旧版继续保留用于回退。局域网版固定为 `v1.0.0-lan`；`latest` 保持局域网语义并只由 `main` 分支推送更新。小智独立日志客户端已增加持久化远程 TLS 配置、ESP-IDF CA bundle、域名验证/SNI 和跳过 UDP 发现，未修改官方 AI、OTA 或 WebSocket 通道。真实 HiveMQ 信息未读取或写入项目。
 
 远程版本已完成的外部前置验证：用户使用 MQTTX 成功验证 TLS `8883` 连接、`aiot/device/#`（QoS 1）订阅，以及向 `aiot/device/TEST-001/log`（QoS 1）发布并接收 JSON 测试日志；未记录真实域名或凭证。
 
@@ -20,7 +20,9 @@
 
 2026-07-16 日志等级兼容修复：小智固件使用常见等级 `WARN`，IoT 枚举使用 `WARNING`，此前链路虽然已通过 HiveMQ TLS 正常到达后端，但入库校验会报“日志等级不合法”。后端设备运行日志入口现按大小写规范化等级并将 `WARN` 映射为 `WARNING`；这是协议枚举兼容问题，不是 HiveMQ、TLS 或网络故障，现有已烧录固件无需因该问题重新烧录。
 
-构建与静态验证：后端已在 JDK 17 下执行 Maven 测试/编译并成功，本轮 8 项运行事件映射、等级兼容、去重、批次和状态测试全部通过；前端生产构建、Markdown 本地链接、敏感信息扫描与 `git diff --check` 均通过。小智 `.2` 修复版已使用现有 ESP-IDF v5.5.4 构建图完成对象编译、组件归档、ELF 链接、BIN 生成和分区检查；标准 `export.ps1` 的旧 Python 路径问题仍需单独修复。`v1.1.3-remote-mqtt` 发布后需在群晖手动更新项目并复验等级兼容与两个页面的 1 秒刷新。
+2026-07-17 日志详情与本地 AI 回退显示修复：打开详情时主动读取最新详情；列表轮询获得同 ID 记录后原位更新 `currentLog`，不关闭弹窗，也不重置滚动、筛选、分页或批量选择。当前记录不在本页时，前端使用带防缓存参数的详情接口静默兜底，请求互斥并校验请求版本，避免重复并发和旧响应覆盖；业务码 404 时关闭详情并提示记录已删除，普通网络失败不影响列表轮询。后端和前端同时增加 `local_ai_discovery_failed`、`local_ai_fallback_to_official` 及其英文消息的中文映射；这些事件表示本地 AI 不可用后正常使用官方 AI，不修改官方协议、日志 MQTT 状态或 MQTT 故障恢复逻辑。
+
+构建与静态验证：后端已在 JDK 17 下执行 Maven 测试并成功，本轮 12 项运行事件映射、等级兼容、去重、批次和状态测试全部通过；前端 TypeScript 检查和 Vite 生产构建通过；Markdown 本地链接检查、敏感信息扫描与 `git diff --check` 全部通过。小智 `.2` 修复版已使用现有 ESP-IDF v5.5.4 构建图完成对象编译、组件归档、ELF 链接、BIN 生成和分区检查；标准 `export.ps1` 的旧 Python 路径问题仍需单独修复。`v1.1.4-remote-mqtt` 尚未提交、打标签、发布镜像或部署群晖。
 
 当前结论（2026-07-13）：真实小智已完成普通 Wi-Fi、手机热点、断网恢复、本地 MQTT 日志汇总、官方/本地 AI 动态切换和本地 AI WebSocket 实际对话验证。IoT 全局 MQTT 凭证已创建并启用：匿名访问已关闭，服务重启后小智使用配网页保存的同一套凭证完成日志上报验证。
 
