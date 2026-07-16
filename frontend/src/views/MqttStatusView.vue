@@ -1,7 +1,7 @@
 <template>
   <PageContainer title="MQTT 状态" description="查看设备 MQTT 上报通道的连接和消息处理情况">
     <template #actions>
-      <el-button :icon="Refresh" :loading="loading" @click="loadStatus">刷新</el-button>
+      <el-button :icon="Refresh" :loading="loading" @click="loadStatus()">刷新</el-button>
     </template>
 
     <div class="stat-grid">
@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import PageContainer from '@/components/PageContainer.vue'
 import { getMqttGlobalCredential, getMqttStatus, saveMqttGlobalCredential, setMqttAuthentication } from '@/api/mqtt'
@@ -107,9 +107,16 @@ const status = ref<MqttStatus>()
 const credential = ref<MqttGlobalCredentialStatus>()
 const savingCredential = ref(false)
 const credentialForm = ref({ username: '', password: '' })
+let statusRequestPending = false
+let autoRefreshTimer: ReturnType<typeof setInterval> | undefined
+const AUTO_REFRESH_INTERVAL_MS = 5000
 
-async function loadStatus() {
-  loading.value = true
+async function loadStatus(showLoading = true, includeCredential = true) {
+  if (statusRequestPending) return
+  statusRequestPending = true
+  if (showLoading) {
+    loading.value = true
+  }
   try {
     const mqttStatus = await getMqttStatus()
     status.value = mqttStatus
@@ -117,11 +124,40 @@ async function loadStatus() {
       credential.value = undefined
       return
     }
-    const credentialStatus = await getMqttGlobalCredential()
-    credential.value = credentialStatus
-    credentialForm.value.username = credentialStatus.username || 'aiot'
+    if (includeCredential) {
+      const credentialStatus = await getMqttGlobalCredential()
+      credential.value = credentialStatus
+      credentialForm.value.username = credentialStatus.username || 'aiot'
+    }
+  } catch {
+    // The shared HTTP interceptor already displays the request error.
   } finally {
-    loading.value = false
+    statusRequestPending = false
+    if (showLoading) {
+      loading.value = false
+    }
+  }
+}
+
+function refreshStatus() {
+  if (document.hidden || statusRequestPending) return
+  void loadStatus(false, false)
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh()
+  autoRefreshTimer = setInterval(refreshStatus, AUTO_REFRESH_INTERVAL_MS)
+}
+
+function stopAutoRefresh() {
+  if (!autoRefreshTimer) return
+  clearInterval(autoRefreshTimer)
+  autoRefreshTimer = undefined
+}
+
+function handleVisibilityChange() {
+  if (!document.hidden) {
+    refreshStatus()
   }
 }
 
@@ -150,7 +186,16 @@ async function enableAuthentication() {
   ElMessage.success('认证配置已写入。请重启本地 IoT 服务使其生效。')
 }
 
-onMounted(loadStatus)
+onMounted(() => {
+  void loadStatus()
+  startAutoRefresh()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onBeforeUnmount(() => {
+  stopAutoRefresh()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
 </script>
 
 <style scoped>

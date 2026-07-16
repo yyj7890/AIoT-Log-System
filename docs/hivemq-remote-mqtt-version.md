@@ -77,7 +77,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，当前 `v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护。远程群晖 Compose 固定拉取当前远程标签，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
+- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，当前 `v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新。远程群晖 Compose 固定拉取当前远程标签，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件
@@ -184,3 +184,17 @@ MQTT_PASSWORD=<private-password>
 - 本轮修复以独立标签 `v1.1.1-remote-mqtt` 发布前后端镜像，不覆盖或删除 `v1.1.0-remote-mqtt`。
 - `docker-compose.remote.ghcr.yml` 固定引用 `v1.1.1-remote-mqtt`；群晖更新时只需拉取两个新镜像并重新构建现有远程项目，继续复用原数据库卷和私有 `docker/local/hivemq-remote.env`。
 - 发布镜像不代表群晖已经更新；群晖部署和真机复验仍需单独执行。
+
+## 13. 2026-07-16 MQTT 状态页自动刷新
+
+- MQTT 状态页在浏览器页面可见时每 5 秒自动获取一次连接状态、收到/成功/失败计数和最近运行信息，不再要求用户点击“刷新”才能看到新计数。
+- 浏览器标签页隐藏时暂停轮询，返回该标签页时立即刷新，减少无效请求。
+- 自动刷新和手动刷新共用请求互斥，避免同一时刻重复请求；手动“刷新”按钮继续保留。
+- 远程模式的 Broker 仍显示脱敏占位符，HiveMQ 域名、用户名和密码继续只保存在部署环境私有文件中；连接模式、Client ID、Topic 和 QoS 属于运行配置，只读展示。
+- 该改动仅影响前端状态展示，不改变 MQTT 订阅、QoS 1、日志入库或设备上报行为；需要发布新前端镜像并更新群晖项目后才会生效。
+
+### `v1.1.2-remote-mqtt` 发布
+
+- MQTT 状态页自动刷新以独立标签 `v1.1.2-remote-mqtt` 发布前后端镜像，不覆盖或删除 `v1.1.1-remote-mqtt`、`v1.1.0-remote-mqtt` 或局域网 `v1.0.0-lan`。
+- `docker-compose.remote.ghcr.yml` 固定引用 `v1.1.2-remote-mqtt`；群晖更新时继续复用现有数据库卷和私有 `docker/local/hivemq-remote.env`。
+- 发布完成后需要在群晖重新拉取两个镜像并重建远程项目，才能在页面看到自动刷新效果。
