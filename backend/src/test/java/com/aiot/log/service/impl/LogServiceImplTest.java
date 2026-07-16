@@ -103,6 +103,18 @@ class LogServiceImplTest {
     }
 
     @Test
+    void normalizesFirmwareWarnLevelToWarning() {
+        LogVO result = createNewRuntimeLog(runtimeRequest(
+                "wifi_disconnected",
+                "Wi-Fi disconnected",
+                "WARN",
+                LogType.RUNNING));
+
+        assertEquals(LogLevel.WARNING, result.getLevel());
+        assertEquals(LogStatus.PENDING, result.getStatus());
+    }
+
+    @Test
     void doesNotAppendImmediatelyAdjacentDuplicateEvent() {
         LogRecord existing = existingRuntimeLog(
                 "Wi-Fi 已连接\n远程日志 MQTT（TLS 8883）已连接",

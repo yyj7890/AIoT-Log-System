@@ -99,6 +99,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import PageContainer from '@/components/PageContainer.vue'
 import { getMqttGlobalCredential, getMqttStatus, saveMqttGlobalCredential, setMqttAuthentication } from '@/api/mqtt'
+import { LIVE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
 import type { MqttGlobalCredentialStatus, MqttStatus } from '@/types/mqtt'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -109,7 +110,6 @@ const savingCredential = ref(false)
 const credentialForm = ref({ username: '', password: '' })
 let statusRequestPending = false
 let autoRefreshTimer: ReturnType<typeof setInterval> | undefined
-const AUTO_REFRESH_INTERVAL_MS = 5000
 
 async function loadStatus(showLoading = true, includeCredential = true) {
   if (statusRequestPending) return
@@ -146,7 +146,7 @@ function refreshStatus() {
 
 function startAutoRefresh() {
   stopAutoRefresh()
-  autoRefreshTimer = setInterval(refreshStatus, AUTO_REFRESH_INTERVAL_MS)
+  autoRefreshTimer = setInterval(refreshStatus, LIVE_REFRESH_INTERVAL_MS)
 }
 
 function stopAutoRefresh() {

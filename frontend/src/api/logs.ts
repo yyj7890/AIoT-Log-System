@@ -3,7 +3,12 @@ import type { PageResult } from '@/types/api'
 import type { LogPayload, LogQuery, LogRecord, LogStatus } from '@/types/log'
 
 export function getLogList(params: LogQuery) {
-  return request<PageResult<LogRecord>>({ url: '/logs', method: 'GET', params })
+  return request<PageResult<LogRecord>>({
+    url: '/logs',
+    method: 'GET',
+    params: { ...params, _t: Date.now() },
+    headers: { 'Cache-Control': 'no-cache' }
+  })
 }
 
 export function getLogDetail(id: number) {

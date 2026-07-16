@@ -2,7 +2,12 @@ import { request } from './http'
 import type { MqttGlobalCredentialStatus, MqttStatus } from '@/types/mqtt'
 
 export function getMqttStatus() {
-  return request<MqttStatus>({ url: '/mqtt/status', method: 'GET' })
+  return request<MqttStatus>({
+    url: '/mqtt/status',
+    method: 'GET',
+    params: { _t: Date.now() },
+    headers: { 'Cache-Control': 'no-cache' }
+  })
 }
 
 export function getMqttGlobalCredential() {

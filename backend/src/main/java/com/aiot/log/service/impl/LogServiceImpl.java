@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -76,7 +77,8 @@ public class LogServiceImpl implements LogService {
         long size = pageSize == null || pageSize < 1 ? 10 : pageSize;
 
         LambdaQueryWrapper<LogRecord> queryWrapper = new LambdaQueryWrapper<LogRecord>()
-                .orderByDesc(LogRecord::getCreatedAt);
+                .orderByDesc(LogRecord::getUpdatedAt)
+                .orderByDesc(LogRecord::getId);
 
         if (deviceId != null) {
             queryWrapper.eq(LogRecord::getDeviceId, deviceId);
@@ -152,7 +154,7 @@ public class LogServiceImpl implements LogService {
     @Override
     public synchronized LogVO createDeviceRuntimeLog(DeviceRuntimeLogCreateRequest request) {
         Device device = getDeviceByCode(request.getDeviceCode());
-        String level = StringUtils.hasText(request.getLevel()) ? request.getLevel() : LogLevel.INFO;
+        String level = normalizeDeviceRuntimeLevel(request.getLevel());
         validateLevel(level);
 
         String logType = StringUtils.hasText(request.getLogType())
@@ -417,6 +419,14 @@ public class LogServiceImpl implements LogService {
             return 1;
         }
         return 0;
+    }
+
+    private String normalizeDeviceRuntimeLevel(String level) {
+        if (!StringUtils.hasText(level)) {
+            return LogLevel.INFO;
+        }
+        String normalizedLevel = level.trim().toUpperCase(Locale.ROOT);
+        return "WARN".equals(normalizedLevel) ? LogLevel.WARNING : normalizedLevel;
     }
 
     private String resolveDeviceRuntimeTitle(DeviceRuntimeLogCreateRequest request) {

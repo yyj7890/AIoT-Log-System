@@ -66,7 +66,7 @@
           </template>
         </el-table-column>
         <el-table-column label="来源" width="110"><template #default="{ row }"><StatusTag group="logSource" :value="row.source" /></template></el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" min-width="150" />
+        <el-table-column prop="updatedAt" label="更新时间" min-width="150" />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
@@ -88,7 +88,7 @@
         </el-table-column>
       </el-table>
       <div class="section-body page-actions">
-        <el-pagination v-model:current-page="query.page" v-model:page-size="query.pageSize" background layout="total, sizes, prev, pager, next" :total="total" @change="loadData" />
+        <el-pagination v-model:current-page="query.page" v-model:page-size="query.pageSize" background layout="total, sizes, prev, pager, next" :total="total" @change="loadData()" />
       </div>
     </div>
 
@@ -116,6 +116,7 @@ import PageContainer from '@/components/PageContainer.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import LogFormDialog from '@/components/LogFormDialog.vue'
 import { deleteLog, deleteLogs, getLogList, updateLogStatus } from '@/api/logs'
+import { LIVE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
 import { getDeviceList } from '@/api/devices'
 import { getTagList } from '@/api/tags'
 import { useEnumStore } from '@/stores/enumStore'
@@ -141,7 +142,7 @@ const timeRange = ref<[string, string] | null>(null)
 const autoSearchReady = ref(false)
 let autoSearchTimer: ReturnType<typeof setTimeout> | undefined
 let autoRefreshTimer: ReturnType<typeof setInterval> | undefined
-const AUTO_REFRESH_INTERVAL_MS = 5000
+let logRequestPending = false
 const query = reactive<LogQuery>({
   page: 1,
   pageSize: 10,
@@ -225,8 +226,12 @@ async function loadOptions() {
   tags.value = tagList
 }
 
-async function loadData() {
-  loading.value = true
+async function loadData(showLoading = true) {
+  if (logRequestPending) return
+  logRequestPending = true
+  if (showLoading) {
+    loading.value = true
+  }
   try {
     query.startTime = timeRange.value?.[0]
     query.endTime = timeRange.value?.[1]
@@ -234,7 +239,10 @@ async function loadData() {
     logs.value = page.records
     total.value = page.total
   } finally {
-    loading.value = false
+    logRequestPending = false
+    if (showLoading) {
+      loading.value = false
+    }
   }
 }
 
@@ -245,18 +253,18 @@ function scheduleAutoSearch() {
   }
   autoSearchTimer = setTimeout(() => {
     query.page = 1
-    loadData()
+    void loadData()
   }, 300)
 }
 
 function refreshCurrentPage() {
-  if (document.hidden || loading.value) return
-  loadData()
+  if (document.hidden || logRequestPending) return
+  void loadData(false)
 }
 
 function startAutoRefresh() {
   stopAutoRefresh()
-  autoRefreshTimer = setInterval(refreshCurrentPage, AUTO_REFRESH_INTERVAL_MS)
+  autoRefreshTimer = setInterval(refreshCurrentPage, LIVE_REFRESH_INTERVAL_MS)
 }
 
 function stopAutoRefresh() {
@@ -274,7 +282,7 @@ function handleVisibilityChange() {
 function reset() {
   Object.assign(query, { page: 1, pageSize: 10, deviceId: undefined, logType: '', level: '', status: '', source: '', tagId: undefined, keyword: '', startTime: undefined, endTime: undefined })
   timeRange.value = null
-  loadData()
+  void loadData()
 }
 
 function openCreate() {
@@ -297,7 +305,7 @@ function showDetail(log: LogRecord) {
 async function changeStatus(id: number, status: LogStatus) {
   await updateLogStatus(id, status)
   ElMessage.success('状态已更新')
-  loadData()
+  void loadData()
 }
 
 function handleStatusCommand(id: number, command: string | number | object) {
@@ -307,7 +315,7 @@ function handleStatusCommand(id: number, command: string | number | object) {
 async function remove(id: number) {
   await deleteLog(id)
   ElMessage.success('删除成功')
-  loadData()
+  void loadData()
 }
 
 function handleSelectionChange(selection: LogRecord[]) {
@@ -336,12 +344,12 @@ async function batchRemove() {
   await deleteLogs(ids)
   exitSelectionMode()
   ElMessage.success(`已删除 ${ids.length} 条日志`)
-  loadData()
+  void loadData()
 }
 
 function afterSaved() {
   dialogVisible.value = false
-  loadData()
+  void loadData()
 }
 
 onMounted(async () => {

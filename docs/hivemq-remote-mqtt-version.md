@@ -77,7 +77,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，当前 `v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新。远程群晖 Compose 固定拉取当前远程标签，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
+- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，`v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新，当前 `v1.1.3-remote-mqtt` 增加 `WARN` 等级兼容并将状态页和日志管理页统一为 1 秒可靠刷新。远程群晖 Compose 固定拉取当前远程标签，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件
@@ -187,7 +187,7 @@ MQTT_PASSWORD=<private-password>
 
 ## 13. 2026-07-16 MQTT 状态页自动刷新
 
-- MQTT 状态页在浏览器页面可见时每 5 秒自动获取一次连接状态、收到/成功/失败计数和最近运行信息，不再要求用户点击“刷新”才能看到新计数。
+- MQTT 状态页在浏览器页面可见时每 1 秒自动获取一次连接状态、收到/成功/失败计数和最近运行信息，不再要求用户点击“刷新”才能看到新计数。
 - 浏览器标签页隐藏时暂停轮询，返回该标签页时立即刷新，减少无效请求。
 - 自动刷新和手动刷新共用请求互斥，避免同一时刻重复请求；手动“刷新”按钮继续保留。
 - 远程模式的 Broker 仍显示脱敏占位符，HiveMQ 域名、用户名和密码继续只保存在部署环境私有文件中；连接模式、Client ID、Topic 和 QoS 属于运行配置，只读展示。
@@ -198,3 +198,32 @@ MQTT_PASSWORD=<private-password>
 - MQTT 状态页自动刷新以独立标签 `v1.1.2-remote-mqtt` 发布前后端镜像，不覆盖或删除 `v1.1.1-remote-mqtt`、`v1.1.0-remote-mqtt` 或局域网 `v1.0.0-lan`。
 - `docker-compose.remote.ghcr.yml` 固定引用 `v1.1.2-remote-mqtt`；群晖更新时继续复用现有数据库卷和私有 `docker/local/hivemq-remote.env`。
 - 发布完成后需要在群晖重新拉取两个镜像并重建远程项目，才能在页面看到自动刷新效果。
+
+## 14. 2026-07-16 日志等级兼容与实时列表刷新
+
+### “日志等级不合法”的根因
+
+- HiveMQ TLS、Topic 和后端订阅均正常；错误发生在消息到达 IoT 后端后的业务校验阶段。
+- 小智日志客户端接受并上报 `INFO`、`WARN`、`ERROR`，而 IoT 日志枚举使用 `INFO`、`WARNING`、`ERROR`。因此 `WARN` 消息会增加“收到消息”和“处理失败”，但不会入库。
+- 后端设备运行日志入口现在会去除首尾空格、忽略大小写，并将 `WARN` 规范化为系统标准值 `WARNING` 后再校验和入库。该兼容仅作用于设备运行日志入口，不放宽管理端人工日志的枚举约束。
+- 现有小智固件无需因该枚举差异重新烧录；后续固件仍可继续发送 `WARN`。MQTT 状态页的历史失败计数属于当前后端进程内累计值，部署修复后重启后端会重新计数。
+
+### MQTT 状态页与日志管理页
+
+- 两个页面共用 `1000 ms` 刷新间隔；页面不可见时暂停，返回时立即刷新。
+- 自动请求使用互斥标志，避免上一次请求尚未完成时继续堆积；日志列表自动刷新不显示加载遮罩，手工筛选、分页和编辑后的刷新仍保留正常加载反馈。
+- 状态和日志查询都附加无缓存参数及请求头，Nginx 对 `/api/` 响应增加 `Cache-Control: no-store`，避免浏览器或中间层返回旧数据。
+- 日志列表按 `updatedAt`、`id` 倒序排列，并显示“更新时间”。这样同一条“设备运行上报（n 条）”在 30 秒汇总窗口内追加内容时，会重新出现在列表顶部，而不是因为 `createdAt` 不变看起来没有刷新。
+- 选择 1 秒而不是更短间隔，以控制群晖 Spring Boot 与 MySQL 的持续查询负载；如需更实时的推送展示，后续应改用 SSE 或 WebSocket，而不是继续缩短轮询时间。
+
+### 验证
+
+- JDK 17 Maven 测试通过：8 项测试、0 失败，其中新增 `WARN` 规范化为 `WARNING` 的用例。
+- 前端 TypeScript 检查和 Vite 生产构建通过。
+- 验证过程未读取真实 HiveMQ 配置；发布只推送源码提交和版本标签，不会自动修改群晖项目或私有环境文件。
+
+### `v1.1.3-remote-mqtt` 发布
+
+- 本轮修复以独立标签 `v1.1.3-remote-mqtt` 发布前后端镜像，不覆盖或删除 `v1.1.2-remote-mqtt`、更早远程标签或局域网 `v1.0.0-lan`。
+- `docker-compose.remote.ghcr.yml` 固定引用 `v1.1.3-remote-mqtt`；群晖更新时继续复用现有数据库卷和私有 `docker/local/hivemq-remote.env`。
+- 小智固件无需为 `WARN` 兼容重新烧录；群晖必须更新后端镜像后，新的警告日志才会被规范化并成功入库。
