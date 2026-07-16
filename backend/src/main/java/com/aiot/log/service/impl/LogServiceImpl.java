@@ -162,17 +162,32 @@ public class LogServiceImpl implements LogService {
 
         String eventTitle = resolveDeviceRuntimeTitle(request);
         String eventContent = resolveDeviceRuntimeContent(request);
+        String eventSummary = summarizeRuntimeEvent(eventTitle, eventContent);
         // A startup event starts a new firmware boot sequence. It must never be merged
         // into the tail of the previous sequence, even when the reset happens within
         // the normal runtime-event merge window.
         LogRecord logRecord = isStartupEvent(request) ? null : findRecentRuntimeLog(device.getId());
         if (logRecord != null) {
-            logRecord.setContent(logRecord.getContent() + "\n" + summarizeRuntimeEvent(eventTitle, eventContent));
+            // QoS 1 may redeliver a message. Suppress only an immediately adjacent,
+            // byte-for-byte identical normalized summary in the same boot batch.
+            // Do not rely solely on the MQTT duplicate flag because a legitimate
+            // retry after a failed first handling attempt still needs processing.
+            if (eventSummary.equals(lastRuntimeEventSummary(logRecord.getContent()))) {
+                return toVO(logRecordMapper.selectById(logRecord.getId()));
+            }
+            logRecord.setContent(logRecord.getContent() + "\n" + eventSummary);
             logRecord.setTitle(buildRuntimeLogTitle(countRuntimeEvents(logRecord.getContent())));
             if (levelPriority(level) > levelPriority(logRecord.getLevel())) {
                 logRecord.setLevel(level);
                 logRecord.setLogType(logType);
-                logRecord.setStatus(LogLevel.INFO.equals(level) ? LogStatus.RESOLVED : LogStatus.PENDING);
+            }
+            // Keep the highest severity as incident history, but let an explicit
+            // recovery close that incident. A later warning/error reopens it even
+            // when its severity equals the already stored maximum.
+            if (isMqttRecoveryEvent(request)) {
+                logRecord.setStatus(LogStatus.RESOLVED);
+            } else if (!LogLevel.INFO.equals(level)) {
+                logRecord.setStatus(LogStatus.PENDING);
             }
             logRecordMapper.updateById(logRecord);
             return toVO(logRecordMapper.selectById(logRecord.getId()));
@@ -181,7 +196,7 @@ public class LogServiceImpl implements LogService {
         logRecord = new LogRecord();
         logRecord.setDeviceId(device.getId());
         logRecord.setTitle(buildRuntimeLogTitle(1));
-        logRecord.setContent(summarizeRuntimeEvent(eventTitle, eventContent));
+        logRecord.setContent(eventSummary);
         logRecord.setLogType(logType);
         logRecord.setLevel(level);
         logRecord.setStatus(LogLevel.INFO.equals(level) ? LogStatus.RESOLVED : LogStatus.PENDING);
@@ -386,6 +401,14 @@ public class LogServiceImpl implements LogService {
         return content.split("\\r?\\n").length;
     }
 
+    private String lastRuntimeEventSummary(String content) {
+        if (!StringUtils.hasText(content)) {
+            return "";
+        }
+        String[] summaries = content.split("\\r?\\n");
+        return summaries[summaries.length - 1];
+    }
+
     private int levelPriority(String level) {
         if (LogLevel.ERROR.equals(level)) {
             return 2;
@@ -430,6 +453,15 @@ public class LogServiceImpl implements LogService {
         if ("Log MQTT connection recovered".equals(message)) {
             return "日志 MQTT 连接已恢复";
         }
+        if ("Remote log MQTT TLS connected".equals(message)) {
+            return "远程日志 MQTT（TLS 8883）已连接";
+        }
+        if ("Remote log MQTT TLS connection failed and was retried".equals(message)) {
+            return "远程日志 MQTT（TLS 8883）连接失败，正在重试";
+        }
+        if ("Remote log MQTT TLS connection recovered".equals(message)) {
+            return "远程日志 MQTT（TLS 8883）连接已恢复";
+        }
         if ("Local AI server discovered".equals(message)) {
             return "已发现本地 AI 服务";
         }
@@ -454,6 +486,11 @@ public class LogServiceImpl implements LogService {
     private boolean isStartupEvent(DeviceRuntimeLogCreateRequest request) {
         return "startup".equals(request.getEventType())
                 || "firmware_started".equals(request.getEventType());
+    }
+
+    private boolean isMqttRecoveryEvent(DeviceRuntimeLogCreateRequest request) {
+        return "mqtt_reconnected".equals(request.getEventType())
+                || "mqtt_connection_recovered".equals(request.getEventType());
     }
 
     private String localizeRuntimeEvent(String eventType) {

@@ -1,10 +1,10 @@
 # 当前项目状态
 
-更新时间：2026-07-15
+更新时间：2026-07-16
 
 ## 当前阶段
 
-2026-07-15：`Remote-Hivemq` 分支已实现 HiveMQ Cloud 远程 MQTT 模式，且未替换默认局域网模式。后端可通过 `MQTT_MODE=remote` 使用 Paho `ssl://` TLS 订阅原有 `report`/`log` Topic，远程时强制关闭 UDP `19830` 响应器、隐藏远程 Broker 地址并禁止页面修改本地 Mosquitto 凭证。新增源码/GHCR 远程 Compose、Windows 启停脚本、群晖私有 `docker/local/hivemq-remote.env` 初始化和远程镜像部署包生成选项；该文件与局域网 `.env` 分离。远程编排不包含 Mosquitto、不映射 `1883` 或 UDP `19830`。远程版以固定 GHCR 标签 `v1.1.0-remote-mqtt` 发布，局域网版固定为 `v1.0.0-lan`；`latest` 保持局域网语义并只由 `main` 分支推送更新。小智独立日志客户端已增加持久化远程 TLS 配置、ESP-IDF CA bundle、域名验证/SNI 和跳过 UDP 发现，未修改官方 AI、OTA 或 WebSocket 通道。真实 HiveMQ 信息未读取或写入项目。
+2026-07-15：`Remote-Hivemq` 分支已实现 HiveMQ Cloud 远程 MQTT 模式，且未替换默认局域网模式。后端可通过 `MQTT_MODE=remote` 使用 Paho `ssl://` TLS 订阅原有 `report`/`log` Topic，远程时强制关闭 UDP `19830` 响应器、隐藏远程 Broker 地址并禁止页面修改本地 Mosquitto 凭证。新增源码/GHCR 远程 Compose、Windows 启停脚本、群晖私有 `docker/local/hivemq-remote.env` 初始化和远程镜像部署包生成选项；该文件与局域网 `.env` 分离。远程编排不包含 Mosquitto、不映射 `1883` 或 UDP `19830`。首个远程版以 GHCR 标签 `v1.1.0-remote-mqtt` 发布；2026-07-16 的状态中文文案和 QoS 1 相邻重投修复独立发布为 `v1.1.1-remote-mqtt`，旧版继续保留用于回退。局域网版固定为 `v1.0.0-lan`；`latest` 保持局域网语义并只由 `main` 分支推送更新。小智独立日志客户端已增加持久化远程 TLS 配置、ESP-IDF CA bundle、域名验证/SNI 和跳过 UDP 发现，未修改官方 AI、OTA 或 WebSocket 通道。真实 HiveMQ 信息未读取或写入项目。
 
 远程版本已完成的外部前置验证：用户使用 MQTTX 成功验证 TLS `8883` 连接、`aiot/device/#`（QoS 1）订阅，以及向 `aiot/device/TEST-001/log`（QoS 1）发布并接收 JSON 测试日志；未记录真实域名或凭证。
 
@@ -12,9 +12,11 @@
 
 远程版本已完成群晖实机验收：使用固定标签 `v1.1.0-remote-mqtt` 在 DSM Container Manager 创建独立远程项目，MySQL、后端和前端启动成功，后端通过 HiveMQ TLS 连接后收到了 MQTTX 测试消息并处理成功。NAS 的 Docker CLI 不带 Compose V2 插件，因此通过 Container Manager 创建项目；宿主机 `8080` 被既有服务占用后，将远程后端和前端宿主机端口分别调整为 `18080` 和 `18000`，容器内部 `backend:8080` 通信不变。未记录真实 NAS 地址或 HiveMQ 凭证。
 
-远程版本尚待验收：不同网络下 ESP32 真机 TLS 日志上报，以及切回 `lan` 后的 UDP 本地模式回归。
+2026-07-16 小智 ESP32 真机已成功通过 HiveMQ TLS 上传日志，确认固件、HiveMQ、后端订阅和入库链路可用。首次运行汇总出现“连接失败 → 恢复 → 已连接”的假异常：固件把等待可信时间和主动断开误记为失败，后端又把包含一次 `ERROR` 的 30 秒汇总保持为严重/待处理。固件 `.2` 修复版已区分延迟、真实失败和主动停止，修正重复连接事件并支持空队列主动重连；后端收到明确 MQTT 恢复事件后改为 `RESOLVED`，后续新故障会重新置为 `PENDING`。修复版尚待重新烧录，异地网络和 `lan` UDP 回归仍待验收。
 
-构建与静态验证：后端已在 JDK 17 下执行 `mvn -s maven-settings-docker.xml -DskipTests package` 并成功；前端生产构建、远程 Compose 解析、PowerShell 脚本语法、Markdown 本地链接与 `git diff --check` 均通过。ESP-IDF 完整构建仍待本机补齐其 Python 虚拟环境后执行。
+2026-07-16 IoT 展示与幂等修复：后端和前端均已增加远程日志 MQTT TLS 的连接成功、失败重试、连接恢复中文映射，页面连接成功文案为“远程日志 MQTT（TLS 8883）已连接”。同一启动批次、同一 30 秒汇总窗口内，如果新事件与当前汇总最后一条标准化摘要完全相同，则不再重复追加或增加计数；不同事件仍正常追加，`startup`/`firmware_started` 仍强制新建启动批次。该保护面向 QoS 1 可能发生的相邻重投，不降低 QoS，也不改变 `mqtt_connected`、`mqtt_connection_failed`、`mqtt_reconnected` 事件类型。故障 `PENDING`、恢复 `RESOLVED`、后续新故障重新 `PENDING` 的既有逻辑保持不变。
+
+构建与静态验证：后端已在 JDK 17 下执行 Maven 测试/编译并成功，本轮新增 7 项运行事件映射、去重、批次和状态测试全部通过；前端生产构建、远程 Compose 解析、PowerShell 脚本语法、Markdown 本地链接与 `git diff --check` 均通过。小智 `.2` 修复版已使用现有 ESP-IDF v5.5.4 构建图完成对象编译、组件归档、ELF 链接、BIN 生成和分区检查；标准 `export.ps1` 的旧 Python 路径问题仍需单独修复。`v1.1.1-remote-mqtt` 镜像发布后仍需在群晖手动更新项目并执行真机页面复验。
 
 当前结论（2026-07-13）：真实小智已完成普通 Wi-Fi、手机热点、断网恢复、本地 MQTT 日志汇总、官方/本地 AI 动态切换和本地 AI WebSocket 实际对话验证。IoT 全局 MQTT 凭证已创建并启用：匿名访问已关闭，服务重启后小智使用配网页保存的同一套凭证完成日志上报验证。
 
@@ -128,8 +130,9 @@ docker-stop.cmd    停止并保留数据
 ## 下一步
 
 1. 按截图清单准备已脱敏的首页、设备详情、中文运行日志、MQTT 认证状态和批量删除模式截图；上传前执行安全检查清单。
-2. 确认固件不会重复发布同一轮启动事件，并持续观察启动汇总日志。
-3. 完成群晖环境下的长时间持续上报、断网恢复和端口冲突升级回归验证。
+2. 构建带本轮 IoT 映射与相邻重复保护的新远程前后端镜像，更新群晖远程项目后，再烧录 `v2.2.6-aiot-remote-mqtt.2`；确认冷启动页面准确显示“远程日志 MQTT（TLS 8883）已连接”，且不重复追加相邻完全相同事件。
+3. 验证真实故障/恢复/再次故障对应 `PENDING`/`RESOLVED`/`PENDING`，并确认运行环境只有一个使用该远程订阅配置的后端实例，避免多实例同时消费同一 QoS 1 Topic。
+4. 完成异地网络、局域网 UDP `19830` 回归，以及群晖环境下的长时间持续上报和断网恢复验证。
 
 延期观察：本地 AI 回退官方 AI 偏慢、以及本地 AI 回答能力弱，均已记录但暂不处理；以后如决定优化，需在小智固件/本地 AI 服务项目执行。
 

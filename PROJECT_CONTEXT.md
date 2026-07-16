@@ -1,6 +1,6 @@
 # AIoT 项目上下文
 
-更新时间：2026-07-15
+更新时间：2026-07-16
 
 这是新对话继续项目时的首要阅读文件。
 
@@ -20,7 +20,7 @@
 
 - `Local AI server discovered` 统一显示为“已发现本地 AI 服务”，仅表示发现成功，不能被翻译为已连接；只有 `local_ai_connected` / `Local AI server connected` 才显示为“已连接本地 AI 服务”。2026-07-12 曾实机验证设备在本机服务可用时建立 WebSocket 实际对话；本地服务不可用时固件应安全回退官方小智服务。
 
-待处理：实机曾在同一汇总窗口收到两轮相同启动序列，形成“设备运行上报（8 条）”；IoT 后端按收到消息如实合并，需小智固件保证每次启动仅发布一轮。
+2026-07-16 已定位并修复远程固件启动汇总中的 MQTT 假异常：等待可信系统时间、主动停止客户端不再算连接失败，恢复后不再重复补发“已连接”，真实意外断开会在后台主动重连。修复版标识为 `v2.2.6-aiot-remote-mqtt.2`，尚待重新烧录验收。
 
 - 设备运行事件统一中文显示：后端写入时转换已知事件，前端也兼容转换历史英文记录；包括 Wi-Fi、日志 MQTT 连接/失败重试/恢复、本地 AI WebSocket 握手、官方 AI 协议状态；日志标题单行省略并提供完整内容提示
 - 连续运行事件汇总：同一设备在 30 秒内连续发布到 `/log` 的事件仅保留一条“设备运行上报（n 条）”日志，内容逐行保存每一步的最简状态；详情页以“固件开始初始化 → Wi-Fi 已连接 → …”展示，避免标题和消息重复。`startup`/`firmware_started` 是新的启动批次边界，即使设备复位发生在 30 秒内也必须新建一条；其余事件超过窗口才新建日志。已由 `XIAOZHI-001` 实机验证 4 条启动事件成功合并，并验证电脑与小智同连手机热点时可自动发现 Broker 并正常上报；断网后可自动重连并恢复日志上传。
@@ -75,9 +75,9 @@ GitHub 展示与交付材料已整理：根目录 `README.md` 已覆盖项目说
 
 Docker 公开部署策略：`docker-update.cmd`/`docker-start.cmd` 会调用 `tools/initialize-docker-config.ps1`，在被忽略的 `.env` 和 `docker/local/` 生成或复用数据库密码、MQTT 凭证、Mosquitto 密码/ACL 和当前局域网 IPv4。Docker Mosquitto 关闭匿名访问，后端从该私有目录读取 MQTT 凭证，并发布 UDP `19830` 供局域网设备发现；发现 Token 默认留空，确保未预置 Token 的设备可自动发现，固件已配置同一 Token 时才在私有 `.env` 手动启用。没有可用局域网 IPv4 时仍可启动，但会暂时关闭发现。新用户 Docker 首次启动仅执行 `sql/schema.sql`，不再自动导入 `sql/init-data.sql` 的演示设备/日志/标签。新增 `tools/initialize-synology-docker-config.sh` 供群晖 DSM SSH 首次初始化；Container Manager 不会执行 Windows 脚本。群晖脚本会将 Mosquitto 密码哈希和 ACL 设为容器 UID/GID `1883` 所有、权限 `0600`，否则 Broker 无法读取安全文件；Docker 后端从页面更新全局凭证时也会保持这一权限。已拉取 GHCR 前后端成品镜像时，可用 `tools/create-synology-image-deploy.ps1` 生成只含 Compose、表结构 SQL 与初始化脚本的群晖部署包，无须上传 `backend/`/`frontend/` 源码。该更新尚待在本机或群晖重新构建验收；不能与本地开发版同时启动，也不得暴露至公网。
 
-GHCR 成品镜像策略：`.github/workflows/publish-ghcr.yml` 在 `main` 或 `Remote-Hivemq` 推送、版本标签或手动触发时构建并推送后端、前端镜像到 `ghcr.io/yyj7890/aiot-log-backend` 与 `ghcr.io/yyj7890/aiot-log-frontend`。两个包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是固定远程版，`latest` 只允许 `main` 分支推送更新并保持局域网语义；版本标签事件不得更新 `latest`。`docker-compose.ghcr.yml` 和 `docker-ghcr-*.cmd` 仅拉取成品镜像，使用者无需本机编译源码。2026-07-14 已在群晖拉取并运行这两个成品镜像；基础 MySQL/Mosquitto 镜像因 Docker Hub 网络不稳改由本地导出后导入 NAS。包仍应保持 Public，便于其他用户匿名拉取。
+GHCR 成品镜像策略：`.github/workflows/publish-ghcr.yml` 在 `main` 或 `Remote-Hivemq` 推送、版本标签或手动触发时构建并推送后端、前端镜像到 `ghcr.io/yyj7890/aiot-log-backend` 与 `ghcr.io/yyj7890/aiot-log-frontend`。两个包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 是远程状态文案和 QoS 1 相邻重投修复版；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得更新 `latest`。`docker-compose.ghcr.yml` 和 `docker-ghcr-*.cmd` 仅拉取成品镜像，使用者无需本机编译源码。2026-07-14 已在群晖拉取并运行这两个成品镜像；基础 MySQL/Mosquitto 镜像因 Docker Hub 网络不稳改由本地导出后导入 NAS。包仍应保持 Public，便于其他用户匿名拉取。
 
-HiveMQ 远程版本：Git 分支 `Remote-Hivemq` 已实现可选 `MQTT_MODE=remote`。该模式使用 `ssl://<private-host>:8883`、共享 MQTT 凭证和 HiveMQ `aiot/device/#` ACL；后端继续订阅原有 `report`/`log` Topic，Docker/GHCR 远程编排只运行 MySQL、后端和前端，不运行 Mosquitto 或 UDP `19830`。远程 Docker 配置只存于被忽略的 `docker/local/hivemq-remote.env`，与局域网 `.env` 分离，模板是 `config/hivemq-remote.env.example`；Windows 使用 `docker-remote-*.cmd`，群晖成品部署包使用 `tools/create-synology-image-deploy.ps1 -Remote`。远程版固定使用 `v1.1.0-remote-mqtt` 镜像标签，远程群晖 Compose 不拉默认分支的 `latest`。小智独立日志客户端增加远程 TLS 模式、ESP-IDF CA bundle、主机名验证/SNI 和跳过 UDP 发现的逻辑；官方 AI/OTA/WebSocket 通道未修改。2026-07-15 已分别在 Windows Docker 和群晖 Container Manager 完成 MQTTX → HiveMQ TLS → Spring Boot → MySQL 远程日志端到端入库验收；群晖状态页确认消息接收和处理成功。真机异地上报和局域网回归仍待完成。当天的 WSL/Docker Hub、群晖 Compose 命令兼容性和端口冲突排障结论已记录在 `docs/hivemq-remote-mqtt-version.md`，不含真实凭证。详见该文档。
+HiveMQ 远程版本：Git 分支 `Remote-Hivemq` 已实现可选 `MQTT_MODE=remote`。该模式使用 `ssl://<private-host>:8883`、共享 MQTT 凭证和 HiveMQ `aiot/device/#` ACL；后端继续订阅原有 `report`/`log` Topic，Docker/GHCR 远程编排只运行 MySQL、后端和前端，不运行 Mosquitto 或 UDP `19830`。远程 Docker 配置只存于被忽略的 `docker/local/hivemq-remote.env`，与局域网 `.env` 分离，模板是 `config/hivemq-remote.env.example`；Windows 使用 `docker-remote-*.cmd`，群晖成品部署包使用 `tools/create-synology-image-deploy.ps1 -Remote`。当前远程 Compose 固定使用 `v1.1.1-remote-mqtt` 镜像标签，旧 `v1.1.0-remote-mqtt` 保留用于回退，远程群晖 Compose 不拉默认分支的 `latest`。小智独立日志客户端增加远程 TLS 模式、ESP-IDF CA bundle、主机名验证/SNI 和跳过 UDP 发现的逻辑；官方 AI/OTA/WebSocket 通道未修改。2026-07-15 已分别在 Windows Docker 和群晖 Container Manager 完成 MQTTX → HiveMQ TLS → Spring Boot → MySQL 远程日志端到端入库验收；2026-07-16 小智真机也已成功经 HiveMQ 上传日志，确认固件 TLS 与后端订阅链路可用。首次固件出现的 MQTT 失败/恢复假异常已在 `.2` 修复版中处理；后端收到明确恢复事件时会把汇总状态改为 `RESOLVED`，真实后续故障会重新置为 `PENDING`。IoT 后端和前端已补充远程 TLS 连接、失败重试、连接恢复三种中文文案，其中连接成功显示为“远程日志 MQTT（TLS 8883）已连接”；后端在同一启动批次和 30 秒汇总窗口内仅抑制相邻且标准化后完全相同的运行事件，继续保持 QoS 1，并保留原事件类型与故障状态流转。`v1.1.1-remote-mqtt` 发布后仍需更新群晖项目并执行真机页面复验。详见 `docs/hivemq-remote-mqtt-version.md`。
 
 ## 5. 启动方式
 

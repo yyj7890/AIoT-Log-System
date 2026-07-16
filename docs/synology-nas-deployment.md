@@ -63,7 +63,7 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 
 ## 7. HiveMQ 远程版本（实机验收通过）
 
-`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。该编排固定拉取 GHCR 的 `v1.1.0-remote-mqtt` 镜像标签，只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种镜像不会混用。
+`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。该编排当前固定拉取 GHCR 的 `v1.1.1-remote-mqtt` 镜像标签，只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签 `v1.1.0-remote-mqtt` 保留用于回退；局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 
 使用 Windows 上的以下命令生成远程成品镜像部署包：
 

@@ -1,6 +1,6 @@
 # HiveMQ Cloud 远程 MQTT 接入版本
 
-更新时间：2026-07-15
+更新时间：2026-07-16
 
 ## 1. 目的与状态
 
@@ -77,7 +77,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是固定远程版。远程群晖 Compose 固定拉取远程标签，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
+- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，当前 `v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护。远程群晖 Compose 固定拉取当前远程标签，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件
@@ -140,3 +140,47 @@ MQTT_PASSWORD=<private-password>
 - Windows Docker 私有配置初始化脚本、群晖初始化脚本和成品镜像包生成器。
 - 小智固件的 `mqtt_log_client`、AIoT NVS 配置与配网页面；不涉及官方 AI、OTA 或 WebSocket 通道。
 - 项目上下文、状态、部署文档和本文件。
+
+## 11. 2026-07-16 小智真机上报与假异常修复
+
+- 小智远程固件已成功通过 HiveMQ TLS 上传启动运行日志，确认 DNS、TLS `8883`、账号权限、Topic、Spring Boot 订阅和入库链路可用；未记录真实域名或凭证。
+- 首次汇总出现“日志 MQTT 连接失败，正在重试 → 已恢复 → 已连接”的不合理序列。根因在固件状态机：等待可信系统时间被当成失败，主动停止客户端产生的断开事件也可能触发失败标志，恢复分支又未设置首次连接标志。
+- 固件 `v2.2.6-aiot-remote-mqtt.2` 已把连接尝试拆分为 `Connected`、`Deferred`、`Failed`；可信时间等待不再产生异常，主动停止的断开事件被忽略，恢复后不再重复上报“已连接”，真实 Broker 断开即使队列为空也会后台重连。
+- 真实失败事件统一使用 `mqtt_connection_failed`，与后端和前端既有中文映射一致。
+- 后端汇总保留最高严重级别作为故障历史，但明确收到 `mqtt_reconnected` 或 `mqtt_connection_recovered` 后将状态改为 `RESOLVED`；后续再次收到非 `INFO` 故障会重新置为 `PENDING`。
+- JDK 17 Maven 测试/编译通过；固件对象编译、完整主组件归档、ELF 链接、BIN 生成和分区检查通过。修复版尚待重新烧录、冷启动、断网恢复、异地网络和局域网回归验证。
+
+## 12. 2026-07-16 远程状态文案与 QoS 1 相邻重投幂等
+
+### 中文显示
+
+- `Remote log MQTT TLS connected` 映射为“远程日志 MQTT（TLS 8883）已连接”。
+- `Remote log MQTT TLS connection failed and was retried` 映射为“远程日志 MQTT（TLS 8883）连接失败，正在重试”。
+- `Remote log MQTT TLS connection recovered` 映射为“远程日志 MQTT（TLS 8883）连接已恢复”。
+- 后端负责新入库运行事件的中文化，前端同时兼容历史英文单行和多行汇总内容。
+
+### 去重边界
+
+- MQTT 继续使用 QoS 1，不通过降低 QoS 规避重复。
+- 仅当事件位于同一启动批次、同一 30 秒汇总窗口、紧邻上一事件，且标准化后的摘要完全相同时，后端不再重复追加、增加计数或改变状态。
+- 不相邻的相同事件不会被全局删除；内容不同的事件正常追加；`startup` 和 `firmware_started` 始终开始新的启动批次。
+- 不单独依赖 MQTT DUP 标志，因为首次业务处理失败后的合法重投仍需要被处理。
+
+### 兼容性与状态
+
+- 保留 `mqtt_connected`、`mqtt_connection_failed`、`mqtt_reconnected` 事件类型，未改变固件与后端协议。
+- 保留真实故障为 `PENDING`、恢复为 `RESOLVED`、后续新故障重新为 `PENDING` 的状态流转。
+- 汇总仍保留历史最高严重级别；明确恢复事件只关闭当前故障状态，不抹除故障历史。
+
+### 验证结果与待办
+
+- JDK 17 下后端 7 项测试全部通过，覆盖三种远程中文映射、相邻完全相同事件去重、不同事件追加、启动批次边界和故障/恢复/再故障状态流转。
+- 前端 TypeScript 检查和 Vite 生产构建通过。
+- 本轮不读取真实 HiveMQ 配置；版本镜像发布与群晖部署分开执行，发布镜像不会自动修改群晖项目。
+- 后续需用新远程前后端镜像更新群晖项目，再执行冷启动页面、QoS 1 相邻重投、真实断网恢复、局域网模式和单后端实例检查。
+
+### `v1.1.1-remote-mqtt` 发布
+
+- 本轮修复以独立标签 `v1.1.1-remote-mqtt` 发布前后端镜像，不覆盖或删除 `v1.1.0-remote-mqtt`。
+- `docker-compose.remote.ghcr.yml` 固定引用 `v1.1.1-remote-mqtt`；群晖更新时只需拉取两个新镜像并重新构建现有远程项目，继续复用原数据库卷和私有 `docker/local/hivemq-remote.env`。
+- 发布镜像不代表群晖已经更新；群晖部署和真机复验仍需单独执行。

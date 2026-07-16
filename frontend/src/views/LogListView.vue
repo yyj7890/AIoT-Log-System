@@ -182,6 +182,9 @@ const runtimeContentMap: Record<string, string> = {
   'Log MQTT connected': '日志 MQTT 已连接',
   'Log MQTT connection failed and was retried': '日志 MQTT 连接失败，正在重试',
   'Log MQTT connection recovered': '日志 MQTT 连接已恢复',
+  'Remote log MQTT TLS connected': '远程日志 MQTT（TLS 8883）已连接',
+  'Remote log MQTT TLS connection failed and was retried': '远程日志 MQTT（TLS 8883）连接失败，正在重试',
+  'Remote log MQTT TLS connection recovered': '远程日志 MQTT（TLS 8883）连接已恢复',
   'Local AI server discovered': '已发现本地 AI 服务',
   'Local AI server connected': '已连接本地 AI 服务',
   'Local AI server connection failed': '本地 AI 服务连接失败',
@@ -206,7 +209,10 @@ function displayRuntimeContent(content: string) {
 
 function compactRuntimeEvent(line: string) {
   const match = line.match(/^【(.+?)】\s*(.*)$/)
-  if (!match) return line.trim()
+  if (!match) {
+    const eventContent = line.trim()
+    return runtimeContentMap[eventContent] ?? eventContent
+  }
 
   const eventTitle = match[1].trim()
   const eventContent = runtimeContentMap[match[2].trim()] ?? match[2].trim()
