@@ -20,6 +20,20 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
 
+management:
+  server:
+    address: 127.0.0.1
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true

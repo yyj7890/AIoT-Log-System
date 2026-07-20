@@ -109,6 +109,8 @@ GET    /api/mqtt/status
 GET    /api/enums
 ```
 
+容器就绪检查使用 Spring Boot Actuator 的 `GET /actuator/health`。管理服务独立监听 `127.0.0.1:8081`，Docker 不映射该端口；只开放总体健康状态且不显示组件详情。该端点不使用业务接口的统一响应包装，也不返回数据库、MQTT、主机或凭证信息。
+
 接口统一返回：
 
 ```json
