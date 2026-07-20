@@ -10,9 +10,10 @@
 
 - 问题：Compose 只等待 MySQL 健康，前端只等待后端容器进入启动状态；Spring Boot 尚未真正可用时，前端仍可能先启动，容器管理界面也无法区分“进程已启动”和“服务已就绪”。
 - 处理：增加 Spring Boot Actuator，健康端口默认固定为容器/本机回环地址 `127.0.0.1:8081`，仅暴露不含组件详情的 `health`；这些应用默认值也覆盖仍使用旧私有配置文件的本地启动场景。Docker 镜像加入 `curl`，源码构建的局域网和远程 Compose 用内部健康检查判定后端，并让前端等待 `service_healthy`。
-- 安全边界：不映射 `8081`，不增加公网端口，不显示数据库、MQTT、主机或凭证细节；现有 GHCR `v1.1.5-remote-mqtt` 和群晖部署未修改。
+- 安全边界：不映射 `8081`，不增加公网端口，不显示数据库、MQTT、主机或凭证细节；实现和发布阶段未自动修改既有群晖部署。
 - 当前验证：远程前后端镜像构建通过；使用 Maven 17 容器执行 14 项后端测试，结果全部通过。隔离启动临时 MySQL 和禁用 MQTT 的候选后端后，容器内 `GET /actuator/health` 返回 `UP`，同一 Docker 网络中的其他容器无法访问 `8081`，确认管理端口仅限回环地址。POM XML、三个相关 Compose 结构、敏感信息扫描、Markdown 本地链接检查和 `git diff --check` 也通过；临时容器、网络和无持久卷测试数据已清理。
-- 发布：提交 `c853d6c` 已推送到 `Remote-Hivemq`，独立标签、GitHub Release 以及前后端 GHCR `v1.1.6-remote-mqtt` 镜像均已发布并验证清单可解析；远程 GHCR Compose 已固定引用该版本，群晖尚未升级。
+- 发布：提交 `c853d6c` 已推送到 `Remote-Hivemq`，独立标签、GitHub Release 以及前后端 GHCR `v1.1.6-remote-mqtt` 镜像均已发布并验证清单可解析；远程 GHCR Compose 已固定引用该版本。
+- 群晖升级：在原 `aiot-log-system-remote` 项目中复用 MySQL 数据卷、私有环境文件和既有宿主机端口映射完成升级，没有执行卷删除；前端、后端和 MySQL 均正常运行，后端容器显示 `healthy`，证明容器内部 Actuator 健康检查已生效。
 
 ### 长时间运行后日志页没有继续刷新
 

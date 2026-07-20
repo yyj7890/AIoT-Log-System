@@ -6,7 +6,7 @@
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 
-当前状态：**`v1.1.6-remote-mqtt` 已发布，增加只限容器内部访问的后端健康检查，并让前端等待后端就绪后启动；群晖当前仍运行 `v1.1.5-remote-mqtt`，尚未升级。真实凭证未写入仓库。**
+当前状态：**`v1.1.6-remote-mqtt` 已发布并完成群晖升级，增加只限容器内部访问的后端健康检查，并让前端等待后端就绪后启动；前后端和 MySQL 均正常运行，后端容器显示 `healthy`。真实凭证未写入仓库。**
 
 ### v1.1.6 后端容器健康检查（2026-07-20）
 
@@ -15,7 +15,7 @@
 - 源码局域网、源码远程和远程 GHCR Compose 均使用后端内部健康检查，前端等待 `service_healthy` 后启动。
 - 远程前后端镜像构建通过，Maven 17 下 14 项后端测试全部通过；隔离容器内健康端点返回 `UP`。
 - 提交 `c853d6c`、标签、GitHub Release 和前后端 GHCR `v1.1.6-remote-mqtt` 镜像均已发布，镜像清单可正常解析。
-- 远程 GHCR Compose 已固定引用 `v1.1.6-remote-mqtt`；群晖当前运行的 `v1.1.5-remote-mqtt` 不受影响，下一步按原项目升级并复用数据库卷和私有环境文件。
+- 远程 GHCR Compose 已固定引用 `v1.1.6-remote-mqtt`；群晖已按原项目升级并复用数据库卷、私有环境文件和既有宿主机端口映射，后端容器健康检查通过。
 
 ### MQTTX 手工验证记录（2026-07-14）
 
@@ -86,7 +86,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，`v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新，`v1.1.3-remote-mqtt` 增加 `WARN` 等级兼容并将状态页和日志管理页统一为 1 秒可靠刷新，`v1.1.4-remote-mqtt` 增加详情实时同步和本地 AI 回退事件中文化，`v1.1.5-remote-mqtt` 增加日志轮询自愈和系统运行时长显示，`v1.1.6-remote-mqtt` 增加后端容器健康检查和前端就绪依赖。当前源码远程 GHCR Compose 已固定引用 `v1.1.6-remote-mqtt`；群晖当前运行 `v1.1.5-remote-mqtt`，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。
+- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，`v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新，`v1.1.3-remote-mqtt` 增加 `WARN` 等级兼容并将状态页和日志管理页统一为 1 秒可靠刷新，`v1.1.4-remote-mqtt` 增加详情实时同步和本地 AI 回退事件中文化，`v1.1.5-remote-mqtt` 增加日志轮询自愈和系统运行时长显示，`v1.1.6-remote-mqtt` 增加后端容器健康检查和前端就绪依赖。当前源码远程 GHCR Compose 和群晖运行项目均使用 `v1.1.6-remote-mqtt`；旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件
