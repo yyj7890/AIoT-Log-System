@@ -97,11 +97,11 @@ docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
 
 首次运行会由初始化器生成被忽略的 `docker/local/hivemq-remote.env`，用户只在该私有文件中填写 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 和 `MQTT_PASSWORD`；公开模板是 `config/hivemq-remote.env.example`。该文件与原局域网 Docker 的 `.env` 分离，切换模式不会覆盖原配置。远程 Compose 只运行 MySQL、后端和前端，不包含 Mosquitto、TCP `1883` 或 UDP `19830`。不要把私有配置、真实域名、凭证或设备数据提交、上传或截图公开。实现与验证状态见 [HiveMQ 远程版本记录](docs/hivemq-remote-mqtt-version.md)。
 
-两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前已发布远程版为 `v1.1.4-remote-mqtt`，下一候选版 `v1.1.5-remote-mqtt` 增加日志轮询自愈和系统运行时长显示；旧远程版继续保留用于回退。候选版发布前，下面的公开拉取命令仍应使用 `v1.1.4-remote-mqtt`。`latest` 保留给 `main` 的局域网版，且只有明确推送 `main` 分支时才允许更新；远程版本标签不会覆盖它。
+两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前已发布远程版为 `v1.1.5-remote-mqtt`，增加日志轮询自愈和系统运行时长显示；旧远程版继续保留用于回退。`latest` 保留给 `main` 的局域网版，且只有明确推送 `main` 分支时才允许更新；远程版本标签不会覆盖它。
 
 ```text
-docker pull ghcr.io/yyj7890/aiot-log-backend:v1.1.4-remote-mqtt
-docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.1.4-remote-mqtt
+docker pull ghcr.io/yyj7890/aiot-log-backend:v1.1.5-remote-mqtt
+docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.1.5-remote-mqtt
 ```
 
 ### 首次本地配置（公开模板）
