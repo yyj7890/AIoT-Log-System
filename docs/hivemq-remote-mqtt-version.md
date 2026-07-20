@@ -6,7 +6,7 @@
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 
-当前状态：**后端、远程 Docker/GHCR/群晖编排和小智独立日志客户端的远程模式代码已实现；后端 Maven 与前端生产构建已通过。2026-07-15 已完成 Windows Docker + MQTTX + HiveMQ Cloud + Spring Boot + MySQL 的端到端日志入库验收。真实凭证未写入仓库。**
+当前状态：**`v1.1.4-remote-mqtt` 已发布并部署群晖；当前准备 `v1.1.5-remote-mqtt`，修复日志页首次请求失败后轮询未启动的问题，并增加后端运行时长显示。后端 Maven 与前端生产构建已通过，真实凭证未写入仓库。**
 
 ### MQTTX 手工验证记录（2026-07-14）
 
@@ -77,7 +77,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，`v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新，`v1.1.3-remote-mqtt` 增加 `WARN` 等级兼容并将状态页和日志管理页统一为 1 秒可靠刷新；当前代码准备以 `v1.1.4-remote-mqtt` 发布详情实时同步和本地 AI 回退事件中文化。远程群晖 Compose 已固定到待发布的 `v1.1.4-remote-mqtt`，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。版本标签构建完成后，工作流会创建同名 GitHub Release，显示在仓库 Releases 区域。
+- 两个 GHCR 包以标签区分版本：`v1.0.0-lan` 是固定局域网版，`v1.1.0-remote-mqtt` 是首个远程版，`v1.1.1-remote-mqtt` 增加远程状态中文文案和 QoS 1 相邻重投保护，`v1.1.2-remote-mqtt` 增加 MQTT 状态页自动刷新，`v1.1.3-remote-mqtt` 增加 `WARN` 等级兼容并将状态页和日志管理页统一为 1 秒可靠刷新，`v1.1.4-remote-mqtt` 增加详情实时同步和本地 AI 回退事件中文化；当前源码远程 Compose 已准备引用候选 `v1.1.5-remote-mqtt`。群晖当前运行 `v1.1.4-remote-mqtt`，旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件
@@ -253,5 +253,34 @@ MQTT_PASSWORD=<private-password>
 - JDK 17 Maven 测试通过：12 项测试、0 失败，覆盖新增两类事件的标题/消息映射，以及原有远程 MQTT 三种映射、`WARN` 兼容、相邻重复抑制、启动批次和故障状态流转。
 - 前端 TypeScript 检查和 Vite 生产构建通过。
 - Markdown 本地链接检查、敏感信息扫描和 `git diff --check` 全部通过。
-- `docker-compose.remote.ghcr.yml` 已准备引用 `v1.1.4-remote-mqtt`；该标签和镜像当前尚未创建，群晖仍运行已部署的旧版本。
-- 本轮不修改小智固件，不读取真实 HiveMQ 配置，不部署群晖，不修改数据库数据。
+- `v1.1.4-remote-mqtt` 发布时，`docker-compose.remote.ghcr.yml` 固定引用该标签。提交 `9ee4379`、同名 Git 标签、GitHub Release 和前后端 GHCR 镜像均已发布成功；旧远程标签和局域网 `v1.0.0-lan` 保留，`latest` 未被远程标签覆盖。
+- 群晖已成功拉取两个 `v1.1.4-remote-mqtt` 镜像并完成现有远程项目升级，继续复用原 MySQL 数据卷和私有 `docker/local/hivemq-remote.env`。部署记录不包含真实域名、凭证、NAS 地址或运行 Payload。
+- 本轮不修改小智固件，不读取真实 HiveMQ 配置，不修改数据库数据。后续仍需浏览器强制刷新，并使用真机验证详情实时追加、跨页详情兜底和两条本地 AI 中文显示。
+
+## 16. 2026-07-20 日志轮询自愈与系统运行时长
+
+### 问题与根因
+
+- 群晖持续运行两天后观察到：设备日志已经入库，但日志管理页没有显示新记录；进入 MQTT 状态页再返回后，积压日志立即出现，后续重启设备又能正常实时刷新。
+- 该现象说明设备、HiveMQ、后端订阅和数据库链路正常，问题位于前端日志页生命周期。
+- `LogListView` 原先在 `onMounted` 中依次等待设备/标签选项和首次日志请求，完成后才创建每秒轮询和可见性监听。任一初始请求失败都会使异步挂载钩子提前退出，轮询永远不会创建；切换菜单会重新挂载页面，因此暂时恢复。
+
+### 修复
+
+- 页面挂载时先注册 `visibilitychange`、`focus`、`online`、`pageshow` 监听并启动每秒轮询，再异步加载选项和日志；首次请求失败不再中断轮询生命周期。
+- 页面重新可见、窗口重新聚焦、网络恢复或浏览器从缓存恢复时，重新创建定时器并立即刷新；请求互斥继续避免并发堆积，筛选和分页状态不被重置。
+- 该修复仅影响前端获取数据的时机，不修改小智固件、HiveMQ、MQTT QoS 1、Topic、后端入库和数据库数据。
+
+### 系统运行时长
+
+- 新增只读 `GET /api/system/runtime`，返回 Spring Boot JVM 的启动时间戳和已运行秒数，不查询数据库，也不暴露主机、网络或凭证信息。
+- 所有管理页面顶部显示“系统运行时长”；前端每秒本地递增，每 60 秒与后端校准，并在页面恢复、窗口聚焦或网络恢复时立即同步。
+- 该数值代表后端服务进程运行时长，后端容器重启后重新计时，不等同于群晖开机时长。
+
+### 验证与版本边界
+
+- JDK 17 Maven 测试通过：14 项测试、0 失败，其中新增 2 项运行时长计算和非负边界测试；原有 12 项远程日志回归测试继续通过。
+- 前端 TypeScript 检查和 Vite 生产构建通过。
+- 本轮变更文件敏感信息扫描、29 个 Markdown 文件的本地链接检查和 `git diff --check` 全部通过。
+- `docker-compose.remote.ghcr.yml` 已准备引用候选标签 `v1.1.5-remote-mqtt`；该标签和镜像尚未创建，群晖继续运行 `v1.1.4-remote-mqtt`。
+- 发布后需在群晖复现首次请求失败和页面休眠恢复，确认日志无需切换菜单即可自动更新，并检查后端重启后运行时长从零重新开始。

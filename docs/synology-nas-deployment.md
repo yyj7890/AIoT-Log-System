@@ -63,7 +63,7 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 
 ## 7. HiveMQ 远程版本（实机验收通过）
 
-`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。该编排已准备固定拉取待发布的 GHCR `v1.1.4-remote-mqtt` 镜像标签，只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。在该标签完成发布前，群晖继续运行已部署版本；旧远程标签 `v1.1.3-remote-mqtt`、`v1.1.2-remote-mqtt`、`v1.1.1-remote-mqtt` 与 `v1.1.0-remote-mqtt` 保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
+`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。当前源码编排已准备固定拉取候选 GHCR `v1.1.5-remote-mqtt`，群晖已部署项目仍使用 `v1.1.4-remote-mqtt`，直到新标签完成发布并由用户明确升级。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 
 使用 Windows 上的以下命令生成远程成品镜像部署包：
 
@@ -81,3 +81,7 @@ sh tools/initialize-synology-docker-config.sh
 初始化器只会创建被忽略的 `docker/local/hivemq-remote.env`；在其中填写私有 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 与 `MQTT_PASSWORD` 后，再以 `docker-compose.yml` 创建 Container Manager 项目。不得上传、提交或截图展示该文件。该模式不需要群晖公网 IP 或路由器端口转发，管理网页如需外网访问应另行通过受认证的 VPN/反向代理规划，而不是暴露 MQTT 或数据库端口。
 
 2026-07-15 已完成远程项目实机验收：群晖 Docker CLI 不带 Compose V2 插件，故通过 DSM Container Manager 创建项目。NAS 既有服务占用宿主机 `8080` 时，后端首次启动报 external connectivity；将后端映射改为 `18080:8080`、前端改为 `18000:80` 后启动成功，容器内部服务地址未改变。MySQL 健康，后端连接 HiveMQ TLS，MQTTX 测试日志的“收到消息”和“处理成功”计数均增加。原局域网项目及数据保留但未与远程项目同时运行；记录中不包含真实 NAS 地址或 HiveMQ 凭证。
+
+2026-07-17 已完成远程项目升级：群晖成功拉取 `aiot-log-backend:v1.1.4-remote-mqtt` 和 `aiot-log-frontend:v1.1.4-remote-mqtt`，并使用同一远程项目重新创建前后端服务；原 MySQL 数据卷和私有 `docker/local/hivemq-remote.env` 继续复用。该版本增加日志详情实时同步和本地 AI 回退事件中文化；后续浏览器验收应先强制刷新静态资源，再用真机确认详情内容实时追加。
+
+2026-07-20 长时间运行观察发现 `v1.1.4-remote-mqtt` 的日志页可能在首次 API 请求失败后没有创建轮询；切换菜单重新挂载后恢复，设备到数据库链路本身正常。候选 `v1.1.5-remote-mqtt` 调整为先建立轮询和恢复监听，再异步加载数据，并在页面可见、窗口聚焦、网络恢复和 `pageshow` 时自愈；同时在顶部显示后端进程运行时长。发布后更新群晖仍应复用当前 MySQL 卷和私有环境文件，不使用 `down -v`。

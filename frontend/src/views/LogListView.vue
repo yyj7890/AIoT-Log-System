@@ -248,6 +248,8 @@ async function loadData(showLoading = true) {
     logs.value = page.records
     total.value = page.total
     syncOpenDetail(page.records)
+  } catch {
+    // 请求层已经负责提示错误；这里吞掉异常，确保首次失败不会终止轮询生命周期。
   } finally {
     logRequestPending = false
     if (showLoading) {
@@ -349,8 +351,14 @@ function stopAutoRefresh() {
 
 function handleVisibilityChange() {
   if (!document.hidden) {
-    refreshCurrentPage()
+    resumeAutoRefresh()
   }
+}
+
+function resumeAutoRefresh() {
+  if (document.hidden) return
+  startAutoRefresh()
+  refreshCurrentPage()
 }
 
 function reset() {
@@ -433,12 +441,15 @@ function afterSaved() {
   void loadData()
 }
 
-onMounted(async () => {
-  await loadOptions()
-  await loadData()
-  autoSearchReady.value = true
+onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('focus', resumeAutoRefresh)
+  window.addEventListener('online', resumeAutoRefresh)
+  window.addEventListener('pageshow', resumeAutoRefresh)
   startAutoRefresh()
+  autoSearchReady.value = true
+  void loadOptions().catch(() => undefined)
+  void loadData()
 })
 
 onBeforeUnmount(() => {
@@ -447,6 +458,9 @@ onBeforeUnmount(() => {
   }
   stopAutoRefresh()
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('focus', resumeAutoRefresh)
+  window.removeEventListener('online', resumeAutoRefresh)
+  window.removeEventListener('pageshow', resumeAutoRefresh)
 })
 
 watch(
