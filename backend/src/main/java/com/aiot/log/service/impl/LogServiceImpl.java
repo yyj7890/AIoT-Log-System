@@ -152,6 +152,7 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
+    @Transactional
     public synchronized LogVO createDeviceRuntimeLog(DeviceRuntimeLogCreateRequest request) {
         Device device = getDeviceByCode(request.getDeviceCode());
         String level = normalizeDeviceRuntimeLevel(request.getLevel());
@@ -165,6 +166,9 @@ public class LogServiceImpl implements LogService {
         String eventTitle = resolveDeviceRuntimeTitle(request);
         String eventContent = resolveDeviceRuntimeContent(request);
         String eventSummary = summarizeRuntimeEvent(eventTitle, eventContent);
+        if (isMqttRecoveryEvent(request)) {
+            resolveLatestPendingMqttIncident(device.getId());
+        }
         // A startup event starts a new firmware boot sequence. It must never be merged
         // into the tail of the previous sequence, even when the reset happens within
         // the normal runtime-event merge window.
@@ -382,6 +386,28 @@ public class LogServiceImpl implements LogService {
                 .ge(LogRecord::getUpdatedAt, LocalDateTime.now().minusSeconds(windowSeconds))
                 .orderByDesc(LogRecord::getUpdatedAt)
                 .last("LIMIT 1"));
+    }
+
+    private void resolveLatestPendingMqttIncident(Long deviceId) {
+        LogRecord incident = logRecordMapper.selectOne(new LambdaQueryWrapper<LogRecord>()
+                .eq(LogRecord::getDeviceId, deviceId)
+                .eq(LogRecord::getSource, LogSource.DEVICE)
+                .eq(LogRecord::getStatus, LogStatus.PENDING)
+                .likeRight(LogRecord::getTitle, "设备运行上报（")
+                .and(wrapper -> wrapper
+                        .like(LogRecord::getContent, "日志 MQTT 连接失败")
+                        .or()
+                        .like(LogRecord::getContent, "远程日志 MQTT（TLS 8883）连接失败")
+                        .or()
+                        .like(LogRecord::getContent, "Log MQTT connection failed")
+                        .or()
+                        .like(LogRecord::getContent, "Remote log MQTT TLS connection failed"))
+                .orderByDesc(LogRecord::getUpdatedAt)
+                .last("LIMIT 1"));
+        if (incident != null) {
+            incident.setStatus(LogStatus.RESOLVED);
+            logRecordMapper.updateById(incident);
+        }
     }
 
     private String summarizeRuntimeEvent(String eventTitle, String eventContent) {

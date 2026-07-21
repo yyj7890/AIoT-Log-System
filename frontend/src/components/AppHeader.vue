@@ -6,7 +6,10 @@
     </div>
     <div class="header-meta">
       <span class="runtime-label">系统运行时长 {{ formattedUptime }}</span>
-      <el-tag effect="plain" type="success">后端已接入</el-tag>
+      <el-tag v-if="backendConnected === null" effect="plain" type="info">后端检测中</el-tag>
+      <el-tag v-else effect="plain" :type="backendConnected ? 'success' : 'danger'">
+        {{ backendConnected ? '后端已接入' : '后端未连接' }}
+      </el-tag>
     </div>
   </el-header>
 </template>
@@ -19,9 +22,11 @@ import { getSystemRuntime } from '@/api/system'
 const route = useRoute()
 const pageTitle = computed(() => String(route.meta.title || ''))
 const uptimeSeconds = ref<number | null>(null)
+const backendConnected = ref<boolean | null>(null)
 let uptimeTimer: ReturnType<typeof setInterval> | undefined
 let runtimeRequestPending = false
 let ticksSinceSync = 0
+const runtimeSyncIntervalSeconds = 5
 
 const formattedUptime = computed(() => formatDuration(uptimeSeconds.value))
 
@@ -41,9 +46,11 @@ async function syncRuntime() {
   try {
     const runtime = await getSystemRuntime()
     uptimeSeconds.value = runtime.uptimeSeconds
+    backendConnected.value = true
     ticksSinceSync = 0
   } catch {
-    // 顶部辅助状态获取失败时保持现有显示，不影响其他页面功能。
+    uptimeSeconds.value = null
+    backendConnected.value = false
   } finally {
     runtimeRequestPending = false
   }
@@ -54,8 +61,8 @@ function tickRuntime() {
     uptimeSeconds.value += 1
   }
   ticksSinceSync += 1
-  if (ticksSinceSync >= 60) {
-    // 即使本次同步失败，也等待下一个周期再重试，避免后端暂时不可用时每秒请求。
+  if (ticksSinceSync >= runtimeSyncIntervalSeconds) {
+    // 运行时接口是轻量探针；后端暂时不可用时定期重试，以便状态自动恢复。
     ticksSinceSync = 0
     void syncRuntime()
   }

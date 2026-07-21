@@ -253,6 +253,43 @@ class LogServiceImplTest {
                 failedAgain.getContent());
     }
 
+    @Test
+    void recoveryOutsideMergeWindowClosesPreviousPendingMqttIncident() {
+        LogRecord pendingIncident = existingRuntimeLog(
+                "远程日志 MQTT（TLS 8883）连接失败，正在重试",
+                1,
+                LogLevel.ERROR,
+                LogType.ERROR,
+                LogStatus.PENDING);
+        when(logRecordMapper.selectOne(any())).thenReturn(pendingIncident, null);
+
+        final LogRecord[] inserted = new LogRecord[1];
+        when(logRecordMapper.insert(any())).thenAnswer(invocation -> {
+            LogRecord record = invocation.getArgument(0);
+            record.setId(nextLogId.getAndIncrement());
+            record.setCreatedAt(LocalDateTime.now());
+            record.setUpdatedAt(LocalDateTime.now());
+            inserted[0] = record;
+            return 1;
+        });
+        when(logRecordMapper.selectById(anyLong())).thenAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            return pendingIncident.getId().equals(id) ? pendingIncident : inserted[0];
+        });
+
+        LogVO recovered = logService.createDeviceRuntimeLog(runtimeRequest(
+                "mqtt_reconnected",
+                "Remote log MQTT TLS connection recovered",
+                LogLevel.INFO,
+                LogType.RUNNING));
+
+        assertEquals(LogStatus.RESOLVED, pendingIncident.getStatus());
+        assertEquals(LogStatus.RESOLVED, recovered.getStatus());
+        assertEquals("远程日志 MQTT（TLS 8883）连接已恢复", recovered.getContent());
+        verify(logRecordMapper).updateById(pendingIncident);
+        verify(logRecordMapper).insert(any());
+    }
+
     private LogVO createNewRuntimeLog(DeviceRuntimeLogCreateRequest request) {
         if (!"startup".equals(request.getEventType())
                 && !"firmware_started".equals(request.getEventType())) {
