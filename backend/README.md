@@ -19,12 +19,13 @@ Project decisions are recorded in:
 
 ## Database
 
-Run these SQL files before starting the backend:
+Create an empty `aiot_log_system` database before starting the backend. Flyway runs automatically during backend startup:
 
 ```text
-../sql/schema.sql
-../sql/init-data.sql
+src/main/resources/db/migration/V1__create_initial_schema.sql
 ```
+
+For a new database, V1 creates all tables. For an existing pre-Flyway database, the backend records baseline version 1 without recreating or deleting existing tables or rows. Future schema changes must be added as immutable `V2__...sql`, `V3__...sql`, and later migration files. `../sql/init-data.sql` remains optional demo data and is never imported automatically.
 
 Update database connection settings in:
 

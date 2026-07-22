@@ -66,22 +66,20 @@ function Start-MySql {
     Wait-Port -Name "MySQL" -HostName "127.0.0.1" -Port 3306 -TimeoutSeconds 45
 }
 
-function Apply-DatabaseSchema {
+function Ensure-Database {
     $mysql = "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe"
-    $schema = Join-Path $Root "sql\schema.sql"
 
     if (-not (Test-Path $mysql)) {
-        Write-Host "MySQL client not found, skipping schema check."
-        return
-    }
-    if (-not (Test-Path $schema)) {
-        Write-Host "Schema file not found, skipping schema check."
+        Write-Host "MySQL client not found, skipping database creation check."
         return
     }
 
-    Write-Host "Applying database schema..."
-    & $mysql --protocol=tcp --host=127.0.0.1 --user=root --password=root --execute="source $schema"
-    Write-Host "Database schema is ready."
+    Write-Host "Ensuring application database exists..."
+    & $mysql --protocol=tcp --host=127.0.0.1 --user=root --password=root --execute="CREATE DATABASE IF NOT EXISTS aiot_log_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not create or access the aiot_log_system database."
+    }
+    Write-Host "Application database is ready; Flyway will validate or migrate its tables when the backend starts."
 }
 
 function Start-Backend {
@@ -212,7 +210,7 @@ function Open-Frontend {
 }
 
 Start-MySql
-Apply-DatabaseSchema
+Ensure-Database
 Start-MqttBroker
 Start-Backend
 Start-Frontend

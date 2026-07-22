@@ -21,7 +21,8 @@ foreach ($path in $requiredSources) {
     }
 }
 
-New-Item -ItemType Directory -Force -Path $OutputDirectory, (Join-Path $OutputDirectory 'sql'), (Join-Path $OutputDirectory 'tools') | Out-Null
+New-Item -ItemType Directory -Force -Path $OutputDirectory, (Join-Path $OutputDirectory 'tools') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $OutputDirectory 'sql') | Out-Null
 if ($Remote) { New-Item -ItemType Directory -Force -Path (Join-Path $OutputDirectory 'config') | Out-Null }
 $legacyDemoSql = Join-Path $OutputDirectory 'sql/init-data.sql'
 if (Test-Path -LiteralPath $legacyDemoSql -PathType Leaf) {
@@ -40,6 +41,8 @@ This package intentionally contains no frontend or backend source code. It uses 
 `ghcr.io/yyj7890/aiot-log-backend` and `ghcr.io/yyj7890/aiot-log-frontend` images.
 It connects the backend outbound to HiveMQ Cloud with TLS; it does not contain Mosquitto,
 UDP discovery, or an exposed MQTT port.
+The package keeps a frozen V1 compatibility schema for older published images. Flyway in
+new backend images records that schema as baseline version 1 and applies later migrations.
 
 1. Import or pull both images in Container Manager.
 2. Upload this folder to `/volume1/docker/aiot-remote-image`.
@@ -61,7 +64,10 @@ Do not share the generated `docker/local/` directory or its credentials.
 
 This package intentionally contains no frontend or backend source code. It uses the prebuilt
 `ghcr.io/yyj7890/aiot-log-backend` and `ghcr.io/yyj7890/aiot-log-frontend` images.
-It creates an empty database schema for new users; no demo devices, logs, or tags are imported.
+The backend image uses Flyway to create or upgrade the database schema without deleting data.
+New users receive empty tables; no demo devices, logs, or tags are imported.
+The included `sql/schema.sql` is a frozen V1 compatibility bootstrap for older published images;
+all schema changes after V1 belong in backend Flyway migrations.
 
 1. Import or pull both images in Container Manager.
 2. Upload this folder to `/volume1/docker/aiot-image`.

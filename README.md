@@ -121,7 +121,7 @@ Docker 使用独立的 `docker/local/` 私有配置，不会修改上述本地�
 
 ### 群晖 DSM / Container Manager 部署
 
-当前 `docker-compose.yml` 是源码构建编排，不是只引用现成前后端镜像的清单。因此只有使用这份编排时，才需上传项目根目录（至少包含 `docker-compose.yml`、`backend/`、`frontend/`、`sql/`、`docker/`、`tools/`）。首次启动只执行 `sql/schema.sql` 创建空白表结构；`sql/init-data.sql` 仅保留为本地演示数据，不会自动导入新用户数据库。
+当前 `docker-compose.yml` 是源码构建编排，不是只引用现成前后端镜像的清单。因此只有使用这份编排时，才需上传项目根目录（至少包含 `docker-compose.yml`、`backend/`、`frontend/`、`sql/`、`docker/`、`tools/`）。后端启动时由 Flyway 验证和升级数据库：空数据库执行 V1 建表，已有数据库第一次接入时登记为 V1 基线并保留原数据，后续结构变化按 V2、V3 迁移。`sql/schema.sql` 只作为已发布旧镜像和空 MySQL 数据卷的冻结 V1 兼容引导，不再承载后续结构变化；`sql/init-data.sql` 仅保留为本地演示数据，不会自动导入新用户数据库。
 
 Container Manager 不会执行 Windows 的 `.cmd` / PowerShell 初始化脚本。首次创建项目之前，在 DSM 中启用 SSH，以管理员身份登录后先执行 `sudo -i`，再运行一次：
 
@@ -134,7 +134,7 @@ sh tools/initialize-synology-docker-config.sh
 
 NAS 上同样只限可信局域网使用：不要将 `3306`、`1883`、`19830/UDP` 或管理网页端口转发到公网，也不要上传或共享生成的 `.env`、`docker/local/`。
 
-如已在 Container Manager 拉取 `aiot-log-backend` 和 `aiot-log-frontend` 成品镜像，无需上传前后端源码。Windows 上运行 `tools/create-synology-image-deploy.ps1` 会生成一个只含成品镜像 Compose、两份 SQL 和 NAS 初始化脚本的 `dist/synology-image-deploy/`，以及兼容 DSM 文件路径的 `dist/aiot-synology-image-deploy.zip`；将其上传到 NAS 后按其中 `README.txt` 初始化，再用其 `docker-compose.yml` 创建项目。
+如已在 Container Manager 拉取 `aiot-log-backend` 和 `aiot-log-frontend` 成品镜像，无需上传前后端源码。Windows 上运行 `tools/create-synology-image-deploy.ps1` 会生成一个只含成品镜像 Compose、冻结 V1 兼容结构、NAS 初始化脚本和说明的部署包及 ZIP；将其上传到 NAS 后按其中 `README.txt` 初始化，再用其 `docker-compose.yml` 创建项目。Flyway 迁移文件已经打包在后端镜像中，无需在 NAS 单独复制后续 V2、V3 SQL。
 
 ### 成品镜像部署（推荐给其他使用者）
 

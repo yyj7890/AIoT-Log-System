@@ -9,7 +9,7 @@ LOCAL_DIR="$PROJECT_ROOT/docker/local"
 REMOTE_ENV="$LOCAL_DIR/hivemq-remote.env"
 
 if [ ! -f "$PROJECT_ROOT/sql/schema.sql" ] || [ ! -f "$TEMPLATE_FILE" ]; then
-    echo "Missing schema or HiveMQ remote configuration template." >&2
+    echo "Missing compatibility schema or HiveMQ remote configuration template." >&2
     exit 1
 fi
 if ! command -v openssl >/dev/null 2>&1; then

@@ -1,6 +1,6 @@
 # 项目设计说明
 
-更新时间：2026-07-13
+更新时间：2026-07-22
 
 本文合并项目需求、系统架构、数据设计、接口、页面、设备接入和部署说明。
 
@@ -73,7 +73,7 @@ MQTT 认证设计：当前采用全局设备账号模式。MQTT 状态页注册�
 | `alert_rules` | 告警阈值规则 |
 | `users` | 用户预留，登录权限尚未实现 |
 
-数据库结构以 `sql/schema.sql` 为准，演示数据以 `sql/init-data.sql` 为准。初始化脚本使用 UTF-8 和 `SET NAMES utf8mb4`。
+数据库结构版本以 `backend/src/main/resources/db/migration/` 中的 Flyway 迁移为准。`V1__create_initial_schema.sql` 是初始基线：空数据库执行 V1 创建 7 张业务表；已有的完整旧数据库在第一次启动新后端时通过 `baseline-on-migrate` 登记为版本 1，不重建表或删除数据。以后只能新增不可变的 `V2__...sql`、`V3__...sql`，不得修改已经发布的迁移。`sql/schema.sql` 冻结为 V1 兼容引导，仅供已发布的 pre-Flyway 镜像和空 MySQL 数据卷首次初始化；演示数据仍以 `sql/init-data.sql` 为准且不自动导入。
 
 ## 5. 后端接口
 
@@ -263,7 +263,7 @@ Docker 包含前端/Nginx、Spring Boot、MySQL 和 Mosquitto。Docker 不负责
 
 首次运行 `docker-update.cmd`（或后续运行 `docker-start.cmd`）会调用 `tools/initialize-docker-config.ps1`，在本机被忽略的 `.env` 和 `docker/local/` 中生成或复用数据库密码、MQTT 用户名密码、Mosquitto 密码文件和 ACL。Docker Mosquitto 使用这些私有文件关闭匿名访问；后端挂载同一私有目录，通过 `mqtt-credentials.properties` 读取凭证。脚本会更新当前宿主机的局域网 IPv4，并由后端对外发布 UDP `19830` 自动发现响应；默认不配置发现 Token，确保未预置 Token 的设备可自动发现 Broker。需要额外防护时，仅在设备固件也保存同一 Token 的前提下于私有 `.env` 手动设置 `MQTT_DISCOVERY_TOKEN`。没有可用局域网 IPv4 时仍可运行管理系统，但自动发现会暂时关闭。不得提交 `.env`、`docker/local/` 或其中任何内容；此方案仅适用于可信局域网，不得直接暴露公网。
 
-群晖 DSM 的 Container Manager 不执行 Windows 启动脚本。部署源码构建版前，必须上传完整项目目录（至少包含 `docker-compose.yml`、`backend/`、`frontend/`、`sql/`、`docker/`、`tools/`），再通过 SSH 在项目根目录运行 `sh tools/initialize-synology-docker-config.sh`。如已拉取或导入 GHCR 前后端成品镜像，应运行 Windows `tools/create-synology-image-deploy.ps1` 生成仅含 `docker-compose.ghcr.yml`、表结构 SQL 和初始化脚本的部署包，不需要上传 `backend/` 或 `frontend/` 源码。首次启动只挂载 `sql/schema.sql`，新用户数据库为空；`sql/init-data.sql` 仅作为开发演示数据保留。该 POSIX shell 脚本在 NAS 上生成同样的私有 `.env` 和 `docker/local/`，随后才可在 Container Manager 创建项目；缺少 `sql/schema.sql` 或 `docker/local/mosquitto-lan.conf` 会导致绑定挂载失败。2026-07-14 已完成群晖成品镜像实机验收，具体过程与注意事项见 `synology-nas-deployment.md`。
+群晖 DSM 的 Container Manager 不执行 Windows 启动脚本。部署源码构建版前，必须上传完整项目目录（至少包含 `docker-compose.yml`、`backend/`、`frontend/`、`sql/`、`docker/`、`tools/`），再通过 SSH 在项目根目录运行 `sh tools/initialize-synology-docker-config.sh`。如已拉取或导入 GHCR 前后端成品镜像，应运行 Windows `tools/create-synology-image-deploy.ps1` 生成仅含 Compose、冻结 V1 兼容结构和初始化脚本的部署包，不需要上传 `backend/` 或 `frontend/` 源码。MySQL 容器通过 `MYSQL_DATABASE=aiot_log_system` 确保空数据库存在，后端镜像内的 Flyway负责建立基线和执行后续迁移；继续复用原命名卷即可保留数据，不得执行 `down -v`。`sql/init-data.sql` 仅作为开发演示数据保留。该 POSIX shell 脚本在 NAS 上生成同样的私有 `.env` 和 `docker/local/`，随后才可在 Container Manager 创建项目。2026-07-14 已完成群晖成品镜像实机验收，具体过程与注意事项见 `synology-nas-deployment.md`。
 
 本地版和 Docker 版会争用 `3306`、`8080`、`1883`、UDP `19830`，不可同时运行。
 

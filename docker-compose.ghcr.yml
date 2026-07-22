@@ -5,6 +5,7 @@ services:
     image: mysql:8.4
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Run docker-ghcr-update.cmd or create a private .env first}"
+      MYSQL_DATABASE: aiot_log_system
       TZ: Asia/Shanghai
     ports:
       - "${MYSQL_PORT:-3306}:3306"

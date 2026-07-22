@@ -6,6 +6,7 @@ services:
     env_file:
       - ./docker/local/hivemq-remote.env
     environment:
+      MYSQL_DATABASE: aiot_log_system
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"

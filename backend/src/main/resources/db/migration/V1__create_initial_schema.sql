@@ -1,7 +1,3 @@
--- Compatibility bootstrap for published pre-Flyway images and empty MySQL volumes.
--- V1__create_initial_schema.sql is the canonical baseline; never add future schema changes here.
-SET NAMES utf8mb4;
-
 CREATE TABLE users (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   username VARCHAR(50) NOT NULL COMMENT '用户名',

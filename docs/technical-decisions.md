@@ -72,6 +72,14 @@
 
 边界：GitHub Actions 使用工作流 `GITHUB_TOKEN` 写入包，不把个人 Token 写入仓库。首次发布后，维护者必须在 GitHub Packages 手动将两个镜像设为 Public；镜像公开不代表 MQTT 可暴露公网，运行服务仍限可信局域网。`latest` 供体验使用，演示和生产复现应固定 `AIOT_IMAGE_TAG` 到版本标签或提交 SHA。
 
+## 0.7 Flyway 无损数据库升级（2026-07-22）
+
+最终选择：后端接入 Flyway，并把 `backend/src/main/resources/db/migration/V1__create_initial_schema.sql` 作为数据库版本 1。空数据库正常执行 V1；已经存在完整业务表但没有 Flyway 历史表的数据库使用 `baseline-on-migrate=true`、`baseline-version=1` 建立基线，不重建表和不删除数据。以后每次结构变化只新增不可变的 V2、V3 迁移。
+
+原因：Docker 命名卷只能保证数据库文件在更换镜像时仍存在，不能自动处理新镜像所需的字段、索引或表结构。Flyway让数据库结构随后的端镜像版本演进，升级不再依赖删除数据卷或手工重建数据库。
+
+兼容边界：`sql/schema.sql` 冻结为 V1 兼容引导，暂时保留给已经发布的 pre-Flyway 镜像和 MySQL 空卷初始化，后续不得继续修改它；所有 V2 及以后变化必须进入 Flyway。首次把 Flyway 镜像部署到旧数据卷前仍应备份数据库，并继续复用同一命名卷和私有配置，禁止使用 `down -v`。
+
 ## 1. 后端 Java 版本
 
 最终选择：
@@ -530,7 +538,7 @@ docker-stop.cmd    停止容器但保留数据
 
 - 源码、Markdown 和 SQL 文件统一保存为 UTF-8。
 - MySQL 数据库和表使用 `utf8mb4`。
-- 初始化 SQL 显式执行 `SET NAMES utf8mb4`。
+- Flyway V1 和兼容初始化 SQL 使用 `utf8mb4`，JDBC 固定使用 UTF-8。
 - JDBC 使用 Java `UTF-8` 字符集。
 - Spring Boot Servlet 响应强制 UTF-8。
 

@@ -1,6 +1,6 @@
 # 群晖 NAS 实际部署记录
 
-更新时间：2026-07-21
+更新时间：2026-07-22
 
 本文记录一次已完成的群晖 DSM Container Manager 实机部署，用于后续同类 NAS 部署排障。文中不包含真实 IP、域名、账号、密码、Token、设备 MAC 或运行数据。
 
@@ -25,6 +25,8 @@ README.txt
 
 其中 Compose 引用 GHCR 的前端、后端镜像。NAS 不需要 Java、Node.js、Maven，也不需要项目源码。
 
+`sql/schema.sql` 已冻结为 V1 兼容引导，用于当前已经发布的 pre-Flyway 镜像和空 MySQL 数据卷。新后端镜像内置 Flyway：已有群晖数据卷第一次启动时只建立版本 1 基线，后续 V2、V3 迁移自动执行；不得继续修改兼容 `schema.sql`，也不得通过删除数据卷升级。
+
 首次部署在 NAS 项目目录执行：
 
 ```sh
@@ -38,7 +40,7 @@ sh tools/initialize-synology-docker-config.sh
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
 | Docker Hub 拉取 MySQL/Mosquitto 超时或 EOF | NAS/本地网络到 Docker Hub CDN 不稳定 | 在可访问 Docker Hub 的电脑拉取基础镜像后使用 `docker save` 导出，再从 Container Manager 导入。 |
-| Container Manager 报绑定挂载失败 | 缺少 SQL 或私有 Mosquitto 配置文件；Windows 路径分隔符 ZIP 曾被 DSM 当作普通文件名 | 使用群晖部署包和初始化脚本；部署包 ZIP 已改为使用 `/` 路径。 |
+| Container Manager 报绑定挂载失败 | 缺少冻结 V1 兼容 SQL 或私有 Mosquitto 配置文件；Windows 路径分隔符 ZIP 曾被 DSM 当作普通文件名 | 使用群晖部署包和初始化脚本；部署包 ZIP 已改为使用 `/` 路径。 |
 | 后端或前端启动时报 external connectivity | NAS 中已有容器或服务占用默认端口 | 在私有 `.env` 更换冲突端口，例如 `BACKEND_PORT`、`WEB_PORT`；容器内部仍通过 `backend:8080` 通信。 |
 | Mosquitto 循环退出且提示无法打开 password file | DSM 绑定文件由 root 所有，容器内 `mosquitto` 用户无法读取 | 将 `mosquitto-passwords` 和 `mosquitto-acl.conf` 设为 UID/GID `1883` 所有、权限 `0600`；初始化脚本和页面保存逻辑已修正。 |
 | 设备只能手动填写 Broker 地址，不能自动发现 | 初始化曾生成发现 Token，但设备未预置同一 Token，服务端拒绝请求 | 默认发现 Token 改为空；设备同网段且无客户端隔离时可自动发现。若固件已预置 Token，可在私有 `.env` 手动设置。 |

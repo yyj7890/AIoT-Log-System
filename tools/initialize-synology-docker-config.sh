@@ -8,13 +8,10 @@ PROJECT_ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 ENV_FILE="$PROJECT_ROOT/.env"
 LOCAL_DIR="$PROJECT_ROOT/docker/local"
 
-for required_file in sql/schema.sql; do
-    if [ ! -f "$PROJECT_ROOT/$required_file" ]; then
-        echo "Missing required project file: $PROJECT_ROOT/$required_file" >&2
-        echo "Upload the complete project directory before running this script." >&2
-        exit 1
-    fi
-done
+if [ ! -f "$PROJECT_ROOT/sql/schema.sql" ]; then
+    echo "Missing compatibility schema: $PROJECT_ROOT/sql/schema.sql" >&2
+    exit 1
+fi
 
 if ! command -v docker >/dev/null 2>&1; then
     echo "Docker was not found. Run this on the Synology NAS where Container Manager is installed." >&2

@@ -16,6 +16,12 @@ spring:
     url: ${DB_URL:<jdbc-url>}
     username: ${DB_USERNAME:<database-username>}
     password: ${DB_PASSWORD:<database-password>}
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
+    baseline-description: Existing schema before Flyway
+    validate-migration-naming: true
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai

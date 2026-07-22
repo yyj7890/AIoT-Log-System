@@ -75,7 +75,7 @@ GitHub 展示与交付材料已整理：根目录 `README.md` 已覆盖项目说
 
 公开发布配置策略：仓库提交 `backend/src/main/resources/application.example.yml`、`config/mosquitto-lan.example.conf`、`config/mosquitto-acl.example.conf` 与 `config/mqtt-credentials.env.example`；实际本地配置与凭证保留在原位置并忽略。注意：`.gitignore` 不会移除已有 Git 历史中的文件，首次公开推送前必须确认历史不包含本地配置或改用干净公开历史。
 
-Docker 公开部署策略：`docker-update.cmd`/`docker-start.cmd` 会调用 `tools/initialize-docker-config.ps1`，在被忽略的 `.env` 和 `docker/local/` 生成或复用数据库密码、MQTT 凭证、Mosquitto 密码/ACL 和当前局域网 IPv4。Docker Mosquitto 关闭匿名访问，后端从该私有目录读取 MQTT 凭证，并发布 UDP `19830` 供局域网设备发现；发现 Token 默认留空，确保未预置 Token 的设备可自动发现，固件已配置同一 Token 时才在私有 `.env` 手动启用。没有可用局域网 IPv4 时仍可启动，但会暂时关闭发现。新用户 Docker 首次启动仅执行 `sql/schema.sql`，不再自动导入 `sql/init-data.sql` 的演示设备/日志/标签。新增 `tools/initialize-synology-docker-config.sh` 供群晖 DSM SSH 首次初始化；Container Manager 不会执行 Windows 脚本。群晖脚本会将 Mosquitto 密码哈希和 ACL 设为容器 UID/GID `1883` 所有、权限 `0600`，否则 Broker 无法读取安全文件；Docker 后端从页面更新全局凭证时也会保持这一权限。已拉取 GHCR 前后端成品镜像时，可用 `tools/create-synology-image-deploy.ps1` 生成只含 Compose、表结构 SQL 与初始化脚本的群晖部署包，无须上传 `backend/`/`frontend/` 源码。该流程已在群晖完成验收；本地 Docker 版仍不能与本地开发版同时启动，也不得暴露至公网。
+Docker 公开部署策略：`docker-update.cmd`/`docker-start.cmd` 会调用 `tools/initialize-docker-config.ps1`，在被忽略的 `.env` 和 `docker/local/` 生成或复用数据库密码、MQTT 凭证、Mosquitto 密码/ACL 和当前局域网 IPv4。Docker Mosquitto 关闭匿名访问，后端从该私有目录读取 MQTT 凭证，并发布 UDP `19830` 供局域网设备发现；发现 Token 默认留空，确保未预置 Token 的设备可自动发现，固件已配置同一 Token 时才在私有 `.env` 手动启用。没有可用局域网 IPv4 时仍可启动，但会暂时关闭发现。数据库结构已改由后端内置 Flyway 管理：空数据库执行 V1，已有数据库登记 V1 基线并保留数据，后续结构变化使用不可变的 V2、V3 迁移；`sql/schema.sql` 只保留为已发布 pre-Flyway 镜像的冻结 V1 兼容引导，`sql/init-data.sql` 不自动导入。新增 `tools/initialize-synology-docker-config.sh` 供群晖 DSM SSH 首次初始化；Container Manager 不会执行 Windows 脚本。群晖脚本会将 Mosquitto 密码哈希和 ACL 设为容器 UID/GID `1883` 所有、权限 `0600`，否则 Broker 无法读取安全文件；Docker 后端从页面更新全局凭证时也会保持这一权限。已拉取 GHCR 前后端成品镜像时，可用 `tools/create-synology-image-deploy.ps1` 生成兼容群晖的 Compose、冻结 V1 结构与初始化脚本部署包，无须上传 `backend/`/`frontend/` 源码。该流程已在群晖完成验收；本地 Docker 版仍不能与本地开发版同时启动，也不得暴露至公网。
 
 工程质量版本 `v1.1.6-remote-mqtt`：后端已接入 Spring Boot Actuator，仅开放不含组件细节的 `health` 端点，并将管理端口默认固定为只监听 `127.0.0.1:8081`；应用默认值同时保护仍使用旧私有 `application.yml` 的本地环境，Docker 不映射该端口。源码构建的局域网和远程 Compose 使用容器内部健康检查，前端等待后端达到 `service_healthy` 后再启动；远程 GHCR Compose 已固定到 `v1.1.6-remote-mqtt`。2026-07-20 已完成远程前后端镜像构建、JDK 17 Maven 14 项后端测试和隔离容器验收：健康端点返回 `UP`，同一 Docker 网络中的其他容器不能访问管理端口。提交 `c853d6c`、标签、GitHub Release 和两个 GHCR 镜像均已发布；群晖已在原远程项目中升级到 `v1.1.6-remote-mqtt`，前后端和 MySQL 均正常运行，后端容器显示 `healthy`，原 MySQL 数据卷、私有环境文件和宿主机端口映射继续复用。
 
@@ -86,6 +86,8 @@ HiveMQ 远程版本：Git 分支 `Remote-Hivemq` 已实现可选 `MQTT_MODE=remo
 2026-07-21 群晖实机验收：系统此前连续运行约 20 小时，随后完成一次后端正常重启和一次手动停止/启动。后端 API、远程 MQTT TLS 订阅、日志页轮询和运行时长均能自行恢复，运行时长从零重新计时，原 40 条日志及 MySQL 数据卷保持不变。停止期间前端静态页面仍可打开并显示请求失败提示，但顶部“后端已接入”为硬编码，造成离线时误报。通过 MQTTX 依次发送失败、恢复、再次失败事件后，MQTT 计数为收到/成功/失败 `3/3/0`，新日志状态按记录呈现 `PENDING`、`RESOLVED`、`PENDING`；但失败与恢复相隔超过 30 秒时，恢复事件会新建 `RESOLVED` 记录，旧失败记录仍保持 `PENDING`。同日已在源码完成修复：顶部以轻量运行时接口每 5 秒探测后端并显示检测中/已接入/未连接；恢复事件在执行 30 秒日志汇总前独立关闭最新对应的未恢复 MQTT 故障，相关写入纳入同一事务。后端 15 项测试和前端生产构建通过，`v1.1.7-remote-mqtt` 镜像已经发布，尚待群晖升级复测；小智固件未修改。
 
 2026-07-22 群晖已原地升级至 `v1.1.7-remote-mqtt` 并完成复测。后端停止期间运行时接口连续三次超时，前端仍返回 HTTP 200；重新启动后运行时长从 16 秒持续增长，远程 MQTT 自动连接，原 43 条日志保留。随后发送跨窗口恢复和再次失败事件，MQTT 计数为收到/处理成功/失败 `2/2/0`：恢复记录 ID 44 为 `RESOLVED`，并将前一天的最新故障 ID 43 从 `PENDING` 关闭为 `RESOLVED`；再次失败生成 ID 45 并正确进入 `PENDING`。旧版遗留的更早故障 ID 41 未被本次“最新对应故障”规则修改。升级、数据卷复用、离线/恢复和跨窗口状态流转均通过。
+
+2026-07-22 已完成 Flyway 无损迁移源码实现。后端加入 V1 初始迁移和旧库自动基线；本地启动及四套 Compose 显式确保数据库存在，群晖部署包保留冻结 V1 结构以兼容当前已发布镜像。隔离 MySQL 8.4 实测：空库创建 7 张业务表并记录 V1 SQL 成功；已有库中的测试数据保留，Flyway仅记录 V1 BASELINE 成功。JDK 17 Maven 15 项测试、生产 JAR、4 套 Compose 和两种群晖部署包检查均通过。该实现尚未发布新固定标签或部署群晖，当前 NAS 仍安全运行 `v1.1.7-remote-mqtt`。
 
 ## 5. 启动方式
 
@@ -125,11 +127,10 @@ docker-stop.cmd    停止并保留数据
 
 当前执行顺序：
 
-1. 下一次需要修改数据库结构前，引入 Flyway 或 Liquibase，支持已有数据卷无损升级；近期没有表结构变化时不提前启动。
-2. 后续补充 OpenAPI/Swagger、统一错误码、异常响应和运行日志规范；这部分用于接口维护和排错，与 AI 接入无关。
-3. 在已有 15 项后端测试、前端类型检查和生产构建基础上，随核心功能变更逐步补充 MQTT、状态流转、数据库迁移、前端轮询和 Docker 升级回归测试。
-4. 完善镜像发布质量：为 GHCR 前后端镜像增加漏洞扫描，评估镜像签名，复核固定标签与 `latest` 规则，验证旧版本回退，并评估国内镜像仓库。
-5. 前述工作完成后，再决定是否开发日志智能总结、异常原因分析、维护建议和设备历史关联分析。
+1. 后续补充 OpenAPI/Swagger、统一错误码、异常响应和运行日志规范；这部分用于接口维护和排错，与 AI 接入无关。
+2. 在已有 15 项后端测试、前端类型检查和生产构建基础上，随核心功能变更逐步补充 MQTT、状态流转、数据库迁移、前端轮询和 Docker 升级回归测试。
+3. 完善镜像发布质量：为 GHCR 前后端镜像增加漏洞扫描，评估镜像签名，复核固定标签与 `latest` 规则，验证 Flyway 镜像在群晖的数据保留升级和旧版本回退，并评估国内镜像仓库。
+4. 前述工作完成后，再决定是否开发日志智能总结、异常原因分析、维护建议和设备历史关联分析。
 
 暂存跳过：P1 管理登录/权限/HTTP 设备认证/每设备 MQTT 凭证，多设备与大数据量测试，前端性能专项，Redis 与额外生产 Nginx 配置，追加 GitHub 展示、在线演示、局域网 UDP `19830` 回归和桌面安装包。安全功能暂停期间仍只允许在可信网络使用，不得开放公网。
 
