@@ -65,7 +65,7 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 
 ## 7. HiveMQ 远程版本（实机验收通过）
 
-`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。源码中的远程 GHCR 编排已固定使用 `v1.1.8-remote-mqtt`，群晖当前项目仍运行 `v1.1.7-remote-mqtt`，并继续复用原 MySQL 数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
+`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。源码中的远程 GHCR 编排和群晖当前项目均已使用 `v1.1.8-remote-mqtt`，并继续复用原 MySQL 数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 
 使用 Windows 上的以下命令生成远程成品镜像部署包：
 
@@ -95,3 +95,5 @@ sh tools/initialize-synology-docker-config.sh
 同日上述两项问题已在源码修复并通过 15 项后端测试及前端生产构建；前后端 `v1.1.7-remote-mqtt` 镜像和 GitHub Release 已发布。发布当日群晖尚未升级，后续升级继续复用原 MySQL 数据卷和私有环境文件且不得使用 `down -v`。
 
 2026-07-22 已将群晖原项目升级至 `v1.1.7-remote-mqtt`，原 MySQL 数据卷、私有环境文件和端口映射继续复用。后端停止期间 `/api/system/runtime` 连续三次超时，前端静态页保持 HTTP 200；重新启动后运行时长从 16 秒持续增长，HiveMQ TLS 自动恢复连接，原 43 条日志保留。随后向 `aiot/device/XIAOZHI-001/log` 发送跨窗口恢复事件，新增 ID 44 `RESOLVED`，同时把前一天最新失败 ID 43 从 `PENDING` 改为 `RESOLVED`；再次发送失败事件新增 ID 45 `PENDING`。MQTT 收到/处理成功/失败计数为 `2/2/0`。旧版遗留的更早失败 ID 41 不属于“最新对应故障”，因此未被本次恢复事件修改。升级和两项 v1.1.7 修复均已通过群晖实测；Container Manager 的状态截图可在需要发布留档时另行补充。
+
+同日继续原地升级至 `v1.1.8-remote-mqtt`：升级前完成备份，前后端拉取固定镜像，原 MySQL 数据卷、私有 HiveMQ 配置和端口映射继续复用，未执行 `down -v`。后端容器为 `healthy`，网页和 API 返回 200，HiveMQ `connected=true`。首次启动日志出现 `JdbcTableSchemaHistory` 创建记录和 `DbBaseline` 成功记录，原45条日志与设备数据全部保留；随后发送升级验证消息，MQTT收到/处理/失败为 `1/1/0`，新增 ID 46 `RESOLVED`，日志总数变为46。确认 Flyway 首次实卷基线、数据保留及升级后继续写入均正常。
