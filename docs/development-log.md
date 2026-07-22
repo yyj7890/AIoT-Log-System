@@ -11,7 +11,7 @@
 - 问题：MySQL 命名卷可以保留现有数据，但新镜像如果增加字段、索引或表，原来的 `docker-entrypoint-initdb.d/schema.sql` 不会在已有数据卷上再次执行，数据库结构无法随镜像自动升级。
 - 处理：后端加入 `flyway-core` 与 MySQL 支持模块，新增 `V1__create_initial_schema.sql`；配置 `baseline-on-migrate=true` 和基线版本 1。空库执行 V1，已有完整数据库只增加 `flyway_schema_history` 基线记录。四套 Compose 显式创建 `aiot_log_system` 数据库；`sql/schema.sql` 冻结为 V1 兼容引导，后续结构变化只能新增 Flyway V2、V3 迁移。群晖部署包继续兼容当前已发布的 pre-Flyway 镜像。
 - 验证：JDK 17 Maven 15 项测试全部通过，生产 JAR 构建成功。使用隔离的 MySQL 8.4 临时实例分别验证空库和旧库：空库创建 7 张业务表并记录 `V1/SQL/success`；旧库预置测试设备后启动新后端，测试数据保留且只记录 `V1/BASELINE/success`。四套 Compose 配置、部署包生成脚本和两种群晖包均通过检查，临时数据库和文件已清理。
-- 发布边界：当前完成源码实现和本地验证，尚未生成新的固定版本镜像，也未改动正在运行的群晖 `v1.1.7-remote-mqtt` 数据库。第一次部署 Flyway 镜像前仍需备份，并复用原数据卷和私有配置。
+- 发布：Flyway 实现已作为 `v1.1.8-remote-mqtt` 固定标签发布，前后端 GHCR 镜像和 GitHub Release 均由标签工作流生成；远程 GHCR Compose 已固定引用该版本。正在运行的群晖仍是 `v1.1.7-remote-mqtt`，数据库尚未改动；第一次部署 Flyway 镜像前仍需备份，并复用原数据卷和私有配置。
 
 ## 2026-07-21
 

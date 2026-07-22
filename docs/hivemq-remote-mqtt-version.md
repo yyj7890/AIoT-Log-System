@@ -6,7 +6,7 @@
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 
-当前状态：**`v1.1.7-remote-mqtt` 已发布并完成群晖升级复测；`v1.1.8-remote-mqtt` 的 Flyway源码和验证已完成，但固定标签、GitHub Release、GHCR 镜像及群晖部署尚未发布。真实凭证未写入仓库。**
+当前状态：**`v1.1.8-remote-mqtt` 已发布前后端 GHCR 镜像和 GitHub Release，远程 Compose 已固定使用该标签；群晖仍运行已验收的 `v1.1.7-remote-mqtt`，尚未执行 Flyway 首次实卷升级。真实凭证未写入仓库。**
 
 ### 统一版本变更总表
 
@@ -23,7 +23,7 @@
 | `v1.1.5-remote-mqtt` | 已发布并完成群晖升级 | 日志首次请求失败后轮询可自愈；顶部显示后端运行时长 | 增加轻量 `/api/system/runtime` 接口 | 页面恢复、聚焦或网络恢复时自动补刷 |
 | `v1.1.6-remote-mqtt` | 已发布并完成群晖升级 | 无主要业务页面变化；通过 Compose 等待后端健康后启动 | 增加 Actuator内部健康检查，只监听容器回环 `127.0.0.1:8081` | 不映射管理端口；后端 `healthy` 后前端才启动 |
 | `v1.1.7-remote-mqtt` | 已发布并完成群晖升级复测 | 顶部动态显示“检测中/已接入/未连接”，后端恢复后自动重试 | 恢复事件可跨30秒窗口关闭最新未恢复MQTT故障，写入使用事务 | 停止/启动、43条旧日志保留及 `PENDING → RESOLVED → PENDING` 已实测 |
-| `v1.1.8-remote-mqtt` | **候选：源码完成，尚未发布** | 无功能变化；正式发布时只同步构建相同标签 | 接入 Flyway；空库执行 V1，旧库保留数据并建立 V1基线；以后使用 V2、V3迁移 | 首次部署前备份；必须复用原 MySQL卷，禁止 `down -v`；发布后还需群晖实卷验收 |
+| `v1.1.8-remote-mqtt` | **已发布，尚未群晖升级** | 无功能变化；同步构建相同标签 | 接入 Flyway；空库执行 V1，旧库保留数据并建立 V1基线；以后使用 V2、V3迁移 | 首次部署前备份；必须复用原 MySQL卷，禁止 `down -v`；仍需群晖实卷验收 |
 
 版本状态规则：只有固定标签、GitHub Release、前后端 GHCR 镜像清单均完成后才标记“已发布”；只有群晖实际拉取并完成数据、API、MQTT和页面检查后才标记“完成群晖升级”。源码提交或分支镜像不能代替固定版本发布。
 
@@ -105,7 +105,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 两个 GHCR 包以固定标签区分版本，完整差异和发布/群晖状态统一维护在本文“统一版本变更总表”。当前已发布并部署的是 `v1.1.7-remote-mqtt`；`v1.1.8-remote-mqtt` 仍是未发布候选。旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。
+- 两个 GHCR 包以固定标签区分版本，完整差异和发布/群晖状态统一维护在本文“统一版本变更总表”。当前已发布的是 `v1.1.8-remote-mqtt`，群晖仍部署 `v1.1.7-remote-mqtt`。旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件
