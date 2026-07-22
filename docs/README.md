@@ -9,7 +9,7 @@
 | `development-log.md` | 开发过程、问题原因、修复方法和验证结果 |
 | `future-development-backlog.md` | 后续开发计划和优先级 |
 | `technical-decisions.md` | 技术选型、版本及选择原因 |
-| `hivemq-remote-mqtt-version.md` | HiveMQ Cloud 远程 MQTT 分支的实现、边界、部署方式和验收要求 |
+| `hivemq-remote-mqtt-version.md` | HiveMQ Cloud 远程 MQTT 分支的实现、固定镜像版本变更总表、部署方式和验收要求 |
 | `README.md` | 本导航 |
 | `synology-nas-deployment.md` | 群晖 DSM Container Manager 实际部署、故障处理和验收记录 |
 
@@ -32,6 +32,7 @@
 - 想查看报错与解决方法：`development-log.md`
 - 想知道下一步做什么：`future-development-backlog.md`
 - 想知道为什么选择这些技术：`technical-decisions.md`
+- 想知道每个固定镜像版本修改了什么、是否发布及是否完成群晖升级：`hivemq-remote-mqtt-version.md` 的“统一版本变更总表”
 - 想在群晖部署或排查群晖部署：`synology-nas-deployment.md`
 
 ## 原始历史
@@ -58,3 +59,4 @@ history/original-docs/
 - 故障与修复更新 `development-log.md`。
 - 技术选择变化更新 `technical-decisions.md`。
 - 系统结构、接口、设备协议或部署方式变化更新 `project-design.md`。
+- 固定镜像的版本差异、发布状态和群晖升级状态统一更新 `hivemq-remote-mqtt-version.md` 的“统一版本变更总表”，其他文档只保留当前结论和过程记录。
