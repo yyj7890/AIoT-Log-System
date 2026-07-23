@@ -42,7 +42,7 @@
 
 2026-07-23 第二阶段自动化回归基础完成：MQTT订阅器新增5项测试，覆盖日志/状态上报路由、QoS、计数、非法JSON、字段校验、Topic设备编号匹配和断线/恢复回调；运行日志服务新增QoS 1重复故障不追加、非MQTT事件不关闭MQTT故障测试，原有跨窗口 `PENDING → RESOLVED → PENDING` 测试继续保留。Flyway新增2项仅在提供真实MySQL时启用的集成测试，分别验证空库执行V1创建7张业务表，以及旧库建立V1基线并保留设备数据。前端接入Vitest并新增4项共享轮询控制器测试，日志页和MQTT状态页均改用该控制器。部署脚本自动验证4套Compose、远程/局域网边界、前后端镜像标签一致、MySQL命名卷和4个停止脚本不删除数据卷。GitHub新增回归工作流，在MySQL 8.4服务上运行完整后端、前端和部署检查。本机结果为后端32项发现、30项通过、2项因无MySQL环境跳过；前端4项通过，生产构建与部署检查通过。源码尚未发布新固定镜像。
 
-2026-07-23 第三阶段镜像发布链和固定版本已完成：前后端Dockerfile升级到Maven 3.9.16/JDK 17 Noble、Node 24 Alpine 3.24和Nginx 1.30 Alpine。GHCR工作流先用Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，并用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明；关键Action固定到完整提交摘要。首次运行中后端因Tomcat 10.1.31漏洞被正确阻断，未push/attest；升级Tomcat 10.1.57后回归和前后端镜像流程均成功。`v1.1.9-remote-mqtt`前后端清单、attestation manifest和GitHub Release已发布并可解析；群晖仍运行`v1.1.8`，尚未升级。已发布镜像复扫工作流增加当前分支push验收入口；每周/手工触发需工作流进入默认分支后生效。
+2026-07-23 第三阶段镜像发布链和固定版本已完成：前后端Dockerfile升级到Maven 3.9.16/JDK 17 Noble、Node 24 Alpine 3.24和Nginx 1.30 Alpine。GHCR工作流先用Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，并用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明；关键Action固定到完整提交摘要。首次运行中后端因Tomcat 10.1.31漏洞被正确阻断，未push/attest；升级Tomcat 10.1.57后回归和前后端镜像流程均成功。`v1.1.9-remote-mqtt`前后端清单、attestation manifest和GitHub Release已发布并可解析；分支push复扫已再次确认前后端镜像通过。群晖仍运行`v1.1.8`，尚未升级。每周/手工触发需工作流进入默认分支后生效。
 
 当前结论（2026-07-13）：真实小智已完成普通 Wi-Fi、手机热点、断网恢复、本地 MQTT 日志汇总、官方/本地 AI 动态切换和本地 AI WebSocket 实际对话验证。IoT 全局 MQTT 凭证已创建并启用：匿名访问已关闭，服务重启后小智使用配网页保存的同一套凭证完成日志上报验证。
 
@@ -135,14 +135,14 @@ docker-stop.cmd    停止并保留数据
 - GHCR 前后端成品镜像已在群晖新环境拉取并完成运行验证；MySQL/Mosquitto 因 Docker Hub 网络不稳采用离线导入
 - 群晖已原地升级至 `v1.1.7-remote-mqtt`；停止/启动、API 与运行时长恢复、MQTT 自动重连、43 条既有日志保留以及跨窗口 `PENDING`/`RESOLVED`/`PENDING` 均已实测通过
 - 群晖已继续升级至 `v1.1.8-remote-mqtt`；Flyway 旧库基线、45 条既有日志保留和升级后新增日志写入均已实测通过
-- 当前源码的 OpenAPI 分组 JSON 和 Swagger UI 已通过真实 HTTP 端点测试；尚未发布到固定镜像
+- OpenAPI 分组 JSON 和 Swagger UI 已通过真实 HTTP 端点测试并随 `v1.1.9-remote-mqtt` 发布；群晖尚未升级
 - MQTT、状态流转、Flyway、前端轮询和Docker数据卷保护均已有对应自动化回归入口
 
 尚未验证：
 
 - 真实硬件长时间持续上报
 - 群晖 Container Manager 中停止、启动全过程的 `healthy` 状态截图留证；API、MQTT、前端可用性、运行时长恢复和数据保留已经验证
-- 验证已发布镜像复扫工作流；随后进行群晖`v1.1.9`保留数据升级和`v1.1.8`回退演练
+- 群晖`v1.1.9`保留数据升级和`v1.1.8`回退演练
 
 暂存跳过：
 
@@ -165,8 +165,8 @@ docker-stop.cmd    停止并保留数据
 
 ## 下一步
 
-1. 确认已发布镜像复扫工作流通过。
-2. 群晖复用原数据卷和私有配置升级`v1.1.9-remote-mqtt`；完成后按兼容规则回退`v1.1.8-remote-mqtt`并决定是否再次升回。
+1. 群晖复用原数据卷和私有配置升级`v1.1.9-remote-mqtt`。
+2. 完成后按兼容规则回退`v1.1.8-remote-mqtt`，确认数据和服务恢复，并决定是否再次升回。
 3. 前述工作完成后，再决定是否进入AI日志分析阶段。
 
 持续维护：MQTT、状态流转、Flyway、前端轮询或Docker编排发生变化时，同步更新对应回归测试。
