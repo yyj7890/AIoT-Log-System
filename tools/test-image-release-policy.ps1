@@ -6,12 +6,14 @@ $scheduledPath = Join-Path $root '.github/workflows/image-security.yml'
 $remoteComposePath = Join-Path $root 'docker-compose.remote.ghcr.yml'
 $frontendDockerfilePath = Join-Path $root 'frontend/Dockerfile'
 $backendDockerfilePath = Join-Path $root 'backend/Dockerfile'
+$backendPomPath = Join-Path $root 'backend/pom.xml'
 
 $publish = Get-Content -Raw -Encoding UTF8 $publishPath
 $scheduled = Get-Content -Raw -Encoding UTF8 $scheduledPath
 $remoteCompose = Get-Content -Raw -Encoding UTF8 $remoteComposePath
 $frontendDockerfile = Get-Content -Raw -Encoding UTF8 $frontendDockerfilePath
 $backendDockerfile = Get-Content -Raw -Encoding UTF8 $backendDockerfilePath
+$backendPom = Get-Content -Raw -Encoding UTF8 $backendPomPath
 
 function Assert-Match {
     param(
@@ -56,6 +58,7 @@ Assert-Match $frontendDockerfile '^FROM node:24-alpine3\.24 AS build' 'Frontend 
 Assert-Match $frontendDockerfile '(?m)^FROM nginx:1\.30-alpine$' 'Frontend runtime image must use the maintained Nginx 1.30 Alpine line.'
 Assert-Match $backendDockerfile '^FROM maven:3\.9\.16-eclipse-temurin-17-noble AS build' 'Backend build image must use the maintained Maven/JDK 17 line.'
 Assert-Match $backendDockerfile '(?m)^FROM eclipse-temurin:17-jre-noble$' 'Backend runtime image must use the maintained JRE 17 Noble line.'
+Assert-Match $backendPom '<tomcat\.version>10\.1\.57</tomcat\.version>' 'Backend must keep the security-patched Tomcat 10.1.57 override until the Spring Boot line is upgraded.'
 
 Write-Host 'Image release policy validated.'
 Write-Host "Current fixed remote image tag: $($fixedTags[0])"

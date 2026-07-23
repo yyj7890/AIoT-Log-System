@@ -23,6 +23,14 @@
 - 回归保护：新增`tools/test-image-release-policy.ps1`，检查扫描阈值、scan→push→attest顺序、完整Action摘要、签名绑定push digest、`latest`仅由`main`更新、远程前后端固定同一语义版本及维护中的基础镜像线。
 - 当前状态：本地策略检查、4套Compose部署检查和3份工作流YAML解析通过；本机Docker Engine未运行，真实镜像构建、漏洞扫描和签名需要推送后由GitHub Actions验证。完成线上验证前不标记固定版本已发布。
 
+#### 首次后端候选镜像被漏洞门禁阻断
+
+- 问题：第三阶段首次GitHub实际运行中，前端镜像完成扫描、推送和来源证明，后端候选镜像在漏洞门禁停止，未推送该候选镜像。
+- 根因：Spring Boot 3.3.5依赖管理带入`tomcat-embed-core 10.1.31`；Grype识别到多个已有上游修复版本的CRITICAL漏洞，其中修复版本达到Tomcat 10.1.55。失败发生在scan步骤，后续push和attest均被跳过，证明门禁顺序生效。
+- 处理：保留现有Spring Boot 3.3.5兼容基线，显式把同一Servlet 6.0兼容线的Tomcat升级到当前10.1.57。Apache官方安全页确认10.1.x应通过升级发布版本取得安全修复；该方式比直接跨Spring Boot版本线改造影响更小。
+- 本地验证：Tomcat 10.1.57已被实际加载；Maven发现32项测试，30项通过、2项因本地无MySQL条件跳过，生产JAR构建成功。发布策略检查增加Tomcat安全版本约束。
+- 线上验证要求：重新推送后，后端候选镜像必须通过同一CRITICAL门禁并完成digest来源证明。若仍有CRITICAL项，不允许降低扫描阈值或添加忽略规则。
+
 ### OpenAPI/Swagger 接口文档
 
 - 处理：后端接入与 Spring Boot 3.3.x 兼容的 Springdoc 2.6.0，新增中文 OpenAPI 元数据和 `aiot-api` 分组，仅收录 `/api/**`。9 个业务控制器补充中文 Tag 与 Operation，通用响应和分页结构补充 Schema；根路径和 Actuator 不进入业务文档。

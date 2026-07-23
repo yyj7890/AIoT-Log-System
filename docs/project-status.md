@@ -42,7 +42,7 @@
 
 2026-07-23 第二阶段自动化回归基础完成：MQTT订阅器新增5项测试，覆盖日志/状态上报路由、QoS、计数、非法JSON、字段校验、Topic设备编号匹配和断线/恢复回调；运行日志服务新增QoS 1重复故障不追加、非MQTT事件不关闭MQTT故障测试，原有跨窗口 `PENDING → RESOLVED → PENDING` 测试继续保留。Flyway新增2项仅在提供真实MySQL时启用的集成测试，分别验证空库执行V1创建7张业务表，以及旧库建立V1基线并保留设备数据。前端接入Vitest并新增4项共享轮询控制器测试，日志页和MQTT状态页均改用该控制器。部署脚本自动验证4套Compose、远程/局域网边界、前后端镜像标签一致、MySQL命名卷和4个停止脚本不删除数据卷。GitHub新增回归工作流，在MySQL 8.4服务上运行完整后端、前端和部署检查。本机结果为后端32项发现、30项通过、2项因无MySQL环境跳过；前端4项通过，生产构建与部署检查通过。源码尚未发布新固定镜像。
 
-2026-07-23 第三阶段镜像发布质量进入线上验证：前后端Dockerfile升级到维护中的Maven 3.9.16/JDK 17 Noble、Node 24 Alpine 3.24和Nginx 1.30 Alpine。GHCR工作流先构建候选镜像并使用Anchore Grype阻断“已有修复版本的CRITICAL漏洞”，通过后才推送，并用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明；关键Action全部固定到完整提交摘要。新增每周/手工已发布镜像复扫和发布策略回归脚本，覆盖scan→push→attest顺序、标签语义、签名digest、基础镜像线及远程前后端固定标签一致性。远程GHCR Compose已预置`v1.1.9-remote-mqtt`，但标签工作流成功前不得用于群晖升级。本地策略检查、4套Compose和工作流YAML检查通过；本机Docker Engine未运行，真实构建、扫描、签名和新固定版本发布仍待GitHub验证。
+2026-07-23 第三阶段镜像发布质量进入线上验证：前后端Dockerfile升级到维护中的Maven 3.9.16/JDK 17 Noble、Node 24 Alpine 3.24和Nginx 1.30 Alpine。GHCR工作流先构建候选镜像并使用Anchore Grype阻断“已有修复版本的CRITICAL漏洞”，通过后才推送，并用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明；关键Action全部固定到完整提交摘要。新增每周/手工已发布镜像复扫和发布策略回归脚本，覆盖scan→push→attest顺序、标签语义、签名digest、基础镜像线及远程前后端固定标签一致性。首次GitHub运行中前端完成全流程；后端因`tomcat-embed-core 10.1.31`的可修复CRITICAL漏洞被正确阻断，未执行push/attest。源码已在原Spring Boot兼容线上把Tomcat升级至10.1.57；本地32项测试发现（30通过、2项MySQL条件跳过）及生产JAR通过，等待再次镜像扫描。远程GHCR Compose已预置`v1.1.9-remote-mqtt`，但标签工作流成功前不得用于群晖升级。
 
 当前结论（2026-07-13）：真实小智已完成普通 Wi-Fi、手机热点、断网恢复、本地 MQTT 日志汇总、官方/本地 AI 动态切换和本地 AI WebSocket 实际对话验证。IoT 全局 MQTT 凭证已创建并启用：匿名访问已关闭，服务重启后小智使用配网页保存的同一套凭证完成日志上报验证。
 

@@ -95,7 +95,7 @@ HiveMQ 远程版本：Git 分支 `Remote-Hivemq` 已实现可选 `MQTT_MODE=remo
 
 2026-07-23 已完成第二阶段自动化回归基础：后端新增 MQTT 消息路由、非法载荷、Topic与Payload设备编号一致性、连接回调、QoS 1重复故障、非MQTT事件隔离和MySQL 8.4 Flyway新库/旧库数据保留测试；本地无MySQL测试环境时自动跳过2项Flyway集成测试，其余30项后端测试通过。前端接入Vitest 4.1.10，将日志页和MQTT状态页轮询抽成共享控制器，4项测试覆盖定时刷新、隐藏暂停、恢复立即刷新、请求互斥和防重复定时器。`tools/test-deployment-regression.ps1` 自动检查4套Compose、统一镜像标签、远程模式边界、MySQL命名卷和停止脚本不删卷；GitHub `regression.yml` 使用MySQL 8.4执行完整32项后端测试、前端测试/构建和部署检查。MQTT拒绝日志不再输出原始Payload。上述源码尚未发布新固定镜像。
 
-2026-07-23 第三阶段镜像发布质量已完成源码实现并进入GitHub验证：发布工作流先构建候选镜像，使用固定提交版本的Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，并使用GitHub官方Artifact Attestation为实际镜像digest生成Sigstore签名的SLSA来源证明。新增每周和手工已发布镜像复扫、发布策略回归检查；`latest`仍只由`main`更新并保持局域网语义，远程群晖继续使用前后端一致的固定版本。后端基础镜像更新到Maven 3.9.16/JDK 17 Noble，前端更新到Node 24 Alpine 3.24/Nginx 1.30 Alpine。本地策略、Compose和YAML检查已通过；新固定镜像和群晖升级/回退必须等GitHub构建、扫描、签名成功后执行。
+2026-07-23 第三阶段镜像发布质量已完成源码实现并进入GitHub验证：发布工作流先构建候选镜像，使用固定提交版本的Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，并使用GitHub官方Artifact Attestation为实际镜像digest生成Sigstore签名的SLSA来源证明。新增每周和手工已发布镜像复扫、发布策略回归检查；`latest`仍只由`main`更新并保持局域网语义，远程群晖继续使用前后端一致的固定版本。后端基础镜像更新到Maven 3.9.16/JDK 17 Noble，前端更新到Node 24 Alpine 3.24/Nginx 1.30 Alpine。首次线上运行中前端完成扫描、推送和来源证明；后端因Tomcat 10.1.31存在可修复CRITICAL漏洞被门禁阻断，未推送。后端已在Spring Boot 3.3.5兼容线上显式升级Tomcat至10.1.57，本地32项测试发现（30通过、2项MySQL条件跳过）和生产JAR成功；新固定镜像和群晖升级/回退必须等再次扫描成功后执行。
 
 ## 5. 启动方式
 
