@@ -11,7 +11,8 @@ on:
       - 'docker-compose*.yml'
       - 'docker-*.cmd'
       - 'tools/test-deployment-regression.ps1'
-      - '.github/workflows/regression.yml'
+      - 'tools/test-image-release-policy.ps1'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'backend/**'
@@ -19,7 +20,8 @@ on:
       - 'docker-compose*.yml'
       - 'docker-*.cmd'
       - 'tools/test-deployment-regression.ps1'
-      - '.github/workflows/regression.yml'
+      - 'tools/test-image-release-policy.ps1'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
@@ -83,3 +85,7 @@ jobs:
       - name: Validate Docker upgrade safeguards
         shell: pwsh
         run: ./tools/test-deployment-regression.ps1
+
+      - name: Validate image release policy
+        shell: pwsh
+        run: ./tools/test-image-release-policy.ps1

@@ -6,6 +6,23 @@
 
 ## 2026-07-23
 
+### 前两阶段记录完整性复核
+
+- 第一阶段范围：OpenAPI/Swagger、统一错误码、追踪号和结构化异常日志。完成事实分别记录在本文件下方两个专题和 `project-status.md`，选型与边界记录在 `technical-decisions.md` 的 0.8、0.9。
+- 第一阶段问题记录：OpenAPI属于能力建设，没有线上故障；Spring Boot/Springdoc版本兼容、Swagger可信网络边界作为决策记录保存。错误治理明确记录了裸数字错误、HTTP状态不一致、缺少追踪号和日志字段不统一的问题、原因、处理与验证。
+- 第二阶段范围：MQTT、状态流转、Flyway、前端轮询和Docker升级保护的自动化回归。完成事实记录在本文件“第二阶段自动化回归基础”和 `project-status.md`，分层理由与边界记录在 `technical-decisions.md` 0.10。
+- 第二阶段问题记录：真实端点测试最初用一个同时缺少多个字段的请求断言固定错误消息，但Bean Validation不保证多个错误的返回顺序；测试数据改为只缺少一个目标字段，使断言稳定。开发机没有独立测试MySQL，因此2项Flyway测试采用条件启用，并由GitHub MySQL 8.4服务执行；不是跳过数据库验证。MQTT测试同时发现并补上Topic设备编号与Payload设备编号一致性校验。
+- 结论：前两阶段均具备完成记录、决策记录和问题/边界记录；没有实际故障的建设项不虚构问题，明确标记为“无线上故障、记录选型与风险边界”。
+
+### 第三阶段镜像发布质量
+
+- 基础镜像：后端构建升级到 Maven 3.9.16 + JDK 17 Noble，运行时固定JRE 17 Noble维护线；前端构建升级到Node 24 Alpine 3.24，运行时升级到Nginx 1.30 Alpine。
+- 发布门禁：GHCR发布工作流先构建本地候选镜像，使用Anchore Grype扫描，再推送同源缓存构建；存在“已有修复版本的CRITICAL漏洞”时阻断发布。扫描Action及Docker/GitHub Actions均固定到完整提交摘要，降低可变标签供应链风险。
+- 来源证明：镜像推送后按实际digest调用GitHub官方`actions/attest`生成Sigstore签名的SLSA来源证明并写入GHCR，不维护长期私钥。签名绑定digest而非可变标签。
+- 持续检查：新增每周和手工触发的已发布镜像扫描；默认从远程GHCR Compose解析当前固定标签，也可手工指定历史固定标签。
+- 回归保护：新增`tools/test-image-release-policy.ps1`，检查扫描阈值、scan→push→attest顺序、完整Action摘要、签名绑定push digest、`latest`仅由`main`更新、远程前后端固定同一语义版本及维护中的基础镜像线。
+- 当前状态：本地策略检查、4套Compose部署检查和3份工作流YAML解析通过；本机Docker Engine未运行，真实镜像构建、漏洞扫描和签名需要推送后由GitHub Actions验证。完成线上验证前不标记固定版本已发布。
+
 ### OpenAPI/Swagger 接口文档
 
 - 处理：后端接入与 Spring Boot 3.3.x 兼容的 Springdoc 2.6.0，新增中文 OpenAPI 元数据和 `aiot-api` 分组，仅收录 `/api/**`。9 个业务控制器补充中文 Tag 与 Operation，通用响应和分页结构补充 Schema；根路径和 Actuator 不进入业务文档。

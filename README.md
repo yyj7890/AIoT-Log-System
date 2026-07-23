@@ -166,6 +166,15 @@ docker-ghcr-stop.cmd    停止 GHCR 部署并保留数据
 
 发布者向 `main` 推送后，GitHub Actions 会构建并推送 `latest` 与提交 SHA 标签；推送 `v1.0.0` 这类标签还会生成对应版本标签。需要固定版本时，在本机忽略的 `.env` 设置 `AIOT_IMAGE_TAG=v1.0.0`，不要把该私有 `.env` 上传。
 
+发布流程会先用Grype扫描候选镜像；发现已有修复版本的CRITICAL漏洞时停止发布。扫描通过并推送后，GitHub为实际镜像digest生成Sigstore签名的SLSA来源证明。固定镜像可使用GitHub CLI验证来源：
+
+```bash
+gh attestation verify oci://ghcr.io/yyj7890/aiot-log-backend:<fixed-tag> -R yyj7890/AIoT-Log-System
+gh attestation verify oci://ghcr.io/yyj7890/aiot-log-frontend:<fixed-tag> -R yyj7890/AIoT-Log-System
+```
+
+群晖升级和回退必须同时修改前后端为同一个固定标签，并保留MySQL命名卷和私有环境文件。升级前先备份数据库；如果新版本包含不向后兼容的Flyway迁移，回退应用镜像时还必须恢复升级前数据库备份。
+
 ## 真实设备接入示例：小智 ESP32-S3
 
 以下流程以小智 ESP32-S3 为当前实机示例。其他设备可通过标准 MQTT、HTTP 或适配器/边缘网关接入同一后端，具体 Topic 与事件格式保持统一即可。

@@ -1,0 +1,68 @@
+name: Scan published container images
+
+on:
+  schedule:
+    - cron: '23 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Fixed image tag; leave empty to use the remote GHCR Compose tag
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  resolve-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.image_tag }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Resolve fixed image tag
+        id: tag
+        shell: pwsh
+        run: |
+          $requestedTag = '${{ inputs.image_tag }}'.Trim()
+          if ($requestedTag) {
+            $imageTag = $requestedTag
+          } else {
+            $composeText = Get-Content -Raw -Encoding UTF8 docker-compose.remote.ghcr.yml
+            $matches = [regex]::Matches(
+              $composeText,
+              'ghcr\.io/yyj7890/aiot-log-(?:backend|frontend):([A-Za-z0-9._-]+)'
+            )
+            $tags = @($matches | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)
+            if ($tags.Count -ne 1) {
+              throw "Remote GHCR Compose must use one shared fixed tag."
+            }
+            $imageTag = $tags[0]
+          }
+
+          if ($imageTag -notmatch '^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') {
+            throw "Only fixed semantic-version image tags are allowed: $imageTag"
+          }
+          "image_tag=$imageTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+  scan:
+    needs: resolve-tag
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - aiot-log-backend
+          - aiot-log-frontend
+    steps:
+      - name: Scan published image
+        uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+        with:
+          image: ghcr.io/yyj7890/${{ matrix.image }}:${{ needs.resolve-tag.outputs.image_tag }}
+          fail-build: true
+          severity-cutoff: critical
+          only-fixed: true
+          output-format: table

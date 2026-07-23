@@ -1,4 +1,4 @@
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+FROM maven:3.9.16-eclipse-temurin-17-noble AS build
 WORKDIR /app
 
 COPY pom.xml .
@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.m2/repository \
     -Dmaven.wagon.http.retryHandler.count=5 \
     clean package -DskipTests
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:17-jre-noble
 WORKDIR /app
 
 RUN apt-get update \
