@@ -6,7 +6,7 @@
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 
-当前状态：**`v1.1.9-remote-mqtt` 已发布前后端 GHCR 镜像、digest来源证明和GitHub Release，尚未升级群晖；群晖当前仍运行已完成Flyway实卷验收的`v1.1.8-remote-mqtt`。真实凭证未写入仓库。**
+当前状态：**`v1.1.9-remote-mqtt` 已发布前后端 GHCR 镜像、digest来源证明和GitHub Release；腾讯云TCR同步配置已实现，等待命名空间和Secrets后发布。尚未升级群晖，群晖当前仍运行已完成Flyway实卷验收的`v1.1.8-remote-mqtt`。真实凭证未写入仓库。**
 
 ### 统一版本变更总表
 
@@ -35,7 +35,7 @@
 - 使用 `gh attestation verify oci://ghcr.io/yyj7890/<image>:<tag> -R yyj7890/AIoT-Log-System` 验证镜像由本仓库GitHub工作流构建并签名。
 - 群晖升级前记录当前前后端固定标签并备份数据库；升级和回退时前后端必须使用同一个标签，不执行`down -v`，继续复用原命名卷、私有HiveMQ配置和端口映射。
 - 当前数据库只有Flyway V1，应用回退可继续复用该结构。以后若某个版本引入不向后兼容的V2/V3迁移，回退旧应用时必须同步恢复升级前数据库备份。
-- 国内镜像仓库当前不启用：Public GHCR仍可满足现有群晖部署；只有持续出现实际拉取问题时，才增加阿里云/腾讯云同步并验证digest一致性。
+- 国内同步源使用腾讯云TCR个人版：`ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-backend`和`aiot-log-frontend`。只从GHCR复制固定标签，不重新构建、不使用`latest`；同步后必须验证两边顶层digest一致。发布凭证只存GitHub Secrets。
 
 ### v1.1.6 后端容器健康检查（2026-07-20）
 

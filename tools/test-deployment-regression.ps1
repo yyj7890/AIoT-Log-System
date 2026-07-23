@@ -8,7 +8,8 @@ $composeFiles = @(
     'docker-compose.yml',
     'docker-compose.remote.yml',
     'docker-compose.ghcr.yml',
-    'docker-compose.remote.ghcr.yml'
+    'docker-compose.remote.ghcr.yml',
+    'docker-compose.remote.tcr.yml'
 )
 
 function Assert-Condition {
@@ -47,7 +48,8 @@ foreach ($composeFile in $composeFiles) {
 
 $remoteSource = Read-ProjectFile 'docker-compose.remote.yml'
 $remoteGhcr = Read-ProjectFile 'docker-compose.remote.ghcr.yml'
-foreach ($content in @($remoteSource, $remoteGhcr)) {
+$remoteTcr = Read-ProjectFile 'docker-compose.remote.tcr.yml'
+foreach ($content in @($remoteSource, $remoteGhcr, $remoteTcr)) {
     Assert-Condition ($content -notmatch '(?m)^\s+mosquitto:\s*$') `
         'Remote Compose must not start a local Mosquitto service.'
     Assert-Condition ($content -notmatch '19830') `
@@ -66,6 +68,17 @@ Assert-Condition ($remoteTags.Count -eq 1) `
     'Remote GHCR frontend and backend must use the same fixed image tag.'
 Assert-Condition ($remoteTags[0] -ne 'latest') `
     'Remote GHCR deployment must never use latest.'
+
+$remoteTcrTags = @([regex]::Matches(
+    $remoteTcr,
+    'ccr\.ccs\.tencentyun\.com/aiot-log-system/aiot-log-(?:backend|frontend):([A-Za-z0-9._-]+)'
+) | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)
+Assert-Condition ($remoteTcrTags.Count -eq 1) `
+    'Remote Tencent TCR frontend and backend must use the same fixed image tag.'
+Assert-Condition ($remoteTcrTags[0] -ne 'latest') `
+    'Remote Tencent TCR deployment must never use latest.'
+Assert-Condition ($remoteTcrTags[0] -eq $remoteTags[0]) `
+    'Remote GHCR and Tencent TCR deployments must use the same fixed image tag.'
 
 $localGhcr = Read-ProjectFile 'docker-compose.ghcr.yml'
 $localImageTagReferences = [regex]::Matches($localGhcr, '\$\{AIOT_IMAGE_TAG:-latest\}')
@@ -86,5 +99,5 @@ foreach ($stopScript in $stopScripts) {
 
 Write-Host 'Deployment regression checks passed.'
 Write-Host "Validated Compose files: $($composeFiles.Count)"
-Write-Host "Remote fixed image tag: $($remoteTags[0])"
+Write-Host "Remote GHCR/TCR fixed image tag: $($remoteTags[0])"
 Write-Host "Stop scripts checked: $($stopScripts.Count)"

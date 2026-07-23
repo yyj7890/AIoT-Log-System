@@ -67,10 +67,18 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 
 `Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。源码中的远程GHCR编排已固定到已发布的`v1.1.9-remote-mqtt`，群晖当前项目仍运行`v1.1.8-remote-mqtt`，升级前后都必须继续复用原MySQL数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 
+国内镜像部署使用`docker-compose.remote.tcr.yml`，前后端固定为腾讯云TCR的`v1.1.9-remote-mqtt`。TCR只是GHCR固定镜像的同步源，工作流不重新构建并强制校验digest一致。若腾讯云仓库设为私有，必须先在群晖Container Manager注册表中登录`ccr.ccs.tencentyun.com`；若设为公有，应先用未登录客户端验证匿名拉取。
+
 使用 Windows 上的以下命令生成远程成品镜像部署包：
 
 ```powershell
 tools/create-synology-image-deploy.ps1 -Remote -OutputDirectory dist/synology-remote-image-deploy
+```
+
+腾讯云TCR国内源部署包：
+
+```powershell
+tools/create-synology-image-deploy.ps1 -Remote -TencentRegistry -OutputDirectory dist/synology-remote-tcr-image-deploy
 ```
 
 将生成目录上传到 NAS 后，先在该目录执行：

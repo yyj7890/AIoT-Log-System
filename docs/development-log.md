@@ -21,7 +21,15 @@
 - 来源证明：镜像推送后按实际digest调用GitHub官方`actions/attest`生成Sigstore签名的SLSA来源证明并写入GHCR，不维护长期私钥。签名绑定digest而非可变标签。
 - 持续检查：新增每周和手工触发的已发布镜像扫描；默认从远程GHCR Compose解析当前固定标签，也可手工指定历史固定标签。
 - 回归保护：新增`tools/test-image-release-policy.ps1`，检查扫描阈值、scan→push→attest顺序、完整Action摘要、签名绑定push digest、`latest`仅由`main`更新、远程前后端固定同一语义版本及维护中的基础镜像线。
-- 当前状态：本地策略检查、4套Compose部署检查和3份工作流YAML解析通过；本机Docker Engine未运行，真实镜像构建、漏洞扫描和签名需要推送后由GitHub Actions验证。完成线上验证前不标记固定版本已发布。
+- 初始实现状态：当时本地策略检查、4套Compose部署检查和3份工作流YAML解析通过；真实镜像构建、漏洞扫描和签名随后由GitHub Actions完成验证，最终结果见下方问题与发布记录。
+
+#### 腾讯云TCR国内同步源
+
+- 需求：在GHCR继续作为主发布源的前提下，为群晖增加国内镜像拉取地址并部署`v1.1.9-remote-mqtt`。
+- 地址规范：用户提供的项目名包含大写和Markdown链接，不能直接作为镜像路径；按腾讯云个人版小写命名规则规范为`ccr.ccs.tencentyun.com/aiot-log-system/{aiot-log-backend,aiot-log-frontend}`。命名空间必须由腾讯云账号先创建且全局唯一。
+- 实现：新增`sync-tcr.yml`，从已完成扫描和证明的GHCR固定标签复制OCI索引到TCR，不重新构建；禁止`latest`，并强制比较源、目标顶层digest。新增独立`docker-compose.remote.tcr.yml`和`-Remote -TencentRegistry`群晖部署包生成选项。
+- 凭证边界：GitHub仓库当前没有Actions变量或Secrets；实际同步前必须配置`TCR_USERNAME`和`TCR_PASSWORD`，不得提交到代码、Compose或部署包。
+- 当前验证：5套Compose静态部署检查、镜像策略检查、4份工作流YAML解析和TCR群晖部署包生成均通过。TCR镜像发布与群晖升级尚未进行。
 
 #### 首次后端候选镜像被漏洞门禁阻断
 
@@ -51,14 +59,14 @@
 - 问题：业务代码直接抛出裸 `400/404/409/500`，字符串消息既承担程序判断又承担用户显示；全局处理器没有设置真实 HTTP 状态，也缺少请求关联标识。
 - 处理：增加集中 `ErrorCode` 和类型化 `BusinessException`；响应保留数值 `code`，新增稳定 `errorCode` 和 `traceId`，并让 HTTP 状态与响应一致。请求过滤器生成或沿用合法 `X-Trace-Id`，写入响应头和 MDC。全局处理器统一覆盖校验、参数类型、JSON、方法、路由、数据冲突和未知异常。
 - 日志：可预期拒绝使用 `api_request_rejected`，内部业务操作失败使用 `api_operation_failed`，未知异常使用 `api_unhandled_error`；字段采用 `event/errorCode/status/method/path/traceId/detail`，不记录请求体、密码、Token 或 MQTT 凭证。前端错误对象同步保留 `errorCode` 和 `traceId`。
-- 验证：新增4项随机端口真实 HTTP 测试，覆盖业务错误、字段校验、参数格式、损坏 JSON、404路由及客户端追踪号透传；后端共23项测试全部通过，后端生产 JAR、前端类型检查和 Vite 生产构建成功。源码尚未发布新固定镜像。
+- 验证：新增4项随机端口真实 HTTP 测试，覆盖业务错误、字段校验、参数格式、损坏 JSON、404路由及客户端追踪号透传；后端共23项测试全部通过，后端生产 JAR、前端类型检查和 Vite 生产构建成功。相关功能已随`v1.1.9-remote-mqtt`发布。
 
 ### 第二阶段自动化回归基础
 
 - MQTT与状态流转：新增订阅器单元测试，覆盖`/log`、`/report`路由、QoS、计数、非法JSON、字段缺失、Topic与Payload设备编号不一致、断线/恢复回调；新增QoS 1重复故障不追加和非MQTT恢复事件不误关故障测试。订阅器拒绝日志改为只记录Topic、Payload字节数和原因，不输出原始Payload。
 - Flyway：新增真实MySQL条件集成测试。空库必须执行V1并创建7张业务表；旧库先执行冻结V1并插入标记设备，Flyway接入后必须生成`BASELINE`且数据仍存在。本地没有测试MySQL时跳过，GitHub工作流使用MySQL 8.4完整执行。
 - 前端：使用Vitest 4.1.10，将日志页和MQTT状态页的定时逻辑抽为共享控制器；4项测试覆盖可见时每秒刷新、隐藏暂停、恢复立即刷新、请求进行中跳过、恢复后继续以及重复恢复不产生多个定时器。
-- Docker：新增部署回归脚本，调用`docker compose config`验证4套编排，并检查远程模式不启用Mosquitto/UDP发现、GHCR前后端标签一致且非`latest`、MySQL命名卷持续复用、4个停止脚本不使用删卷命令。
+- Docker：新增部署回归脚本，当前调用`docker compose config`验证5套编排，并检查远程模式不启用Mosquitto/UDP发现、GHCR/TCR前后端标签一致且非`latest`、MySQL命名卷持续复用、4个停止脚本不使用删卷命令。
 - 自动执行：新增GitHub `regression.yml`，在每次相关推送或PR中运行MySQL 8.4后端测试、前端测试与构建、部署检查。本机已验证后端32项发现（30通过、2项因无MySQL跳过）、前端4项通过、生产构建和部署检查通过。
 
 ## 2026-07-22

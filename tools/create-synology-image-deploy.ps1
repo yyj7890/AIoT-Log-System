@@ -1,14 +1,31 @@
 param(
     [string]$OutputDirectory = (Join-Path (Split-Path -Parent $PSScriptRoot) 'dist/synology-image-deploy'),
-    [switch]$Remote
+    [switch]$Remote,
+    [switch]$TencentRegistry
 )
 
 $ErrorActionPreference = 'Stop'
+if ($TencentRegistry -and -not $Remote) {
+    throw '-TencentRegistry can only be used together with -Remote.'
+}
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $outputParent = Split-Path -Parent $OutputDirectory
-$zipName = if ($Remote) { 'aiot-synology-remote-image-deploy.zip' } else { 'aiot-synology-image-deploy.zip' }
+$zipName = if ($Remote -and $TencentRegistry) {
+    'aiot-synology-remote-tcr-image-deploy.zip'
+} elseif ($Remote) {
+    'aiot-synology-remote-image-deploy.zip'
+} else {
+    'aiot-synology-image-deploy.zip'
+}
 $zipPath = Join-Path $outputParent $zipName
-$composeSource = Join-Path $projectRoot $(if ($Remote) { 'docker-compose.remote.ghcr.yml' } else { 'docker-compose.ghcr.yml' })
+$composeName = if ($Remote -and $TencentRegistry) {
+    'docker-compose.remote.tcr.yml'
+} elseif ($Remote) {
+    'docker-compose.remote.ghcr.yml'
+} else {
+    'docker-compose.ghcr.yml'
+}
+$composeSource = Join-Path $projectRoot $composeName
 $schemaSource = Join-Path $projectRoot 'sql/schema.sql'
 $initializerSource = Join-Path $PSScriptRoot $(if ($Remote) { 'initialize-synology-remote-docker-config.sh' } else { 'initialize-synology-docker-config.sh' })
 $remoteTemplateSource = Join-Path $projectRoot 'config/hivemq-remote.env.example'
@@ -34,11 +51,16 @@ Copy-Item -LiteralPath $initializerSource -Destination (Join-Path $OutputDirecto
 if ($Remote) { Copy-Item -LiteralPath $remoteTemplateSource -Destination (Join-Path $OutputDirectory 'config/hivemq-remote.env.example') -Force }
 
 if ($Remote) {
-@'
+$registryDescription = if ($TencentRegistry) {
+    '`ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-backend` and `ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-frontend`'
+} else {
+    '`ghcr.io/yyj7890/aiot-log-backend` and `ghcr.io/yyj7890/aiot-log-frontend`'
+}
+@"
 # Synology Container Manager remote HiveMQ deployment
 
 This package intentionally contains no frontend or backend source code. It uses the prebuilt
-`ghcr.io/yyj7890/aiot-log-backend` and `ghcr.io/yyj7890/aiot-log-frontend` images.
+$registryDescription images.
 It connects the backend outbound to HiveMQ Cloud with TLS; it does not contain Mosquitto,
 UDP discovery, or an exposed MQTT port.
 The package keeps a frozen V1 compatibility schema for older published images. Flyway in
@@ -57,7 +79,7 @@ new backend images records that schema as baseline version 1 and applies later m
 5. In Container Manager, create a project using this folder's `docker-compose.yml`.
 
 Do not share the generated `docker/local/` directory or its credentials.
-'@ | Set-Content -LiteralPath (Join-Path $OutputDirectory 'README.txt') -Encoding utf8
+"@ | Set-Content -LiteralPath (Join-Path $OutputDirectory 'README.txt') -Encoding utf8
 } else {
 @'
 # Synology Container Manager image deployment

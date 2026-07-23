@@ -115,6 +115,15 @@ docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
 
 两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前远程固定版本为 `v1.1.9-remote-mqtt`。该版本包含Flyway V1、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
 
+远程版同时支持腾讯云 TCR 国内镜像：
+
+```text
+ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-backend:v1.1.9-remote-mqtt
+ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-frontend:v1.1.9-remote-mqtt
+```
+
+`.github/workflows/sync-tcr.yml` 从已经扫描并发布的 GHCR 固定镜像复制到 TCR，不重新构建，并强制校验两边 digest 一致。腾讯云命名空间必须先创建；发布凭证仅保存在 GitHub Actions 的 `TCR_USERNAME`、`TCR_PASSWORD` Secrets 中。群晖使用 `docker-compose.remote.tcr.yml`，GHCR 仍是主发布源。
+
 ```text
 docker pull ghcr.io/yyj7890/aiot-log-backend:v1.1.9-remote-mqtt
 docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.1.9-remote-mqtt
@@ -151,6 +160,12 @@ sh tools/initialize-synology-docker-config.sh
 NAS 上同样只限可信局域网使用：不要将 `3306`、`1883`、`19830/UDP` 或管理网页端口转发到公网，也不要上传或共享生成的 `.env`、`docker/local/`。
 
 如已在 Container Manager 拉取 `aiot-log-backend` 和 `aiot-log-frontend` 成品镜像，无需上传前后端源码。Windows 上运行 `tools/create-synology-image-deploy.ps1` 会生成一个只含成品镜像 Compose、冻结 V1 兼容结构、NAS 初始化脚本和说明的部署包及 ZIP；将其上传到 NAS 后按其中 `README.txt` 初始化，再用其 `docker-compose.yml` 创建项目。Flyway 迁移文件已经打包在后端镜像中，无需在 NAS 单独复制后续 V2、V3 SQL。
+
+远程 HiveMQ 模式如需使用腾讯云国内镜像，可运行：
+
+```powershell
+tools/create-synology-image-deploy.ps1 -Remote -TencentRegistry -OutputDirectory dist/synology-remote-tcr-image-deploy
+```
 
 ### 成品镜像部署（推荐给其他使用者）
 

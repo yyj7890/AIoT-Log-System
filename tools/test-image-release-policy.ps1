@@ -3,14 +3,18 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $publishPath = Join-Path $root '.github/workflows/publish-ghcr.yml'
 $scheduledPath = Join-Path $root '.github/workflows/image-security.yml'
+$tcrSyncPath = Join-Path $root '.github/workflows/sync-tcr.yml'
 $remoteComposePath = Join-Path $root 'docker-compose.remote.ghcr.yml'
+$remoteTcrComposePath = Join-Path $root 'docker-compose.remote.tcr.yml'
 $frontendDockerfilePath = Join-Path $root 'frontend/Dockerfile'
 $backendDockerfilePath = Join-Path $root 'backend/Dockerfile'
 $backendPomPath = Join-Path $root 'backend/pom.xml'
 
 $publish = Get-Content -Raw -Encoding UTF8 $publishPath
 $scheduled = Get-Content -Raw -Encoding UTF8 $scheduledPath
+$tcrSync = Get-Content -Raw -Encoding UTF8 $tcrSyncPath
 $remoteCompose = Get-Content -Raw -Encoding UTF8 $remoteComposePath
+$remoteTcrCompose = Get-Content -Raw -Encoding UTF8 $remoteTcrComposePath
 $frontendDockerfile = Get-Content -Raw -Encoding UTF8 $frontendDockerfilePath
 $backendDockerfile = Get-Content -Raw -Encoding UTF8 $backendDockerfilePath
 $backendPom = Get-Content -Raw -Encoding UTF8 $backendPomPath
@@ -53,6 +57,23 @@ $fixedTags = @($imageMatches | ForEach-Object { $_.Groups[1].Value } | Select-Ob
 if ($fixedTags.Count -ne 1 -or $fixedTags[0] -notmatch '^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') {
     throw 'Remote GHCR Compose must pin both application images to one semantic-version tag.'
 }
+
+$tcrImageMatches = [regex]::Matches(
+    $remoteTcrCompose,
+    'ccr\.ccs\.tencentyun\.com/aiot-log-system/aiot-log-(?:backend|frontend):([A-Za-z0-9._-]+)'
+)
+$tcrFixedTags = @($tcrImageMatches | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)
+if ($tcrFixedTags.Count -ne 1 -or $tcrFixedTags[0] -ne $fixedTags[0]) {
+    throw 'Remote Tencent TCR Compose must pin both images to the same fixed tag as GHCR.'
+}
+
+Assert-Match $tcrSync 'TARGET_REGISTRY:\s*ccr\.ccs\.tencentyun\.com/aiot-log-system' 'Tencent sync must use the approved namespace.'
+Assert-Match $tcrSync 'secrets\.TCR_USERNAME' 'Tencent sync must use a repository username secret.'
+Assert-Match $tcrSync 'secrets\.TCR_PASSWORD' 'Tencent sync must use a repository password secret.'
+Assert-Match $tcrSync 'docker/setup-buildx-action@[0-9a-f]{40}' 'Tencent sync Buildx action must use an immutable SHA.'
+Assert-Match $tcrSync 'docker/login-action@[0-9a-f]{40}' 'Tencent sync login action must use an immutable SHA.'
+Assert-Match $tcrSync 'imagetools create' 'Tencent images must be copied from the scanned GHCR image without rebuilding.'
+Assert-Match $tcrSync 'Digest mismatch' 'Tencent sync must fail when GHCR and mirror digests differ.'
 
 Assert-Match $frontendDockerfile '^FROM node:24-alpine3\.24 AS build' 'Frontend build image must use the maintained Node 24 Alpine line.'
 Assert-Match $frontendDockerfile '(?m)^FROM nginx:1\.30-alpine$' 'Frontend runtime image must use the maintained Nginx 1.30 Alpine line.'

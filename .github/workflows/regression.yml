@@ -12,6 +12,7 @@ on:
       - 'docker-*.cmd'
       - 'tools/test-deployment-regression.ps1'
       - 'tools/test-image-release-policy.ps1'
+      - 'tools/create-synology-image-deploy.ps1'
       - '.github/workflows/**'
   pull_request:
     paths:
@@ -21,6 +22,7 @@ on:
       - 'docker-*.cmd'
       - 'tools/test-deployment-regression.ps1'
       - 'tools/test-image-release-policy.ps1'
+      - 'tools/create-synology-image-deploy.ps1'
       - '.github/workflows/**'
   workflow_dispatch:
 

@@ -91,11 +91,11 @@ HiveMQ 远程版本：Git 分支 `Remote-Hivemq` 已实现可选 `MQTT_MODE=remo
 
 2026-07-23 已完成 OpenAPI/Swagger 源码接入：Spring Boot 3.3.5 使用 Springdoc 2.6.0，业务接口按 `/api/**` 分组，提供 `/v3/api-docs/aiot-api` 和 `/swagger-ui.html`；9 个业务控制器已补充中文分组和操作说明，通用响应与分页结构已进入 Schema。新增真实端点集成测试后，JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。该改动已随 `v1.1.9-remote-mqtt` 发布；群晖当前运行的 `v1.1.8-remote-mqtt` 尚不包含 Swagger，升级后方可使用。
 
-2026-07-23 已完成统一业务错误码、异常响应和后端请求日志规范。错误响应保留前端兼容的数值 `code`，新增稳定字符串 `errorCode` 与 `traceId`，HTTP 状态与错误类型一致；所有请求通过 `X-Trace-Id` 响应头关联后端日志。裸数字 `BusinessException` 已替换为集中 `ErrorCode`，参数校验、类型错误、损坏 JSON、不支持的方法、不存在路由、数据冲突和未知异常均统一处理，日志使用固定事件名和键值字段且不记录请求体或凭证。前端请求错误对象同步保留 `errorCode` 与 `traceId`。后端23项测试、前端类型检查/生产构建和后端生产 JAR 均通过。该改动与 OpenAPI 一样尚未发布新固定镜像。
+2026-07-23 已完成统一业务错误码、异常响应和后端请求日志规范。错误响应保留前端兼容的数值 `code`，新增稳定字符串 `errorCode` 与 `traceId`，HTTP 状态与错误类型一致；所有请求通过 `X-Trace-Id` 响应头关联后端日志。裸数字 `BusinessException` 已替换为集中 `ErrorCode`，参数校验、类型错误、损坏 JSON、不支持的方法、不存在路由、数据冲突和未知异常均统一处理，日志使用固定事件名和键值字段且不记录请求体或凭证。前端请求错误对象同步保留 `errorCode` 与 `traceId`。后端23项测试、前端类型检查/生产构建和后端生产 JAR 均通过。该改动已随`v1.1.9-remote-mqtt`发布。
 
-2026-07-23 已完成第二阶段自动化回归基础：后端新增 MQTT 消息路由、非法载荷、Topic与Payload设备编号一致性、连接回调、QoS 1重复故障、非MQTT事件隔离和MySQL 8.4 Flyway新库/旧库数据保留测试；本地无MySQL测试环境时自动跳过2项Flyway集成测试，其余30项后端测试通过。前端接入Vitest 4.1.10，将日志页和MQTT状态页轮询抽成共享控制器，4项测试覆盖定时刷新、隐藏暂停、恢复立即刷新、请求互斥和防重复定时器。`tools/test-deployment-regression.ps1` 自动检查4套Compose、统一镜像标签、远程模式边界、MySQL命名卷和停止脚本不删卷；GitHub `regression.yml` 使用MySQL 8.4执行完整32项后端测试、前端测试/构建和部署检查。MQTT拒绝日志不再输出原始Payload。上述源码尚未发布新固定镜像。
+2026-07-23 已完成第二阶段自动化回归基础：后端新增 MQTT 消息路由、非法载荷、Topic与Payload设备编号一致性、连接回调、QoS 1重复故障、非MQTT事件隔离和MySQL 8.4 Flyway新库/旧库数据保留测试；本地无MySQL测试环境时自动跳过2项Flyway集成测试，其余30项后端测试通过。前端接入Vitest 4.1.10，将日志页和MQTT状态页轮询抽成共享控制器，4项测试覆盖定时刷新、隐藏暂停、恢复立即刷新、请求互斥和防重复定时器。`tools/test-deployment-regression.ps1` 自动检查5套Compose、统一镜像标签、远程模式边界、MySQL命名卷和停止脚本不删卷；GitHub `regression.yml` 使用MySQL 8.4执行完整32项后端测试、前端测试/构建和部署检查。MQTT拒绝日志不再输出原始Payload。上述功能已随`v1.1.9-remote-mqtt`发布。
 
-2026-07-23 第三阶段镜像发布链已实现并发布`v1.1.9-remote-mqtt`：发布工作流先构建候选镜像，用固定提交版本的Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，再由GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明。首次线上运行中后端因Tomcat 10.1.31漏洞被正确阻断；升级至10.1.57后，回归、前后端扫描、推送、来源证明和GitHub Release均成功，两个公开GHCR清单包含对应attestation manifest。`latest`仍只由`main`更新并保持局域网语义。群晖仍运行`v1.1.8`，尚未升级。已发布镜像复扫工作流在当前分支通过受限push入口验收；其中每周/手工触发只有工作流以后进入默认分支才会生效。
+2026-07-23 第三阶段镜像发布链已实现并发布`v1.1.9-remote-mqtt`：发布工作流先构建候选镜像，用固定提交版本的Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，再由GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明。首次线上运行中后端因Tomcat 10.1.31漏洞被正确阻断；升级至10.1.57后，回归、前后端扫描、推送、来源证明和GitHub Release均成功，两个公开GHCR清单包含对应attestation manifest。`latest`仍只由`main`更新并保持局域网语义。已增加腾讯云TCR国内同步源、digest一致性校验和独立群晖Compose，目标为`ccr.ccs.tencentyun.com/aiot-log-system`；等待腾讯云命名空间和GitHub Secrets后同步。群晖仍运行`v1.1.8`，尚未升级。
 
 ## 5. 启动方式
 
@@ -135,8 +135,8 @@ docker-stop.cmd    停止并保留数据
 
 当前执行顺序：
 
-1. 群晖复用原数据卷和私有配置升级`v1.1.9-remote-mqtt`。
-2. 按数据库兼容规则演练回退`v1.1.8-remote-mqtt`，确认数据和服务恢复；再决定是否重新升级`v1.1.9-remote-mqtt`。
+1. 创建腾讯云`aiot-log-system`命名空间并配置GitHub的`TCR_USERNAME`、`TCR_PASSWORD`，同步和验证`v1.1.9-remote-mqtt`。
+2. 群晖使用TCR固定镜像复用原数据卷和私有配置升级`v1.1.9`，再按兼容规则演练回退`v1.1.8`。
 3. 前述工作完成后，再决定是否开发日志智能总结、异常原因分析、维护建议和设备历史关联分析。
 
 持续维护要求：以后修改MQTT、状态流转、Flyway、前端轮询或Docker编排时，必须同步更新并通过对应回归测试。
