@@ -1,6 +1,12 @@
 name: Scan published container images
 
 on:
+  push:
+    branches:
+      - Remote-Hivemq
+    paths:
+      - '.github/workflows/image-security.yml'
+      - 'docker-compose.remote.ghcr.yml'
   schedule:
     - cron: '23 3 * * 1'
   workflow_dispatch:

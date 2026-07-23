@@ -86,7 +86,7 @@
 
 原因：Springdoc 官方兼容表把 Spring Boot 3.3.x 对应到 2.6.x。分组只暴露业务 API，可避免把根路径和 Actuator 管理端点混入对外接口文档；真实端点集成测试可以同时验证文档生成和页面资源映射。
 
-安全边界：Swagger 仅供可信网络内的开发与维护，不代表管理 API 已具备公网认证能力。环境变量 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 可分别关闭 JSON 与页面；群晖当前固定镜像 `v1.1.8-remote-mqtt` 尚不包含本功能，必须在后续镜像发布并升级后才可使用。
+安全边界：Swagger 仅供可信网络内的开发与维护，不代表管理 API 已具备公网认证能力。环境变量 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 可分别关闭 JSON 与页面；该功能已包含在 `v1.1.9-remote-mqtt`，群晖从当前 `v1.1.8-remote-mqtt` 升级后方可使用。
 
 ## 0.9 错误码、追踪号与日志规范（2026-07-23）
 
@@ -106,7 +106,7 @@
 
 ## 0.11 镜像扫描、来源证明与回滚（2026-07-23）
 
-最终选择：GHCR发布前使用Anchore Grype扫描候选镜像，“存在已有修复版本的CRITICAL漏洞”作为阻断条件；镜像推送后使用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明。所有发布链关键Action固定到40位提交摘要，并每周重新扫描当前固定镜像，以发现发布后新披露的漏洞。
+最终选择：GHCR发布前使用Anchore Grype扫描候选镜像，“存在已有修复版本的CRITICAL漏洞”作为阻断条件；镜像推送后使用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明。所有发布链关键Action固定到40位提交摘要，并定义每周重新扫描当前固定镜像，以发现发布后新披露的漏洞。
 
 原因：只扫描源码依赖不能覆盖JRE、Nginx、Alpine/Ubuntu系统包；只在发布当天扫描又无法发现后来披露的CVE。CRITICAL且已有修复版本是当前阶段可执行的硬门禁，高危但无修复项继续在日志中可见，避免因上游暂时无补丁使所有发布永久阻塞。GitHub Artifact Attestation使用短期OIDC/Sigstore证书，无需保管长期私钥，且直接绑定镜像digest，比只签可变标签更可靠。
 
@@ -117,6 +117,8 @@
 标签与回滚边界：远程群晖只能使用前后端一致的`vX.Y.Z-remote-mqtt`固定标签；`latest`只由`main`更新并保持局域网语义。旧固定标签不得覆盖或删除。升级前备份数据库并复用原命名卷和私有配置；仅当Flyway迁移向后兼容时可直接把前后端标签改回上一版。若新迁移不向后兼容，必须同时恢复升级前数据库备份，不能让旧应用直接使用新结构。
 
 国内仓库结论：当前群晖已能从Public GHCR拉取固定镜像，暂不引入需要额外账号、凭证和双仓库一致性维护的阿里云/腾讯云同步。只有GHCR在实际部署网络持续不可用时再启用国内镜像；届时同步对象必须使用相同digest或重新生成可验证来源证明，不能把国内仓库的`latest`作为生产依据。
+
+GitHub触发边界：`schedule`和`workflow_dispatch`要求工作流文件存在于默认分支。当前开发位于`Remote-Hivemq`，因此先用受限的分支push入口验证当前固定镜像复扫；每周计划和手工历史标签输入在该工作流以后进入默认分支时正式生效。不能为了启用计划任务擅自把远程业务分支合并到`main`。
 
 ## 1. 后端 Java 版本
 

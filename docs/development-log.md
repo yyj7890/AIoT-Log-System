@@ -31,12 +31,19 @@
 - 本地验证：Tomcat 10.1.57已被实际加载；Maven发现32项测试，30项通过、2项因本地无MySQL条件跳过，生产JAR构建成功。发布策略检查增加Tomcat安全版本约束。
 - 线上验证要求：重新推送后，后端候选镜像必须通过同一CRITICAL门禁并完成digest来源证明。若仍有CRITICAL项，不允许降低扫描阈值或添加忽略规则。
 
+#### 已发布镜像复扫触发边界
+
+- 问题：`image-security.yml`首次只提交在`Remote-Hivemq`，通过API手工触发时返回404。
+- 根因：GitHub的`workflow_dispatch`和`schedule`只识别默认分支上已存在的工作流文件；新文件尚未进入默认分支，因此不能从当前分支直接手工调度，每周计划也不会自动运行。
+- 处理：增加仅在`Remote-Hivemq`修改该工作流或远程GHCR Compose时触发的push入口，用于立即验证当前固定镜像复扫；手工指定历史标签和每周计划保留，待工作流进入默认分支后启用。
+- 边界：不为启用计划任务而擅自把远程业务代码合并进`main`。当前固定镜像已经在发布流程中经过同一Grype门禁；复扫工作流仍需本次分支push实际通过。
+
 ### OpenAPI/Swagger 接口文档
 
 - 处理：后端接入与 Spring Boot 3.3.x 兼容的 Springdoc 2.6.0，新增中文 OpenAPI 元数据和 `aiot-api` 分组，仅收录 `/api/**`。9 个业务控制器补充中文 Tag 与 Operation，通用响应和分页结构补充 Schema；根路径和 Actuator 不进入业务文档。
 - 使用：当前源码提供 `/v3/api-docs/aiot-api` 和 `/swagger-ui.html`，可通过 `OPENAPI_ENABLED`、`SWAGGER_UI_ENABLED` 关闭。文档仅供可信网络调试，不改变现有安全边界。
 - 验证：新增配置反射检查和随机端口真实端点测试，确认文档 JSON、Swagger UI 均返回 HTTP 200，且系统运行时、日志和 MQTT 状态等主要路径存在。JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。
-- 发布状态：源码已完成，尚未发布新的固定镜像；群晖当前运行的 `v1.1.8-remote-mqtt` 仍是 Flyway 版本，不包含 Swagger。
+- 发布状态：已随 `v1.1.9-remote-mqtt` 发布；群晖当前运行的 `v1.1.8-remote-mqtt` 仍是 Flyway 版本，不包含 Swagger，升级后方可使用。
 
 ### 统一错误码、异常响应与请求日志
 

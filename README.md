@@ -96,7 +96,7 @@ Swagger UI：http://127.0.0.1:8080/swagger-ui.html
 OpenAPI JSON：http://127.0.0.1:8080/v3/api-docs/aiot-api
 ```
 
-群晖部署时将 `127.0.0.1:8080` 替换为 NAS 地址和后端宿主机映射端口，例如 `http://<NAS>:18080/swagger-ui.html`。文档仅限可信网络使用；可用 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。当前已发布的 `v1.1.8-remote-mqtt` 尚不包含该功能，需要等待后续固定镜像。
+群晖部署时将 `127.0.0.1:8080` 替换为 NAS 地址和后端宿主机映射端口，例如 `http://<NAS>:18080/swagger-ui.html`。文档仅限可信网络使用；可用 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。已发布的 `v1.1.9-remote-mqtt` 包含该功能；群晖当前仍运行 `v1.1.8-remote-mqtt`，升级后方可使用。
 
 API 失败时使用真实 HTTP 状态，并在响应体返回稳定的 `errorCode` 和 `traceId`；响应头 `X-Trace-Id` 可用于关联后端日志。客户端程序应判断 `errorCode`，不要依赖中文 `message`。
 
@@ -113,11 +113,11 @@ docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
 
 首次运行会由初始化器生成被忽略的 `docker/local/hivemq-remote.env`，用户只在该私有文件中填写 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 和 `MQTT_PASSWORD`；公开模板是 `config/hivemq-remote.env.example`。该文件与原局域网 Docker 的 `.env` 分离，切换模式不会覆盖原配置。远程 Compose 只运行 MySQL、后端和前端，不包含 Mosquitto、TCP `1883` 或 UDP `19830`。不要把私有配置、真实域名、凭证或设备数据提交、上传或截图公开。实现与验证状态见 [HiveMQ 远程版本记录](docs/hivemq-remote-mqtt-version.md)。
 
-两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前远程固定版本为 `v1.1.8-remote-mqtt`，在 `v1.1.7` 基础上接入 Flyway 数据库迁移；空库执行 V1，已有数据库保留数据并建立 V1 基线，后续结构升级使用 V2、V3 迁移。旧远程版继续保留用于回退。`latest` 保留给 `main` 的局域网版，且只有明确推送 `main` 分支时才允许更新；远程版本标签不会覆盖它。
+两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前远程固定版本为 `v1.1.9-remote-mqtt`。该版本包含Flyway V1、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
 
 ```text
-docker pull ghcr.io/yyj7890/aiot-log-backend:v1.1.8-remote-mqtt
-docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.1.8-remote-mqtt
+docker pull ghcr.io/yyj7890/aiot-log-backend:v1.1.9-remote-mqtt
+docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.1.9-remote-mqtt
 ```
 
 ### 首次本地配置（公开模板）

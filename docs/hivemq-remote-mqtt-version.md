@@ -6,7 +6,7 @@
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 
-当前状态：**`v1.1.8-remote-mqtt` 已发布前后端 GHCR 镜像和 GitHub Release，并完成群晖 Flyway 首次实卷升级验收；原数据保留且升级后可继续通过 HiveMQ 写入。真实凭证未写入仓库。**
+当前状态：**`v1.1.9-remote-mqtt` 已发布前后端 GHCR 镜像、digest来源证明和GitHub Release，尚未升级群晖；群晖当前仍运行已完成Flyway实卷验收的`v1.1.8-remote-mqtt`。真实凭证未写入仓库。**
 
 ### 统一版本变更总表
 
@@ -24,14 +24,14 @@
 | `v1.1.6-remote-mqtt` | 已发布并完成群晖升级 | 无主要业务页面变化；通过 Compose 等待后端健康后启动 | 增加 Actuator内部健康检查，只监听容器回环 `127.0.0.1:8081` | 不映射管理端口；后端 `healthy` 后前端才启动 |
 | `v1.1.7-remote-mqtt` | 已发布并完成群晖升级复测 | 顶部动态显示“检测中/已接入/未连接”，后端恢复后自动重试 | 恢复事件可跨30秒窗口关闭最新未恢复MQTT故障，写入使用事务 | 停止/启动、43条旧日志保留及 `PENDING → RESOLVED → PENDING` 已实测 |
 | `v1.1.8-remote-mqtt` | **已发布并完成群晖升级验收** | 无功能变化；同步构建相同标签 | 接入 Flyway；空库执行 V1，旧库保留数据并建立 V1基线；以后使用 V2、V3迁移 | 原45条日志保留，出现 `DbBaseline` 成功记录；测试写入新增 ID 46，MQTT计数 `1/1/0` |
-| `v1.1.9-remote-mqtt` | 计划发布，等待镜像安全工作流验证 | 包含OpenAPI、统一错误追踪、共享轮询控制器及对应回归 | 增加MQTT Topic/Payload一致性校验及完整回归入口；数据库仍为Flyway V1 | 候选镜像先扫描可修复CRITICAL漏洞，推送后生成digest绑定的Sigstore来源证明；尚未发布或部署群晖 |
+| `v1.1.9-remote-mqtt` | **已发布，尚未升级群晖** | 包含OpenAPI、统一错误追踪、共享轮询控制器及对应回归 | 增加MQTT Topic/Payload一致性校验、Tomcat 10.1.57安全修复及完整回归入口；数据库仍为Flyway V1 | 前后端候选镜像通过可修复CRITICAL门禁，均生成digest绑定的Sigstore来源证明；GitHub Release已发布 |
 
 版本状态规则：只有固定标签、GitHub Release、前后端 GHCR 镜像清单均完成后才标记“已发布”；只有群晖实际拉取并完成数据、API、MQTT和页面检查后才标记“完成群晖升级”。源码提交或分支镜像不能代替固定版本发布。
 
 ### 镜像安全与回滚规则（2026-07-23）
 
 - 发布顺序固定为候选镜像构建、Grype漏洞门禁、GHCR推送、digest来源证明；CRITICAL且已有修复版本时不得发布。
-- 每周重新扫描远程GHCR Compose引用的当前固定标签，也可手工指定任意历史固定标签复扫。
+- 已发布镜像复扫工作流从远程GHCR Compose解析当前固定标签；当前分支修改工作流/Compose时会运行。每周和手工指定历史标签需要该工作流进入GitHub默认分支后启用。
 - 使用 `gh attestation verify oci://ghcr.io/yyj7890/<image>:<tag> -R yyj7890/AIoT-Log-System` 验证镜像由本仓库GitHub工作流构建并签名。
 - 群晖升级前记录当前前后端固定标签并备份数据库；升级和回退时前后端必须使用同一个标签，不执行`down -v`，继续复用原命名卷、私有HiveMQ配置和端口映射。
 - 当前数据库只有Flyway V1，应用回退可继续复用该结构。以后若某个版本引入不向后兼容的V2/V3迁移，回退旧应用时必须同步恢复升级前数据库备份。
@@ -115,7 +115,7 @@ MQTT_PASSWORD=<private-password>
 - 订阅逻辑继续同时订阅 `aiot/device/+/report` 与 `aiot/device/+/log`，复用原有入库业务。
 - 远程模式下 UDP `19830` 响应器强制关闭，管理页不会显示真实 Broker 地址或允许修改本地 Mosquitto 凭证。
 - 新增 `docker-compose.remote.yml` 与 `docker-compose.remote.ghcr.yml`：只运行 MySQL、后端、前端，不启动 Mosquitto、不映射 `1883`、不映射 UDP `19830`。
-- 两个 GHCR 包以固定标签区分版本，完整差异和发布/群晖状态统一维护在本文“统一版本变更总表”。当前已发布并在群晖部署的是 `v1.1.8-remote-mqtt`。旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。
+- 两个 GHCR 包以固定标签区分版本，完整差异和发布/群晖状态统一维护在本文“统一版本变更总表”。当前最新发布版本是 `v1.1.9-remote-mqtt`，群晖当前仍部署 `v1.1.8-remote-mqtt`。旧远程标签保留用于回退，避免误用 `latest`；`latest` 只允许 `main` 分支推送更新并保持局域网语义，版本标签事件不得覆盖它。
 - 新增 Windows `docker-remote-*.cmd`、远程私有 `.env` 初始化脚本，以及 `tools/create-synology-image-deploy.ps1 -Remote` 的群晖成品镜像部署包支持。
 
 ### 小智固件

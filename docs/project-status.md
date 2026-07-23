@@ -36,13 +36,13 @@
 
 2026-07-22 Flyway 无损数据库升级完成并发布、部署为 `v1.1.8-remote-mqtt`：后端加入 `flyway-core`、MySQL 支持和 V1 初始迁移，旧数据库通过版本 1 基线接入；以后结构变化只能新增 V2、V3 迁移。隔离 MySQL 8.4 验证中，空库创建 7 张业务表并记录 `V1/SQL/success`，已有库的测试设备保留且只记录 `V1/BASELINE/success`。15 项后端测试、生产 JAR、四套 Compose 和两种群晖部署包均通过检查。群晖原项目升级后出现 `JdbcTableSchemaHistory` 和 `DbBaseline` 成功记录，原45条日志与设备数据保留；MQTT升级验证消息收到/处理/失败为 `1/1/0`，新增 ID 46，日志总数变为46。固定镜像版本差异统一见 `hivemq-remote-mqtt-version.md` 的“统一版本变更总表”。
 
-2026-07-23 OpenAPI/Swagger 源码接入完成：依据 Spring Boot 3.3.x 兼容范围使用 Springdoc 2.6.0，生成中文标题、说明和版本元数据；`aiot-api` 分组仅收录 `/api/**`，9 个业务控制器均有中文 Tag 和 Operation，通用 `ApiResponse`、`PageResult` 已补充 Schema。接口 JSON 为 `/v3/api-docs/aiot-api`，调试页面为 `/swagger-ui.html`，可用 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 关闭。新增配置检查和真实随机端口集成测试，确认两个端点均返回 HTTP 200 且主要接口存在；JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。该源码尚未发布新的固定镜像，群晖当前 `v1.1.8-remote-mqtt` 不包含本功能。
+2026-07-23 OpenAPI/Swagger 源码接入完成：依据 Spring Boot 3.3.x 兼容范围使用 Springdoc 2.6.0，生成中文标题、说明和版本元数据；`aiot-api` 分组仅收录 `/api/**`，9 个业务控制器均有中文 Tag 和 Operation，通用 `ApiResponse`、`PageResult` 已补充 Schema。接口 JSON 为 `/v3/api-docs/aiot-api`，调试页面为 `/swagger-ui.html`，可用 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 关闭。新增配置检查和真实随机端口集成测试，确认两个端点均返回 HTTP 200 且主要接口存在；JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。该功能已随 `v1.1.9-remote-mqtt` 发布；群晖当前 `v1.1.8-remote-mqtt` 不包含本功能，升级后方可使用。
 
 2026-07-23 统一错误与日志规范完成：新增集中式 `ErrorCode`，所有业务异常不再使用裸数字；错误响应的数值 `code` 与 HTTP 状态一致，同时提供稳定字符串 `errorCode` 和请求 `traceId`。`X-Trace-Id` 会在响应头返回并进入 MDC；合法的调用方追踪号可继续沿用，否则后端生成新值。全局异常处理覆盖业务错误、字段校验、参数类型、损坏 JSON、不支持的方法、不存在路由、数据库冲突和未知异常，未知异常不向客户端暴露堆栈。可预期拒绝统一为 `api_request_rejected`，内部业务操作失败为 `api_operation_failed`，未知错误为 `api_unhandled_error`，均使用键值字段且不记录请求体和凭证。前端保留数值状态码兼容，并在 `ApiRequestError` 中传递 `errorCode`、`traceId`。4项真实端点测试覆盖400/404和追踪号关联，后端总计23项测试、前端生产构建和后端生产 JAR均通过。源码尚未发布新固定镜像。
 
 2026-07-23 第二阶段自动化回归基础完成：MQTT订阅器新增5项测试，覆盖日志/状态上报路由、QoS、计数、非法JSON、字段校验、Topic设备编号匹配和断线/恢复回调；运行日志服务新增QoS 1重复故障不追加、非MQTT事件不关闭MQTT故障测试，原有跨窗口 `PENDING → RESOLVED → PENDING` 测试继续保留。Flyway新增2项仅在提供真实MySQL时启用的集成测试，分别验证空库执行V1创建7张业务表，以及旧库建立V1基线并保留设备数据。前端接入Vitest并新增4项共享轮询控制器测试，日志页和MQTT状态页均改用该控制器。部署脚本自动验证4套Compose、远程/局域网边界、前后端镜像标签一致、MySQL命名卷和4个停止脚本不删除数据卷。GitHub新增回归工作流，在MySQL 8.4服务上运行完整后端、前端和部署检查。本机结果为后端32项发现、30项通过、2项因无MySQL环境跳过；前端4项通过，生产构建与部署检查通过。源码尚未发布新固定镜像。
 
-2026-07-23 第三阶段镜像发布质量进入线上验证：前后端Dockerfile升级到维护中的Maven 3.9.16/JDK 17 Noble、Node 24 Alpine 3.24和Nginx 1.30 Alpine。GHCR工作流先构建候选镜像并使用Anchore Grype阻断“已有修复版本的CRITICAL漏洞”，通过后才推送，并用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明；关键Action全部固定到完整提交摘要。新增每周/手工已发布镜像复扫和发布策略回归脚本，覆盖scan→push→attest顺序、标签语义、签名digest、基础镜像线及远程前后端固定标签一致性。首次GitHub运行中前端完成全流程；后端因`tomcat-embed-core 10.1.31`的可修复CRITICAL漏洞被正确阻断，未执行push/attest。源码已在原Spring Boot兼容线上把Tomcat升级至10.1.57；本地32项测试发现（30通过、2项MySQL条件跳过）及生产JAR通过，等待再次镜像扫描。远程GHCR Compose已预置`v1.1.9-remote-mqtt`，但标签工作流成功前不得用于群晖升级。
+2026-07-23 第三阶段镜像发布链和固定版本已完成：前后端Dockerfile升级到Maven 3.9.16/JDK 17 Noble、Node 24 Alpine 3.24和Nginx 1.30 Alpine。GHCR工作流先用Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，并用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明；关键Action固定到完整提交摘要。首次运行中后端因Tomcat 10.1.31漏洞被正确阻断，未push/attest；升级Tomcat 10.1.57后回归和前后端镜像流程均成功。`v1.1.9-remote-mqtt`前后端清单、attestation manifest和GitHub Release已发布并可解析；群晖仍运行`v1.1.8`，尚未升级。已发布镜像复扫工作流增加当前分支push验收入口；每周/手工触发需工作流进入默认分支后生效。
 
 当前结论（2026-07-13）：真实小智已完成普通 Wi-Fi、手机热点、断网恢复、本地 MQTT 日志汇总、官方/本地 AI 动态切换和本地 AI WebSocket 实际对话验证。IoT 全局 MQTT 凭证已创建并启用：匿名访问已关闭，服务重启后小智使用配网页保存的同一套凭证完成日志上报验证。
 
@@ -142,7 +142,7 @@ docker-stop.cmd    停止并保留数据
 
 - 真实硬件长时间持续上报
 - 群晖 Container Manager 中停止、启动全过程的 `healthy` 状态截图留证；API、MQTT、前端可用性、运行时长恢复和数据保留已经验证
-- 第三阶段GitHub真实镜像构建、扫描、签名与新固定标签验证；随后进行群晖保留数据升级/回退演练
+- 验证已发布镜像复扫工作流；随后进行群晖`v1.1.9`保留数据升级和`v1.1.8`回退演练
 
 暂存跳过：
 
@@ -161,12 +161,12 @@ docker-stop.cmd    停止并保留数据
 - 前端主包体积较大，尚未进一步拆包。
 - 国内镜像仓库已完成当前阶段评估：继续使用Public GHCR，只有实际部署网络长期不可用时再引入双仓库同步。
 - 群晖部署已完成首次验收，但仍需进行长时间稳定性、端口冲突覆盖和升级回归验证；详见 `synology-nas-deployment.md`。
-- GHCR 包应保持Public；`v1.0.0-lan`与远程`v1.1.0`至`v1.1.8`固定标签已发布。新发布流程的漏洞门禁和签名来源证明已实现，待GitHub实际构建确认。
+- GHCR包应保持Public；`v1.0.0-lan`与远程`v1.1.0`至`v1.1.9`固定标签已发布。`v1.1.9`已经过漏洞门禁并生成签名来源证明，尚未完成群晖升级/回退。
 
 ## 下一步
 
-1. 推送第三阶段实现并确认GitHub真实构建、漏洞扫描和来源证明成功，再发布新的远程固定镜像。
-2. 群晖复用原数据卷和私有配置升级新固定镜像；完成后按兼容规则演练旧标签回退。
+1. 确认已发布镜像复扫工作流通过。
+2. 群晖复用原数据卷和私有配置升级`v1.1.9-remote-mqtt`；完成后按兼容规则回退`v1.1.8-remote-mqtt`并决定是否再次升回。
 3. 前述工作完成后，再决定是否进入AI日志分析阶段。
 
 持续维护：MQTT、状态流转、Flyway、前端轮询或Docker编排发生变化时，同步更新对应回归测试。
