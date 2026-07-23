@@ -2,15 +2,25 @@ package com.aiot.log.exception;
 
 public class BusinessException extends RuntimeException {
 
-    private final Integer code;
+    private final ErrorCode errorCode;
 
-    public BusinessException(Integer code, String message) {
-        super(message);
-        this.code = code;
+    public BusinessException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
     }
 
-    public Integer getCode() {
-        return code;
+    public BusinessException(ErrorCode errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    public BusinessException(ErrorCode errorCode, String message, Throwable cause) {
+        super(message, cause);
+        this.errorCode = errorCode;
+    }
+
+    public ErrorCode getErrorCode() {
+        return errorCode;
     }
 }
 

@@ -5,6 +5,7 @@ import com.aiot.log.entity.AlertRule;
 import com.aiot.log.entity.Device;
 import com.aiot.log.enums.LogLevel;
 import com.aiot.log.exception.BusinessException;
+import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.mapper.AlertRuleMapper;
 import com.aiot.log.mapper.DeviceMapper;
 import com.aiot.log.service.AlertRuleService;
@@ -84,7 +85,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
     private AlertRule getExistingRule(Long id) {
         AlertRule rule = alertRuleMapper.selectById(id);
         if (rule == null) {
-            throw new BusinessException(404, "告警规则不存在");
+            throw new BusinessException(ErrorCode.ALERT_RULE_NOT_FOUND);
         }
         return rule;
     }
@@ -101,16 +102,16 @@ public class AlertRuleServiceImpl implements AlertRuleService {
 
     private void validateRequest(AlertRuleRequest request) {
         if (request.getDeviceId() != null && deviceMapper.selectById(request.getDeviceId()) == null) {
-            throw new BusinessException(404, "设备不存在");
+            throw new BusinessException(ErrorCode.DEVICE_NOT_FOUND);
         }
         if (!METRICS.contains(request.getMetric())) {
-            throw new BusinessException(400, "告警指标不合法");
+            throw new BusinessException(ErrorCode.ALERT_METRIC_INVALID);
         }
         if (!OPERATORS.contains(request.getOperator())) {
-            throw new BusinessException(400, "比较符不合法");
+            throw new BusinessException(ErrorCode.ALERT_OPERATOR_INVALID);
         }
         if (StringUtils.hasText(request.getLevel()) && !LogLevel.isValid(request.getLevel())) {
-            throw new BusinessException(400, "告警等级不合法");
+            throw new BusinessException(ErrorCode.ALERT_LEVEL_INVALID);
         }
     }
 

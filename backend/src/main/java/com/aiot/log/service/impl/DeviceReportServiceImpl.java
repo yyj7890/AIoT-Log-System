@@ -12,6 +12,7 @@ import com.aiot.log.enums.LogSource;
 import com.aiot.log.enums.LogStatus;
 import com.aiot.log.enums.LogType;
 import com.aiot.log.exception.BusinessException;
+import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.mapper.AlertRuleMapper;
 import com.aiot.log.mapper.DeviceMapper;
 import com.aiot.log.mapper.DeviceReportMapper;
@@ -114,14 +115,14 @@ public class DeviceReportServiceImpl implements DeviceReportService {
         Device device = deviceMapper.selectOne(new LambdaQueryWrapper<Device>()
                 .eq(Device::getDeviceCode, deviceCode));
         if (device == null) {
-            throw new BusinessException(404, "设备不存在");
+            throw new BusinessException(ErrorCode.DEVICE_NOT_FOUND);
         }
         return device;
     }
 
     private void validateStatus(String status) {
         if (!DeviceStatus.isValid(status)) {
-            throw new BusinessException(400, "设备状态不合法");
+            throw new BusinessException(ErrorCode.DEVICE_STATUS_INVALID);
         }
     }
 

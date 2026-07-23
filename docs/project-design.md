@@ -126,9 +126,25 @@ OpenAPI 分组 JSON GET /v3/api-docs/aiot-api
 {
   "code": 200,
   "message": "success",
+  "errorCode": null,
+  "traceId": "9f31c9c607e84bc7b2e0dc627c49fd62",
   "data": {}
 }
 ```
+
+错误响应使用真实 HTTP 状态，并保持相同结构。例如设备不存在返回 HTTP 404：
+
+```json
+{
+  "code": 404,
+  "message": "设备不存在",
+  "errorCode": "DEVICE_NOT_FOUND",
+  "traceId": "9f31c9c607e84bc7b2e0dc627c49fd62",
+  "data": null
+}
+```
+
+`code` 用于兼容现有调用方并与 HTTP 状态一致；`errorCode` 是程序判断使用的稳定字符串，不应依赖可翻译的 `message`。每个请求的响应头 `X-Trace-Id` 与响应体 `traceId` 相同，并进入后端 MDC。调用方可传入8至64位、仅含字母数字及 `._-` 的 `X-Trace-Id`，否则后端自动生成。异常日志使用固定事件名、`errorCode/status/method/path/traceId/detail` 键值，不记录请求体、密码、Token、真实 MQTT 凭证或堆栈到客户端。
 
 ## 6. 前端页面
 

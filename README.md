@@ -24,6 +24,7 @@ AIoT-Log-System 解决 AIoT 设备在日常运行中“状态分散、日志难�
 - UDP `19830` 自动发现同一局域网内的 Mosquitto Broker，适应 Wi-Fi、网线与手机热点的 DHCP 地址变化。
 - Mosquitto 已关闭匿名访问，使用全局 MQTT 用户名密码认证与 Topic ACL。
 - 当前源码提供按业务接口分组的 OpenAPI JSON 和 Swagger UI。
+- API 错误响应提供稳定业务错误码和请求追踪号，便于前后端联调和日志定位。
 - 提供本地开发脚本和 Docker Compose 四服务部署。
 
 ## 技术栈
@@ -95,6 +96,8 @@ OpenAPI JSON：http://127.0.0.1:8080/v3/api-docs/aiot-api
 ```
 
 群晖部署时将 `127.0.0.1:8080` 替换为 NAS 地址和后端宿主机映射端口，例如 `http://<NAS>:18080/swagger-ui.html`。文档仅限可信网络使用；可用 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。当前已发布的 `v1.1.8-remote-mqtt` 尚不包含该功能，需要等待后续固定镜像。
+
+API 失败时使用真实 HTTP 状态，并在响应体返回稳定的 `errorCode` 和 `traceId`；响应头 `X-Trace-Id` 可用于关联后端日志。客户端程序应判断 `errorCode`，不要依赖中文 `message`。
 
 ### HiveMQ Cloud 远程版本（`Remote-Hivemq` 分支）
 

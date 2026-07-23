@@ -4,6 +4,7 @@ import com.aiot.log.dto.TagCreateRequest;
 import com.aiot.log.entity.LogTag;
 import com.aiot.log.entity.Tag;
 import com.aiot.log.exception.BusinessException;
+import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.mapper.LogTagMapper;
 import com.aiot.log.mapper.TagMapper;
 import com.aiot.log.service.TagService;
@@ -51,7 +52,7 @@ public class TagServiceImpl implements TagService {
     public void deleteTag(Long id) {
         Tag tag = tagMapper.selectById(id);
         if (tag == null) {
-            throw new BusinessException(404, "标签不存在");
+            throw new BusinessException(ErrorCode.TAG_NOT_FOUND);
         }
         logTagMapper.delete(new LambdaQueryWrapper<LogTag>().eq(LogTag::getTagId, id));
         tagMapper.deleteById(id);
@@ -60,7 +61,7 @@ public class TagServiceImpl implements TagService {
     private void ensureTagNameUnique(String name) {
         Long count = tagMapper.selectCount(new LambdaQueryWrapper<Tag>().eq(Tag::getName, name));
         if (count > 0) {
-            throw new BusinessException(409, "标签名称已存在");
+            throw new BusinessException(ErrorCode.TAG_NAME_DUPLICATED);
         }
     }
 

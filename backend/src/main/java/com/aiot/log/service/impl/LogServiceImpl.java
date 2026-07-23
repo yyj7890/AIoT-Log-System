@@ -15,6 +15,7 @@ import com.aiot.log.enums.LogSource;
 import com.aiot.log.enums.LogStatus;
 import com.aiot.log.enums.LogType;
 import com.aiot.log.exception.BusinessException;
+import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.mapper.DeviceMapper;
 import com.aiot.log.mapper.LogTagMapper;
 import com.aiot.log.mapper.LogRecordMapper;
@@ -249,13 +250,13 @@ public class LogServiceImpl implements LogService {
     public void deleteLogs(List<Long> ids) {
         Set<Long> uniqueIds = new LinkedHashSet<Long>(ids);
         if (uniqueIds.isEmpty() || uniqueIds.contains(null)) {
-            throw new BusinessException(400, "日志编号不能为空");
+            throw new BusinessException(ErrorCode.LOG_BATCH_ID_INVALID);
         }
 
         List<LogRecord> existingLogs = logRecordMapper.selectList(new LambdaQueryWrapper<LogRecord>()
                 .in(LogRecord::getId, uniqueIds));
         if (existingLogs.size() != uniqueIds.size()) {
-            throw new BusinessException(404, "部分日志不存在");
+            throw new BusinessException(ErrorCode.LOG_BATCH_NOT_FOUND);
         }
 
         logTagMapper.delete(new LambdaQueryWrapper<LogTag>().in(LogTag::getLogId, uniqueIds));
@@ -284,13 +285,13 @@ public class LogServiceImpl implements LogService {
         }
         List<Tag> tags = tagMapper.selectList(new LambdaQueryWrapper<Tag>().in(Tag::getId, tagIds));
         if (tags.size() != tagIds.size()) {
-            throw new BusinessException(404, "部分标签不存在");
+            throw new BusinessException(ErrorCode.TAG_BATCH_NOT_FOUND);
         }
     }
 
     private void ensureTagExists(Long tagId) {
         if (tagMapper.selectById(tagId) == null) {
-            throw new BusinessException(404, "标签不存在");
+            throw new BusinessException(ErrorCode.TAG_NOT_FOUND);
         }
     }
 
@@ -353,7 +354,7 @@ public class LogServiceImpl implements LogService {
     private LogRecord getExistingLog(Long id) {
         LogRecord logRecord = logRecordMapper.selectById(id);
         if (logRecord == null) {
-            throw new BusinessException(404, "日志不存在");
+            throw new BusinessException(ErrorCode.LOG_NOT_FOUND);
         }
         return logRecord;
     }
@@ -361,7 +362,7 @@ public class LogServiceImpl implements LogService {
     private Device ensureDeviceExists(Long deviceId) {
         Device device = deviceMapper.selectById(deviceId);
         if (device == null) {
-            throw new BusinessException(404, "设备不存在");
+            throw new BusinessException(ErrorCode.DEVICE_NOT_FOUND);
         }
         return device;
     }
@@ -370,7 +371,7 @@ public class LogServiceImpl implements LogService {
         Device device = deviceMapper.selectOne(new LambdaQueryWrapper<Device>()
                 .eq(Device::getDeviceCode, deviceCode));
         if (device == null) {
-            throw new BusinessException(404, "设备编号不存在");
+            throw new BusinessException(ErrorCode.DEVICE_NOT_FOUND, "设备编号不存在");
         }
         return device;
     }
@@ -564,13 +565,13 @@ public class LogServiceImpl implements LogService {
 
     private void validateLogType(String logType) {
         if (!LogType.isValid(logType)) {
-            throw new BusinessException(400, "日志类型不合法");
+            throw new BusinessException(ErrorCode.LOG_TYPE_INVALID);
         }
     }
 
     private void validateLevel(String level) {
         if (!LogLevel.isValid(level)) {
-            throw new BusinessException(400, "日志等级不合法");
+            throw new BusinessException(ErrorCode.LOG_LEVEL_INVALID);
         }
     }
 
@@ -582,7 +583,7 @@ public class LogServiceImpl implements LogService {
 
     private void validateStatus(String status) {
         if (!LogStatus.isValid(status)) {
-            throw new BusinessException(400, "日志状态不合法");
+            throw new BusinessException(ErrorCode.LOG_STATUS_INVALID);
         }
     }
 
@@ -594,7 +595,7 @@ public class LogServiceImpl implements LogService {
 
     private void validateSource(String source) {
         if (!LogSource.isValid(source)) {
-            throw new BusinessException(400, "日志来源不合法");
+            throw new BusinessException(ErrorCode.LOG_SOURCE_INVALID);
         }
     }
 

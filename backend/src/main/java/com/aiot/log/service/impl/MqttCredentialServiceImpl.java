@@ -2,6 +2,7 @@ package com.aiot.log.service.impl;
 
 import com.aiot.log.dto.MqttGlobalCredentialUpdateRequest;
 import com.aiot.log.exception.BusinessException;
+import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.service.MqttCredentialService;
 import com.aiot.log.vo.MqttGlobalCredentialStatusVO;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,10 @@ public class MqttCredentialServiceImpl implements MqttCredentialService {
                 }
             }
         } catch (IOException exception) {
-            throw new BusinessException(500, "无法读取 MQTT 凭证状态");
+            throw new BusinessException(
+                    ErrorCode.MQTT_CREDENTIAL_READ_FAILED,
+                    ErrorCode.MQTT_CREDENTIAL_READ_FAILED.getMessage(),
+                    exception);
         }
         MqttGlobalCredentialStatusVO vo = new MqttGlobalCredentialStatusVO();
         vo.setUsername(username);
@@ -63,10 +67,16 @@ public class MqttCredentialServiceImpl implements MqttCredentialService {
             secureDockerMosquittoFiles();
             return getGlobalCredentialStatus();
         } catch (IOException exception) {
-            throw new BusinessException(500, "保存 MQTT 全局凭证失败：" + exception.getMessage());
+            throw new BusinessException(
+                    ErrorCode.MQTT_CREDENTIAL_SAVE_FAILED,
+                    ErrorCode.MQTT_CREDENTIAL_SAVE_FAILED.getMessage(),
+                    exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new BusinessException(500, "保存 MQTT 全局凭证被中断");
+            throw new BusinessException(
+                    ErrorCode.MQTT_CREDENTIAL_SAVE_FAILED,
+                    "保存 MQTT 全局凭证被中断",
+                    exception);
         }
     }
 
@@ -74,7 +84,7 @@ public class MqttCredentialServiceImpl implements MqttCredentialService {
     public synchronized MqttGlobalCredentialStatusVO setAuthenticationEnabled(boolean enabled) {
         MqttGlobalCredentialStatusVO status = getGlobalCredentialStatus();
         if (enabled && !Boolean.TRUE.equals(status.getPasswordConfigured())) {
-            throw new BusinessException(400, "请先保存全局 MQTT 用户名和密码");
+            throw new BusinessException(ErrorCode.MQTT_CREDENTIAL_REQUIRED);
         }
         Path config = configDirectory.resolve("mosquitto-lan.conf");
         try {
@@ -92,7 +102,10 @@ public class MqttCredentialServiceImpl implements MqttCredentialService {
                     + System.lineSeparator(), StandardCharsets.UTF_8);
             return getGlobalCredentialStatus();
         } catch (IOException exception) {
-            throw new BusinessException(500, "更新 MQTT 认证开关失败");
+            throw new BusinessException(
+                    ErrorCode.MQTT_AUTH_UPDATE_FAILED,
+                    ErrorCode.MQTT_AUTH_UPDATE_FAILED.getMessage(),
+                    exception);
         }
     }
 

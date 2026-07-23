@@ -8,6 +8,7 @@ import com.aiot.log.entity.DeviceReport;
 import com.aiot.log.entity.LogRecord;
 import com.aiot.log.enums.DeviceStatus;
 import com.aiot.log.exception.BusinessException;
+import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.mapper.DeviceMapper;
 import com.aiot.log.mapper.DeviceReportMapper;
 import com.aiot.log.mapper.LogRecordMapper;
@@ -120,7 +121,7 @@ public class DeviceServiceImpl implements DeviceService {
         getExistingDevice(id);
         Long logCount = countLogs(id, null, null);
         if (logCount > 0) {
-            throw new BusinessException(409, "设备下存在日志，不能删除");
+            throw new BusinessException(ErrorCode.DEVICE_HAS_LOGS);
         }
         deviceMapper.deleteById(id);
     }
@@ -128,7 +129,7 @@ public class DeviceServiceImpl implements DeviceService {
     private Device getExistingDevice(Long id) {
         Device device = deviceMapper.selectById(id);
         if (device == null) {
-            throw new BusinessException(404, "设备不存在");
+            throw new BusinessException(ErrorCode.DEVICE_NOT_FOUND);
         }
         return device;
     }
@@ -137,13 +138,13 @@ public class DeviceServiceImpl implements DeviceService {
         Long count = deviceMapper.selectCount(new LambdaQueryWrapper<Device>()
                 .eq(Device::getDeviceCode, deviceCode));
         if (count > 0) {
-            throw new BusinessException(409, "设备编号已存在");
+            throw new BusinessException(ErrorCode.DEVICE_CODE_DUPLICATED);
         }
     }
 
     private void validateStatusOrDefault(String status) {
         if (StringUtils.hasText(status) && !DeviceStatus.isValid(status)) {
-            throw new BusinessException(400, "设备状态不合法");
+            throw new BusinessException(ErrorCode.DEVICE_STATUS_INVALID);
         }
     }
 

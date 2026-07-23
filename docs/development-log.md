@@ -13,6 +13,13 @@
 - 验证：新增配置反射检查和随机端口真实端点测试，确认文档 JSON、Swagger UI 均返回 HTTP 200，且系统运行时、日志和 MQTT 状态等主要路径存在。JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。
 - 发布状态：源码已完成，尚未发布新的固定镜像；群晖当前运行的 `v1.1.8-remote-mqtt` 仍是 Flyway 版本，不包含 Swagger。
 
+### 统一错误码、异常响应与请求日志
+
+- 问题：业务代码直接抛出裸 `400/404/409/500`，字符串消息既承担程序判断又承担用户显示；全局处理器没有设置真实 HTTP 状态，也缺少请求关联标识。
+- 处理：增加集中 `ErrorCode` 和类型化 `BusinessException`；响应保留数值 `code`，新增稳定 `errorCode` 和 `traceId`，并让 HTTP 状态与响应一致。请求过滤器生成或沿用合法 `X-Trace-Id`，写入响应头和 MDC。全局处理器统一覆盖校验、参数类型、JSON、方法、路由、数据冲突和未知异常。
+- 日志：可预期拒绝使用 `api_request_rejected`，内部业务操作失败使用 `api_operation_failed`，未知异常使用 `api_unhandled_error`；字段采用 `event/errorCode/status/method/path/traceId/detail`，不记录请求体、密码、Token 或 MQTT 凭证。前端错误对象同步保留 `errorCode` 和 `traceId`。
+- 验证：新增4项随机端口真实 HTTP 测试，覆盖业务错误、字段校验、参数格式、损坏 JSON、404路由及客户端追踪号透传；后端共23项测试全部通过，后端生产 JAR、前端类型检查和 Vite 生产构建成功。源码尚未发布新固定镜像。
+
 ## 2026-07-22
 
 ### Flyway 无损数据库迁移基线

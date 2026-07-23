@@ -1,6 +1,8 @@
 export interface ApiResponse<T> {
   code: number
   message: string
+  errorCode?: string
+  traceId?: string
   data: T
 }
 

@@ -5,6 +5,7 @@ import com.aiot.log.config.MqttDeviceReportSubscriber;
 import com.aiot.log.config.MqttProperties;
 import com.aiot.log.dto.MqttGlobalCredentialUpdateRequest;
 import com.aiot.log.exception.BusinessException;
+import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.service.MqttCredentialService;
 import com.aiot.log.vo.MqttGlobalCredentialStatusVO;
 import com.aiot.log.vo.MqttStatusVO;
@@ -82,7 +83,7 @@ public class MqttController {
 
     private void ensureLanCredentialManagement() {
         if (mqttProperties.isRemoteMode()) {
-            throw new BusinessException(400, "远程 MQTT 模式仅使用部署环境中的私有凭证，不能在页面修改本地 Mosquitto 凭证");
+            throw new BusinessException(ErrorCode.MQTT_REMOTE_CREDENTIAL_READ_ONLY);
         }
     }
 }

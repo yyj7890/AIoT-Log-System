@@ -52,6 +52,10 @@ springdoc:
     operations-sorter: method
     tags-sorter: alpha
 
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId:-none}]"
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
