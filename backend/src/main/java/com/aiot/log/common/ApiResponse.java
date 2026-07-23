@@ -1,9 +1,17 @@
 package com.aiot.log.common;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "统一 API 响应")
 public class ApiResponse<T> {
 
+    @Schema(description = "业务状态码；200 表示成功", example = "200")
     private Integer code;
+
+    @Schema(description = "响应说明", example = "success")
     private String message;
+
+    @Schema(description = "业务数据；无返回数据时为 null")
     private T data;
 
     public ApiResponse() {

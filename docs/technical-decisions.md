@@ -80,6 +80,14 @@
 
 兼容边界：`sql/schema.sql` 冻结为 V1 兼容引导，暂时保留给已经发布的 pre-Flyway 镜像和 MySQL 空卷初始化，后续不得继续修改它；所有 V2 及以后变化必须进入 Flyway。首次把 Flyway 镜像部署到旧数据卷前仍应备份数据库，并继续复用同一命名卷和私有配置，禁止使用 `down -v`。
 
+## 0.8 OpenAPI 文档方案（2026-07-23）
+
+最终选择：Spring Boot 3.3.5 使用 Springdoc 2.6.0，建立只匹配 `/api/**` 的 `aiot-api` 分组；Swagger UI 使用 `/swagger-ui.html`，机器可读文档使用 `/v3/api-docs/aiot-api`。控制器负责业务分组和操作说明，通用响应模型负责 Schema。
+
+原因：Springdoc 官方兼容表把 Spring Boot 3.3.x 对应到 2.6.x。分组只暴露业务 API，可避免把根路径和 Actuator 管理端点混入对外接口文档；真实端点集成测试可以同时验证文档生成和页面资源映射。
+
+安全边界：Swagger 仅供可信网络内的开发与维护，不代表管理 API 已具备公网认证能力。环境变量 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 可分别关闭 JSON 与页面；群晖当前固定镜像 `v1.1.8-remote-mqtt` 尚不包含本功能，必须在后续镜像发布并升级后才可使用。
+
 ## 1. 后端 Java 版本
 
 最终选择：

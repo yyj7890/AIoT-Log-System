@@ -1,6 +1,6 @@
 # 项目设计说明
 
-更新时间：2026-07-22
+更新时间：2026-07-23
 
 本文合并项目需求、系统架构、数据设计、接口、页面、设备接入和部署说明。
 
@@ -108,6 +108,15 @@ DELETE /api/alert-rules/{id}
 GET    /api/mqtt/status
 GET    /api/enums
 ```
+
+当前源码通过 Springdoc 提供 OpenAPI 文档，仅收录 `/api/**` 业务接口：
+
+```text
+Swagger UI        GET /swagger-ui.html
+OpenAPI 分组 JSON GET /v3/api-docs/aiot-api
+```
+
+本地源码或自行构建的 Docker 后端可直接使用以上路径；群晖需将路径拼接到后端宿主机映射端口。文档默认仅供可信网络维护和调试，不得因此把后端开放到公网。生产环境可设置 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。Actuator 管理端点不属于 `aiot-api` 分组。
 
 容器就绪检查使用 Spring Boot Actuator 的 `GET /actuator/health`。管理服务独立监听 `127.0.0.1:8081`，Docker 不映射该端口；只开放总体健康状态且不显示组件详情。该端点不使用业务接口的统一响应包装，也不返回数据库、MQTT、主机或凭证信息。
 

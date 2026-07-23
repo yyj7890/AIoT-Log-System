@@ -8,6 +8,8 @@ import com.aiot.log.dto.LogStatusUpdateRequest;
 import com.aiot.log.dto.LogUpdateRequest;
 import com.aiot.log.service.LogService;
 import com.aiot.log.vo.LogVO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
@@ -27,6 +29,7 @@ import java.time.LocalDateTime;
 @Validated
 @RestController
 @RequestMapping("/api/logs")
+@Tag(name = "日志管理", description = "运行、异常、维护和巡检日志的查询与维护")
 public class LogController {
 
     private final LogService logService;
@@ -36,6 +39,7 @@ public class LogController {
     }
 
     @GetMapping
+    @Operation(summary = "分页查询日志", description = "支持设备、类型、级别、状态、来源、标签、关键字和时间范围筛选")
     public ApiResponse<PageResult<LogVO>> listLogs(
             @RequestParam(required = false) Long page,
             @RequestParam(required = false) Long pageSize,
@@ -53,21 +57,25 @@ public class LogController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "获取日志详情")
     public ApiResponse<LogVO> getLog(@PathVariable Long id) {
         return ApiResponse.success(logService.getLog(id));
     }
 
     @PostMapping
+    @Operation(summary = "创建人工日志")
     public ApiResponse<LogVO> createLog(@Valid @RequestBody LogCreateRequest request) {
         return ApiResponse.success(logService.createLog(request));
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "更新日志")
     public ApiResponse<LogVO> updateLog(@PathVariable Long id, @Valid @RequestBody LogUpdateRequest request) {
         return ApiResponse.success(logService.updateLog(id, request));
     }
 
     @PatchMapping("/{id}/status")
+    @Operation(summary = "更新日志处理状态")
     public ApiResponse<LogVO> updateLogStatus(
             @PathVariable Long id,
             @Valid @RequestBody LogStatusUpdateRequest request) {
@@ -75,12 +83,14 @@ public class LogController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "删除单条日志")
     public ApiResponse<Void> deleteLog(@PathVariable Long id) {
         logService.deleteLog(id);
         return ApiResponse.success();
     }
 
     @DeleteMapping
+    @Operation(summary = "批量删除日志")
     public ApiResponse<Void> deleteLogs(@Valid @RequestBody LogBatchDeleteRequest request) {
         logService.deleteLogs(request.getIds());
         return ApiResponse.success();

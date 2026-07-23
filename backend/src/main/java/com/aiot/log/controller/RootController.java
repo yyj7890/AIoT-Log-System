@@ -1,6 +1,7 @@
 package com.aiot.log.controller;
 
 import com.aiot.log.common.ApiResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -8,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
+@Hidden
 public class RootController {
 
     @GetMapping("/")

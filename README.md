@@ -23,6 +23,7 @@ AIoT-Log-System 解决 AIoT 设备在日常运行中“状态分散、日志难�
 - 日志页面自动刷新；按需进入批量删除模式，并在删除前二次确认。
 - UDP `19830` 自动发现同一局域网内的 Mosquitto Broker，适应 Wi-Fi、网线与手机热点的 DHCP 地址变化。
 - Mosquitto 已关闭匿名访问，使用全局 MQTT 用户名密码认证与 Topic ACL。
+- 当前源码提供按业务接口分组的 OpenAPI JSON 和 Swagger UI。
 - 提供本地开发脚本和 Docker Compose 四服务部署。
 
 ## 技术栈
@@ -84,6 +85,17 @@ docker-stop.cmd     停止容器并保留数据
 
 Docker 首次运行 `docker-update.cmd` 时会在本机生成 `.env` 和 `docker/local/`：其中包含随机数据库密码、MQTT 凭证、Mosquitto 密码文件及当前局域网 IPv4。这些文件均已被 `.gitignore` 忽略，**不要打开、复制、提交或上传**。局域网 UDP 自动发现默认不要求 Token，以便未预置 Token 的设备可自动获取 Broker 地址；如设备固件支持并配置了同一 Token，可在私有 `.env` 中手动设置 `MQTT_DISCOVERY_TOKEN`。脚本不会覆盖已存在的凭证；在切换 Wi-Fi、网线或热点后再次运行 `docker-start.cmd`，会更新仅供 UDP 发现使用的本机局域网地址。若电脑当前没有可用局域网 IPv4，Docker 仍可启动，但会暂时关闭 UDP 发现；联网后再次运行启动脚本即可恢复。Docker 也会使用 TCP `1883` 和 UDP `19830`，不要与本地开发版同时运行。
 
+### 接口文档
+
+当前源码构建的后端提供以下接口文档：
+
+```text
+Swagger UI：http://127.0.0.1:8080/swagger-ui.html
+OpenAPI JSON：http://127.0.0.1:8080/v3/api-docs/aiot-api
+```
+
+群晖部署时将 `127.0.0.1:8080` 替换为 NAS 地址和后端宿主机映射端口，例如 `http://<NAS>:18080/swagger-ui.html`。文档仅限可信网络使用；可用 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。当前已发布的 `v1.1.8-remote-mqtt` 尚不包含该功能，需要等待后续固定镜像。
+
 ### HiveMQ Cloud 远程版本（`Remote-Hivemq` 分支）
 
 该分支保留上述局域网模式，并增加可选的远程日志接入：设备通过 HiveMQ Cloud 的 TLS `8883` 上报，家中群晖/电脑上的后端主动订阅并写入 MySQL。远程模式不需要群晖公网 IP，也不应开放家庭 `1883`、`8080`、`3306` 或 UDP `19830` 到公网。
@@ -100,8 +112,8 @@ docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
 两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前远程固定版本为 `v1.1.8-remote-mqtt`，在 `v1.1.7` 基础上接入 Flyway 数据库迁移；空库执行 V1，已有数据库保留数据并建立 V1 基线，后续结构升级使用 V2、V3 迁移。旧远程版继续保留用于回退。`latest` 保留给 `main` 的局域网版，且只有明确推送 `main` 分支时才允许更新；远程版本标签不会覆盖它。
 
 ```text
-docker pull ghcr.io/yyj7890/aiot-log-backend:v1.1.7-remote-mqtt
-docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.1.7-remote-mqtt
+docker pull ghcr.io/yyj7890/aiot-log-backend:v1.1.8-remote-mqtt
+docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.1.8-remote-mqtt
 ```
 
 ### 首次本地配置（公开模板）

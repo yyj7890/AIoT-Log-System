@@ -7,6 +7,8 @@ import com.aiot.log.enums.LogSource;
 import com.aiot.log.enums.LogStatus;
 import com.aiot.log.enums.LogType;
 import com.aiot.log.vo.EnumOptionVO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,9 +20,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/enums")
+@Tag(name = "枚举选项", description = "前端表单和筛选器使用的业务枚举")
 public class EnumController {
 
     @GetMapping
+    @Operation(summary = "获取全部业务枚举")
     public ApiResponse<Map<String, List<EnumOptionVO>>> getEnums() {
         Map<String, List<EnumOptionVO>> result = new HashMap<String, List<EnumOptionVO>>();
         result.put("deviceStatus", getDeviceStatusOptions());

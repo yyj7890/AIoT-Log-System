@@ -4,6 +4,15 @@
 
 完整早期过程保存在 `../history/docs-before-consolidation-2026-07-09.zip`，包括原始命令、长篇报错和逐步搭建过程。
 
+## 2026-07-23
+
+### OpenAPI/Swagger 接口文档
+
+- 处理：后端接入与 Spring Boot 3.3.x 兼容的 Springdoc 2.6.0，新增中文 OpenAPI 元数据和 `aiot-api` 分组，仅收录 `/api/**`。9 个业务控制器补充中文 Tag 与 Operation，通用响应和分页结构补充 Schema；根路径和 Actuator 不进入业务文档。
+- 使用：当前源码提供 `/v3/api-docs/aiot-api` 和 `/swagger-ui.html`，可通过 `OPENAPI_ENABLED`、`SWAGGER_UI_ENABLED` 关闭。文档仅供可信网络调试，不改变现有安全边界。
+- 验证：新增配置反射检查和随机端口真实端点测试，确认文档 JSON、Swagger UI 均返回 HTTP 200，且系统运行时、日志和 MQTT 状态等主要路径存在。JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。
+- 发布状态：源码已完成，尚未发布新的固定镜像；群晖当前运行的 `v1.1.8-remote-mqtt` 仍是 Flyway 版本，不包含 Swagger。
+
 ## 2026-07-22
 
 ### Flyway 无损数据库迁移基线

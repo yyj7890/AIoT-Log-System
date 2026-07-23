@@ -1,12 +1,22 @@
 package com.aiot.log.common;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
+@Schema(description = "分页查询结果")
 public class PageResult<T> {
 
+    @Schema(description = "当前页记录")
     private List<T> records;
+
+    @Schema(description = "符合条件的记录总数", example = "46")
     private Long total;
+
+    @Schema(description = "当前页码，从 1 开始", example = "1")
     private Long page;
+
+    @Schema(description = "每页记录数", example = "10")
     private Long pageSize;
 
     public PageResult() {
