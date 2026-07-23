@@ -6,7 +6,7 @@
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 
-当前状态：**`v1.1.9-remote-mqtt` 已发布前后端 GHCR 镜像、digest来源证明和GitHub Release；腾讯云TCR同步配置已实现，等待命名空间和Secrets后发布。尚未升级群晖，群晖当前仍运行已完成Flyway实卷验收的`v1.1.8-remote-mqtt`。真实凭证未写入仓库。**
+当前状态：**`v1.1.9-remote-mqtt` 已发布前后端 GHCR 和腾讯云TCR镜像、digest来源证明及GitHub Release；两个TCR公有镜像可匿名解析且顶层digest与GHCR一致。尚未升级群晖，群晖当前仍运行已完成Flyway实卷验收的`v1.1.8-remote-mqtt`。真实凭证未写入仓库。**
 
 ### 统一版本变更总表
 

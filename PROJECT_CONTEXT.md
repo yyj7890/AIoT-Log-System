@@ -95,7 +95,7 @@ HiveMQ 远程版本：Git 分支 `Remote-Hivemq` 已实现可选 `MQTT_MODE=remo
 
 2026-07-23 已完成第二阶段自动化回归基础：后端新增 MQTT 消息路由、非法载荷、Topic与Payload设备编号一致性、连接回调、QoS 1重复故障、非MQTT事件隔离和MySQL 8.4 Flyway新库/旧库数据保留测试；本地无MySQL测试环境时自动跳过2项Flyway集成测试，其余30项后端测试通过。前端接入Vitest 4.1.10，将日志页和MQTT状态页轮询抽成共享控制器，4项测试覆盖定时刷新、隐藏暂停、恢复立即刷新、请求互斥和防重复定时器。`tools/test-deployment-regression.ps1` 自动检查5套Compose、统一镜像标签、远程模式边界、MySQL命名卷和停止脚本不删卷；GitHub `regression.yml` 使用MySQL 8.4执行完整32项后端测试、前端测试/构建和部署检查。MQTT拒绝日志不再输出原始Payload。上述功能已随`v1.1.9-remote-mqtt`发布。
 
-2026-07-23 第三阶段镜像发布链已实现并发布`v1.1.9-remote-mqtt`：发布工作流先构建候选镜像，用固定提交版本的Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，再由GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明。首次线上运行中后端因Tomcat 10.1.31漏洞被正确阻断；升级至10.1.57后，回归、前后端扫描、推送、来源证明和GitHub Release均成功，两个公开GHCR清单包含对应attestation manifest。`latest`仍只由`main`更新并保持局域网语义。已增加腾讯云TCR国内同步源、digest一致性校验和独立群晖Compose，目标为`ccr.ccs.tencentyun.com/aiot-log-system`；等待腾讯云命名空间和GitHub Secrets后同步。群晖仍运行`v1.1.8`，尚未升级。
+2026-07-23 第三阶段镜像发布链已实现并发布`v1.1.9-remote-mqtt`：发布工作流先构建候选镜像，用固定提交版本的Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，再由GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明。首次线上运行中后端因Tomcat 10.1.31漏洞被正确阻断；升级至10.1.57后，回归、前后端扫描、推送、来源证明和GitHub Release均成功。腾讯云TCR国内同步源也已发布同一固定标签，未登录客户端可解析；后端顶层digest为`sha256:9450deb945abed9face18674d3301e9cbf7d96be61629ec0331b71181357999d`，前端为`sha256:60e63bee3f4175d8068ebd576212c2315ac35dcb8977d1863c0b4e248824d969`，均与GHCR相同且保留attestation manifest。群晖仍运行`v1.1.8`，尚未升级。
 
 ## 5. 启动方式
 
@@ -135,8 +135,8 @@ docker-stop.cmd    停止并保留数据
 
 当前执行顺序：
 
-1. 创建腾讯云`aiot-log-system`命名空间并配置GitHub的`TCR_USERNAME`、`TCR_PASSWORD`，同步和验证`v1.1.9-remote-mqtt`。
-2. 群晖使用TCR固定镜像复用原数据卷和私有配置升级`v1.1.9`，再按兼容规则演练回退`v1.1.8`。
+1. 群晖使用TCR固定镜像复用原数据卷和私有配置升级`v1.1.9`。
+2. 按兼容规则演练回退`v1.1.8`，确认数据与服务恢复，再决定是否升回`v1.1.9`。
 3. 前述工作完成后，再决定是否开发日志智能总结、异常原因分析、维护建议和设备历史关联分析。
 
 持续维护要求：以后修改MQTT、状态流转、Flyway、前端轮询或Docker编排时，必须同步更新并通过对应回归测试。

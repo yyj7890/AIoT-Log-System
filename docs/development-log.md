@@ -29,7 +29,7 @@
 - 地址规范：用户提供的项目名包含大写和Markdown链接，不能直接作为镜像路径；按腾讯云个人版小写命名规则规范为`ccr.ccs.tencentyun.com/aiot-log-system/{aiot-log-backend,aiot-log-frontend}`。命名空间必须由腾讯云账号先创建且全局唯一。
 - 实现：新增`sync-tcr.yml`，从已完成扫描和证明的GHCR固定标签复制OCI索引到TCR，不重新构建；禁止`latest`，并强制比较源、目标顶层digest。新增独立`docker-compose.remote.tcr.yml`和`-Remote -TencentRegistry`群晖部署包生成选项。
 - 凭证边界：GitHub仓库当前没有Actions变量或Secrets；实际同步前必须配置`TCR_USERNAME`和`TCR_PASSWORD`，不得提交到代码、Compose或部署包。
-- 当前验证：5套Compose静态部署检查、镜像策略检查、4份工作流YAML解析和TCR群晖部署包生成均通过。TCR镜像发布与群晖升级尚未进行。
+- 发布验证：提交`bc7a099`触发同步运行`30001574691`，标签解析、腾讯云登录、前后端复制和digest校验全部成功；同提交回归运行`30001574743`通过。未登录客户端可解析两个TCR公有镜像，前端和后端顶层digest均与GHCR一致，并保留OCI索引中的attestation manifest。群晖升级尚未进行。
 
 #### 首次后端候选镜像被漏洞门禁阻断
 
