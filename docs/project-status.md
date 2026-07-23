@@ -36,13 +36,13 @@
 
 2026-07-22 Flyway 无损数据库升级完成并发布、部署为 `v1.1.8-remote-mqtt`：后端加入 `flyway-core`、MySQL 支持和 V1 初始迁移，旧数据库通过版本 1 基线接入；以后结构变化只能新增 V2、V3 迁移。隔离 MySQL 8.4 验证中，空库创建 7 张业务表并记录 `V1/SQL/success`，已有库的测试设备保留且只记录 `V1/BASELINE/success`。15 项后端测试、生产 JAR、四套 Compose 和两种群晖部署包均通过检查。群晖原项目升级后出现 `JdbcTableSchemaHistory` 和 `DbBaseline` 成功记录，原45条日志与设备数据保留；MQTT升级验证消息收到/处理/失败为 `1/1/0`，新增 ID 46，日志总数变为46。固定镜像版本差异统一见 `hivemq-remote-mqtt-version.md` 的“统一版本变更总表”。
 
-2026-07-23 OpenAPI/Swagger 源码接入完成：依据 Spring Boot 3.3.x 兼容范围使用 Springdoc 2.6.0，生成中文标题、说明和版本元数据；`aiot-api` 分组仅收录 `/api/**`，9 个业务控制器均有中文 Tag 和 Operation，通用 `ApiResponse`、`PageResult` 已补充 Schema。接口 JSON 为 `/v3/api-docs/aiot-api`，调试页面为 `/swagger-ui.html`，可用 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 关闭。新增配置检查和真实随机端口集成测试，确认两个端点均返回 HTTP 200 且主要接口存在；JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。该功能已随 `v1.1.9-remote-mqtt` 发布；群晖当前 `v1.1.8-remote-mqtt` 不包含本功能，升级后方可使用。
+2026-07-23 OpenAPI/Swagger 源码接入完成：依据 Spring Boot 3.3.x 兼容范围使用 Springdoc 2.6.0，生成中文标题、说明和版本元数据；`aiot-api` 分组仅收录 `/api/**`，9 个业务控制器均有中文 Tag 和 Operation，通用 `ApiResponse`、`PageResult` 已补充 Schema。接口 JSON 为 `/v3/api-docs/aiot-api`，调试页面为 `/swagger-ui.html`，可用 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 关闭。新增配置检查和真实随机端口集成测试，确认两个端点均返回 HTTP 200 且主要接口存在；JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。该功能已随 `v1.1.9-remote-mqtt` 发布并在群晖完成真实端点验收。
 
 2026-07-23 统一错误与日志规范完成：新增集中式 `ErrorCode`，所有业务异常不再使用裸数字；错误响应的数值 `code` 与 HTTP 状态一致，同时提供稳定字符串 `errorCode` 和请求 `traceId`。`X-Trace-Id` 会在响应头返回并进入 MDC；合法的调用方追踪号可继续沿用，否则后端生成新值。全局异常处理覆盖业务错误、字段校验、参数类型、损坏 JSON、不支持的方法、不存在路由、数据库冲突和未知异常，未知异常不向客户端暴露堆栈。可预期拒绝统一为 `api_request_rejected`，内部业务操作失败为 `api_operation_failed`，未知错误为 `api_unhandled_error`，均使用键值字段且不记录请求体和凭证。前端保留数值状态码兼容，并在 `ApiRequestError` 中传递 `errorCode`、`traceId`。4项真实端点测试覆盖400/404和追踪号关联，后端总计23项测试、前端生产构建和后端生产 JAR均通过。该功能已随`v1.1.9-remote-mqtt`发布。
 
 2026-07-23 第二阶段自动化回归基础完成：MQTT订阅器新增5项测试，覆盖日志/状态上报路由、QoS、计数、非法JSON、字段校验、Topic设备编号匹配和断线/恢复回调；运行日志服务新增QoS 1重复故障不追加、非MQTT事件不关闭MQTT故障测试，原有跨窗口 `PENDING → RESOLVED → PENDING` 测试继续保留。Flyway新增2项仅在提供真实MySQL时启用的集成测试，分别验证空库执行V1创建7张业务表，以及旧库建立V1基线并保留设备数据。前端接入Vitest并新增4项共享轮询控制器测试，日志页和MQTT状态页均改用该控制器。部署脚本自动验证5套Compose、远程/局域网边界、前后端镜像标签一致、MySQL命名卷和4个停止脚本不删除数据卷。GitHub新增回归工作流，在MySQL 8.4服务上运行完整后端、前端和部署检查。本机结果为后端32项发现、30项通过、2项因无MySQL环境跳过；前端4项通过，生产构建与部署检查通过。相关功能已随`v1.1.9-remote-mqtt`发布。
 
-2026-07-23 第三阶段镜像发布链和固定版本已完成：前后端Dockerfile升级到Maven 3.9.16/JDK 17 Noble、Node 24 Alpine 3.24和Nginx 1.30 Alpine。GHCR工作流先用Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，并用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明；关键Action固定到完整提交摘要。首次运行中后端因Tomcat 10.1.31漏洞被正确阻断，未push/attest；升级Tomcat 10.1.57后回归和前后端镜像流程均成功。`v1.1.9-remote-mqtt`前后端清单、attestation manifest和GitHub Release已发布并可解析；腾讯云TCR同步运行`30001574691`成功，两个公有镜像可匿名解析，顶层digest与GHCR一致并保留attestation manifest。群晖仍运行`v1.1.8`，尚未升级。
+2026-07-23 第三阶段镜像发布链、国内同步和群晖升级已完成：前后端Dockerfile升级到Maven 3.9.16/JDK 17 Noble、Node 24 Alpine 3.24和Nginx 1.30 Alpine。GHCR工作流先用Anchore Grype阻断已有修复版本的CRITICAL漏洞，通过后推送，并用GitHub官方Artifact Attestation为实际digest生成Sigstore签名的SLSA来源证明。首次运行中后端因Tomcat 10.1.31漏洞被正确阻断；升级Tomcat 10.1.57后完整流程成功。腾讯云TCR同步运行`30001574691`成功，公有镜像顶层digest与GHCR一致并保留attestation manifest。群晖通过TCR原地升级`v1.1.9`后，前端、运行时、MQTT、日志、Swagger和OpenAPI均返回200；远程MQTT已连接，原46条日志保留，测试后计数`2/2/0`、新增ID47，总数47。
 
 当前结论（2026-07-13）：真实小智已完成普通 Wi-Fi、手机热点、断网恢复、本地 MQTT 日志汇总、官方/本地 AI 动态切换和本地 AI WebSocket 实际对话验证。IoT 全局 MQTT 凭证已创建并启用：匿名访问已关闭，服务重启后小智使用配网页保存的同一套凭证完成日志上报验证。
 
@@ -135,14 +135,14 @@ docker-stop.cmd    停止并保留数据
 - GHCR 前后端成品镜像已在群晖新环境拉取并完成运行验证；MySQL/Mosquitto 因 Docker Hub 网络不稳采用离线导入
 - 群晖已原地升级至 `v1.1.7-remote-mqtt`；停止/启动、API 与运行时长恢复、MQTT 自动重连、43 条既有日志保留以及跨窗口 `PENDING`/`RESOLVED`/`PENDING` 均已实测通过
 - 群晖已继续升级至 `v1.1.8-remote-mqtt`；Flyway 旧库基线、45 条既有日志保留和升级后新增日志写入均已实测通过
-- OpenAPI 分组 JSON 和 Swagger UI 已通过真实 HTTP 端点测试并随 `v1.1.9-remote-mqtt` 发布；群晖尚未升级
+- OpenAPI 分组 JSON 和 Swagger UI 已通过真实 HTTP 端点测试并随 `v1.1.9-remote-mqtt` 完成群晖验收
 - MQTT、状态流转、Flyway、前端轮询和Docker数据卷保护均已有对应自动化回归入口
 
 尚未验证：
 
 - 真实硬件长时间持续上报
 - 群晖 Container Manager 中停止、启动全过程的 `healthy` 状态截图留证；API、MQTT、前端可用性、运行时长恢复和数据保留已经验证
-- 群晖`v1.1.9`保留数据升级和`v1.1.8`回退演练
+- 群晖`v1.1.8`回退演练
 
 暂存跳过：
 
@@ -161,12 +161,12 @@ docker-stop.cmd    停止并保留数据
 - 前端主包体积较大，尚未进一步拆包。
 - 腾讯云TCR国内同步源已发布`v1.1.9`前后端镜像并验证匿名解析和digest一致；GHCR继续作为主发布源。
 - 群晖部署已完成首次验收，但仍需进行长时间稳定性、端口冲突覆盖和升级回归验证；详见 `synology-nas-deployment.md`。
-- GHCR包应保持Public；`v1.0.0-lan`与远程`v1.1.0`至`v1.1.9`固定标签已发布。`v1.1.9`已经过漏洞门禁并生成签名来源证明，尚未完成群晖升级/回退。
+- GHCR包应保持Public；`v1.0.0-lan`与远程`v1.1.0`至`v1.1.9`固定标签已发布。`v1.1.9`已经过漏洞门禁、签名来源证明和群晖升级验收，尚未完成回退演练。
 
 ## 下一步
 
-1. 群晖使用TCR镜像复用原数据卷和私有配置升级`v1.1.9`。
-2. 按兼容规则回退`v1.1.8`确认数据和服务恢复，再决定是否升回`v1.1.9`。
+1. 按兼容规则回退`v1.1.8`确认数据和服务恢复。
+2. 根据回退结果决定是否升回`v1.1.9`。
 3. 前述工作完成后，再决定是否进入AI日志分析阶段。
 
 持续维护：MQTT、状态流转、Flyway、前端轮询或Docker编排发生变化时，同步更新对应回归测试。

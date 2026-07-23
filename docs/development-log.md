@@ -29,7 +29,8 @@
 - 地址规范：用户提供的项目名包含大写和Markdown链接，不能直接作为镜像路径；按腾讯云个人版小写命名规则规范为`ccr.ccs.tencentyun.com/aiot-log-system/{aiot-log-backend,aiot-log-frontend}`。命名空间必须由腾讯云账号先创建且全局唯一。
 - 实现：新增`sync-tcr.yml`，从已完成扫描和证明的GHCR固定标签复制OCI索引到TCR，不重新构建；禁止`latest`，并强制比较源、目标顶层digest。新增独立`docker-compose.remote.tcr.yml`和`-Remote -TencentRegistry`群晖部署包生成选项。
 - 凭证边界：GitHub仓库当前没有Actions变量或Secrets；实际同步前必须配置`TCR_USERNAME`和`TCR_PASSWORD`，不得提交到代码、Compose或部署包。
-- 发布验证：提交`bc7a099`触发同步运行`30001574691`，标签解析、腾讯云登录、前后端复制和digest校验全部成功；同提交回归运行`30001574743`通过。未登录客户端可解析两个TCR公有镜像，前端和后端顶层digest均与GHCR一致，并保留OCI索引中的attestation manifest。群晖升级尚未进行。
+- 发布验证：提交`bc7a099`触发同步运行`30001574691`，标签解析、腾讯云登录、前后端复制和digest校验全部成功；同提交回归运行`30001574743`通过。未登录客户端可解析两个TCR公有镜像，前端和后端顶层digest均与GHCR一致，并保留OCI索引中的attestation manifest。
+- 群晖验收：使用TCR固定镜像原地重新构建`v1.1.9`，复用原MySQL数据卷、HiveMQ私有配置和端口。前端、后端、Swagger/OpenAPI均返回200，远程MQTT已连接，原46条日志保留；测试消息计数`2/2/0`，新增ID47 `RESOLVED`，总数47。升级成功，回退演练另行执行。
 
 #### 首次后端候选镜像被漏洞门禁阻断
 
@@ -52,7 +53,7 @@
 - 处理：后端接入与 Spring Boot 3.3.x 兼容的 Springdoc 2.6.0，新增中文 OpenAPI 元数据和 `aiot-api` 分组，仅收录 `/api/**`。9 个业务控制器补充中文 Tag 与 Operation，通用响应和分页结构补充 Schema；根路径和 Actuator 不进入业务文档。
 - 使用：当前源码提供 `/v3/api-docs/aiot-api` 和 `/swagger-ui.html`，可通过 `OPENAPI_ENABLED`、`SWAGGER_UI_ENABLED` 关闭。文档仅供可信网络调试，不改变现有安全边界。
 - 验证：新增配置反射检查和随机端口真实端点测试，确认文档 JSON、Swagger UI 均返回 HTTP 200，且系统运行时、日志和 MQTT 状态等主要路径存在。JDK 17 Maven 共 19 项测试全部通过，生产 JAR 构建成功。
-- 发布状态：已随 `v1.1.9-remote-mqtt` 发布；群晖当前运行的 `v1.1.8-remote-mqtt` 仍是 Flyway 版本，不包含 Swagger，升级后方可使用。
+- 发布状态：已随 `v1.1.9-remote-mqtt` 发布并在群晖完成Swagger/OpenAPI真实端点验收。
 
 ### 统一错误码、异常响应与请求日志
 

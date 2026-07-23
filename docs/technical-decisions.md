@@ -86,7 +86,7 @@
 
 原因：Springdoc 官方兼容表把 Spring Boot 3.3.x 对应到 2.6.x。分组只暴露业务 API，可避免把根路径和 Actuator 管理端点混入对外接口文档；真实端点集成测试可以同时验证文档生成和页面资源映射。
 
-安全边界：Swagger 仅供可信网络内的开发与维护，不代表管理 API 已具备公网认证能力。环境变量 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 可分别关闭 JSON 与页面；该功能已包含在 `v1.1.9-remote-mqtt`，群晖从当前 `v1.1.8-remote-mqtt` 升级后方可使用。
+安全边界：Swagger 仅供可信网络内的开发与维护，不代表管理 API 已具备公网认证能力。环境变量 `OPENAPI_ENABLED` 和 `SWAGGER_UI_ENABLED` 可分别关闭 JSON 与页面；该功能已包含在 `v1.1.9-remote-mqtt`并完成群晖可信网络内验收。
 
 ## 0.9 错误码、追踪号与日志规范（2026-07-23）
 

@@ -65,7 +65,7 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 
 ## 7. HiveMQ 远程版本（实机验收通过）
 
-`Remote-Hivemq` 分支另提供远程编排 `docker-compose.remote.ghcr.yml`。源码中的远程GHCR编排已固定到已发布的`v1.1.9-remote-mqtt`，群晖当前项目仍运行`v1.1.8-remote-mqtt`，升级前后都必须继续复用原MySQL数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
+`Remote-Hivemq` 分支提供远程GHCR/TCR编排，当前均固定`v1.1.9-remote-mqtt`；群晖已通过TCR镜像完成原地升级，继续复用原MySQL数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 
 国内镜像部署使用`docker-compose.remote.tcr.yml`，前后端固定为腾讯云TCR的`v1.1.9-remote-mqtt`。TCR只是GHCR固定镜像的同步源，工作流不重新构建并强制校验digest一致。两个仓库已设为公有并通过未登录客户端解析：后端顶层digest为`sha256:9450deb945abed9face18674d3301e9cbf7d96be61629ec0331b71181357999d`，前端为`sha256:60e63bee3f4175d8068ebd576212c2315ac35dcb8977d1863c0b4e248824d969`。
 
@@ -105,3 +105,5 @@ sh tools/initialize-synology-docker-config.sh
 2026-07-22 已将群晖原项目升级至 `v1.1.7-remote-mqtt`，原 MySQL 数据卷、私有环境文件和端口映射继续复用。后端停止期间 `/api/system/runtime` 连续三次超时，前端静态页保持 HTTP 200；重新启动后运行时长从 16 秒持续增长，HiveMQ TLS 自动恢复连接，原 43 条日志保留。随后向 `aiot/device/XIAOZHI-001/log` 发送跨窗口恢复事件，新增 ID 44 `RESOLVED`，同时把前一天最新失败 ID 43 从 `PENDING` 改为 `RESOLVED`；再次发送失败事件新增 ID 45 `PENDING`。MQTT 收到/处理成功/失败计数为 `2/2/0`。旧版遗留的更早失败 ID 41 不属于“最新对应故障”，因此未被本次恢复事件修改。升级和两项 v1.1.7 修复均已通过群晖实测；Container Manager 的状态截图可在需要发布留档时另行补充。
 
 同日继续原地升级至 `v1.1.8-remote-mqtt`：升级前完成备份，前后端拉取固定镜像，原 MySQL 数据卷、私有 HiveMQ 配置和端口映射继续复用，未执行 `down -v`。后端容器为 `healthy`，网页和 API 返回 200，HiveMQ `connected=true`。首次启动日志出现 `JdbcTableSchemaHistory` 创建记录和 `DbBaseline` 成功记录，原45条日志与设备数据全部保留；随后发送升级验证消息，MQTT收到/处理/失败为 `1/1/0`，新增 ID 46 `RESOLVED`，日志总数变为46。确认 Flyway 首次实卷基线、数据保留及升级后继续写入均正常。
+
+2026-07-23 通过腾讯云TCR公有镜像继续原地升级至`v1.1.9-remote-mqtt`：项目重新构建后，前端、后端运行时、MQTT状态、日志、Swagger UI和OpenAPI JSON全部返回HTTP 200，`X-Trace-Id`响应头生效，远程MQTT为`connected=true`。升级前46条日志完整保留；测试消息后MQTT收到/处理/失败为`2/2/0`，新增ID47 `RESOLVED`，日志总数47。确认TCR拉取、原数据卷复用、新版功能和升级后继续写入均正常；`v1.1.8`回退演练仍待执行。
