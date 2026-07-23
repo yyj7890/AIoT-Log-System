@@ -1,0 +1,85 @@
+name: Regression tests
+
+on:
+  push:
+    branches:
+      - main
+      - Remote-Hivemq
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'docker-compose*.yml'
+      - 'docker-*.cmd'
+      - 'tools/test-deployment-regression.ps1'
+      - '.github/workflows/regression.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'docker-compose*.yml'
+      - 'docker-*.cmd'
+      - 'tools/test-deployment-regression.ps1'
+      - '.github/workflows/regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: regression-root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pregression-root --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Run backend and MySQL migration regressions
+        working-directory: backend
+        env:
+          FLYWAY_TEST_DB_URL: jdbc:mysql://127.0.0.1:3306/mysql?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          FLYWAY_TEST_DB_USERNAME: root
+          FLYWAY_TEST_DB_PASSWORD: regression-root
+        run: mvn --batch-mode clean verify
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend polling regressions
+        working-directory: frontend
+        run: npm test
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Validate Docker upgrade safeguards
+        shell: pwsh
+        run: ./tools/test-deployment-regression.ps1

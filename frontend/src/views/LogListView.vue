@@ -118,6 +118,7 @@ import LogFormDialog from '@/components/LogFormDialog.vue'
 import { deleteLog, deleteLogs, getLogDetail, getLogList, updateLogStatus } from '@/api/logs'
 import { ApiRequestError } from '@/api/http'
 import { LIVE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { createAutoRefreshController } from '@/utils/autoRefresh'
 import { getDeviceList } from '@/api/devices'
 import { getTagList } from '@/api/tags'
 import { useEnumStore } from '@/stores/enumStore'
@@ -142,7 +143,6 @@ const currentLog = ref<LogRecord | null>(null)
 const timeRange = ref<[string, string] | null>(null)
 const autoSearchReady = ref(false)
 let autoSearchTimer: ReturnType<typeof setTimeout> | undefined
-let autoRefreshTimer: ReturnType<typeof setInterval> | undefined
 let logRequestPending = false
 let detailRequestPending = false
 let detailRequestLogId: number | null = null
@@ -333,33 +333,14 @@ async function refreshLogDetail(id: number, showError: boolean) {
   }
 }
 
-function refreshCurrentPage() {
-  if (document.hidden || logRequestPending) return
-  void loadData(false)
-}
-
-function startAutoRefresh() {
-  stopAutoRefresh()
-  autoRefreshTimer = setInterval(refreshCurrentPage, LIVE_REFRESH_INTERVAL_MS)
-}
-
-function stopAutoRefresh() {
-  if (!autoRefreshTimer) return
-  clearInterval(autoRefreshTimer)
-  autoRefreshTimer = undefined
-}
-
-function handleVisibilityChange() {
-  if (!document.hidden) {
-    resumeAutoRefresh()
+const autoRefresh = createAutoRefreshController({
+  intervalMs: LIVE_REFRESH_INTERVAL_MS,
+  isHidden: () => document.hidden,
+  isPending: () => logRequestPending,
+  refresh: () => {
+    void loadData(false)
   }
-}
-
-function resumeAutoRefresh() {
-  if (document.hidden) return
-  startAutoRefresh()
-  refreshCurrentPage()
-}
+})
 
 function reset() {
   Object.assign(query, { page: 1, pageSize: 10, deviceId: undefined, logType: '', level: '', status: '', source: '', tagId: undefined, keyword: '', startTime: undefined, endTime: undefined })
@@ -442,11 +423,11 @@ function afterSaved() {
 }
 
 onMounted(() => {
-  document.addEventListener('visibilitychange', handleVisibilityChange)
-  window.addEventListener('focus', resumeAutoRefresh)
-  window.addEventListener('online', resumeAutoRefresh)
-  window.addEventListener('pageshow', resumeAutoRefresh)
-  startAutoRefresh()
+  document.addEventListener('visibilitychange', autoRefresh.handleVisibilityChange)
+  window.addEventListener('focus', autoRefresh.resume)
+  window.addEventListener('online', autoRefresh.resume)
+  window.addEventListener('pageshow', autoRefresh.resume)
+  autoRefresh.start()
   autoSearchReady.value = true
   void loadOptions().catch(() => undefined)
   void loadData()
@@ -456,11 +437,11 @@ onBeforeUnmount(() => {
   if (autoSearchTimer) {
     clearTimeout(autoSearchTimer)
   }
-  stopAutoRefresh()
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
-  window.removeEventListener('focus', resumeAutoRefresh)
-  window.removeEventListener('online', resumeAutoRefresh)
-  window.removeEventListener('pageshow', resumeAutoRefresh)
+  autoRefresh.stop()
+  document.removeEventListener('visibilitychange', autoRefresh.handleVisibilityChange)
+  window.removeEventListener('focus', autoRefresh.resume)
+  window.removeEventListener('online', autoRefresh.resume)
+  window.removeEventListener('pageshow', autoRefresh.resume)
 })
 
 watch(

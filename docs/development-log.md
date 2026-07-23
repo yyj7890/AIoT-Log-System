@@ -20,6 +20,14 @@
 - 日志：可预期拒绝使用 `api_request_rejected`，内部业务操作失败使用 `api_operation_failed`，未知异常使用 `api_unhandled_error`；字段采用 `event/errorCode/status/method/path/traceId/detail`，不记录请求体、密码、Token 或 MQTT 凭证。前端错误对象同步保留 `errorCode` 和 `traceId`。
 - 验证：新增4项随机端口真实 HTTP 测试，覆盖业务错误、字段校验、参数格式、损坏 JSON、404路由及客户端追踪号透传；后端共23项测试全部通过，后端生产 JAR、前端类型检查和 Vite 生产构建成功。源码尚未发布新固定镜像。
 
+### 第二阶段自动化回归基础
+
+- MQTT与状态流转：新增订阅器单元测试，覆盖`/log`、`/report`路由、QoS、计数、非法JSON、字段缺失、Topic与Payload设备编号不一致、断线/恢复回调；新增QoS 1重复故障不追加和非MQTT恢复事件不误关故障测试。订阅器拒绝日志改为只记录Topic、Payload字节数和原因，不输出原始Payload。
+- Flyway：新增真实MySQL条件集成测试。空库必须执行V1并创建7张业务表；旧库先执行冻结V1并插入标记设备，Flyway接入后必须生成`BASELINE`且数据仍存在。本地没有测试MySQL时跳过，GitHub工作流使用MySQL 8.4完整执行。
+- 前端：使用Vitest 4.1.10，将日志页和MQTT状态页的定时逻辑抽为共享控制器；4项测试覆盖可见时每秒刷新、隐藏暂停、恢复立即刷新、请求进行中跳过、恢复后继续以及重复恢复不产生多个定时器。
+- Docker：新增部署回归脚本，调用`docker compose config`验证4套编排，并检查远程模式不启用Mosquitto/UDP发现、GHCR前后端标签一致且非`latest`、MySQL命名卷持续复用、4个停止脚本不使用删卷命令。
+- 自动执行：新增GitHub `regression.yml`，在每次相关推送或PR中运行MySQL 8.4后端测试、前端测试与构建、部署检查。本机已验证后端32项发现（30通过、2项因无MySQL跳过）、前端4项通过、生产构建和部署检查通过。
+
 ## 2026-07-22
 
 ### Flyway 无损数据库迁移基线

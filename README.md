@@ -25,6 +25,7 @@ AIoT-Log-System 解决 AIoT 设备在日常运行中“状态分散、日志难�
 - Mosquitto 已关闭匿名访问，使用全局 MQTT 用户名密码认证与 Topic ACL。
 - 当前源码提供按业务接口分组的 OpenAPI JSON 和 Swagger UI。
 - API 错误响应提供稳定业务错误码和请求追踪号，便于前后端联调和日志定位。
+- 自动化回归覆盖MQTT、故障状态、Flyway迁移、前端轮询和Docker数据卷保护。
 - 提供本地开发脚本和 Docker Compose 四服务部署。
 
 ## 技术栈
@@ -195,10 +196,26 @@ docker-ghcr-stop.cmd    停止 GHCR 部署并保留数据
 - 已验证启动事件汇总、中文运行日志、日志自动刷新和批量删除交互。
 - 已验证本地 AI 可用时的实际 WebSocket 对话，以及本地 AI 不可用时回退官方 AI。
 
+## 自动化回归
+
+```text
+cd backend
+mvn test
+
+cd frontend
+npm test
+npm run build
+
+cd ..
+powershell -ExecutionPolicy Bypass -File tools/test-deployment-regression.ps1
+```
+
+本地未提供测试MySQL时，2项Flyway真实数据库测试会跳过；GitHub的`Regression tests`工作流使用MySQL 8.4执行完整测试。部署检查只验证Compose和数据卷保护规则，不会启动、停止或删除现有容器。
+
 ## 当前已知限制
 
 - 全局 MQTT 凭证、无 TLS 的配置只限可信局域网；生产环境应升级为 TLS、每设备凭证和最小权限 ACL。
-- 管理页面登录、HTTP 设备身份认证、自动化回归测试、成品镜像和在线演示尚未完成。
+- 管理页面登录、HTTP 设备身份认证和在线演示尚未完成；这些安全功能当前暂存跳过。
 - 当前实机验证集中在小智 ESP32-S3 示例设备；其他设备类型、长期持续运行、多设备并发与大数据量性能仍待验证。
 - 本地 AI 回退官方 AI 偏慢、本地 AI 能力较弱已记录为延期问题；本次不处理，后续需在小智固件或本地 AI 服务侧优化。
 

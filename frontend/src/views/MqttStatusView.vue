@@ -100,6 +100,7 @@ import { Refresh } from '@element-plus/icons-vue'
 import PageContainer from '@/components/PageContainer.vue'
 import { getMqttGlobalCredential, getMqttStatus, saveMqttGlobalCredential, setMqttAuthentication } from '@/api/mqtt'
 import { LIVE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { createAutoRefreshController } from '@/utils/autoRefresh'
 import type { MqttGlobalCredentialStatus, MqttStatus } from '@/types/mqtt'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -109,7 +110,6 @@ const credential = ref<MqttGlobalCredentialStatus>()
 const savingCredential = ref(false)
 const credentialForm = ref({ username: '', password: '' })
 let statusRequestPending = false
-let autoRefreshTimer: ReturnType<typeof setInterval> | undefined
 
 async function loadStatus(showLoading = true, includeCredential = true) {
   if (statusRequestPending) return
@@ -139,27 +139,14 @@ async function loadStatus(showLoading = true, includeCredential = true) {
   }
 }
 
-function refreshStatus() {
-  if (document.hidden || statusRequestPending) return
-  void loadStatus(false, false)
-}
-
-function startAutoRefresh() {
-  stopAutoRefresh()
-  autoRefreshTimer = setInterval(refreshStatus, LIVE_REFRESH_INTERVAL_MS)
-}
-
-function stopAutoRefresh() {
-  if (!autoRefreshTimer) return
-  clearInterval(autoRefreshTimer)
-  autoRefreshTimer = undefined
-}
-
-function handleVisibilityChange() {
-  if (!document.hidden) {
-    refreshStatus()
+const autoRefresh = createAutoRefreshController({
+  intervalMs: LIVE_REFRESH_INTERVAL_MS,
+  isHidden: () => document.hidden,
+  isPending: () => statusRequestPending,
+  refresh: () => {
+    void loadStatus(false, false)
   }
-}
+})
 
 async function saveCredential() {
   if (!credentialForm.value.username || !credentialForm.value.password) {
@@ -188,13 +175,13 @@ async function enableAuthentication() {
 
 onMounted(() => {
   void loadStatus()
-  startAutoRefresh()
-  document.addEventListener('visibilitychange', handleVisibilityChange)
+  autoRefresh.start()
+  document.addEventListener('visibilitychange', autoRefresh.handleVisibilityChange)
 })
 
 onBeforeUnmount(() => {
-  stopAutoRefresh()
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  autoRefresh.stop()
+  document.removeEventListener('visibilitychange', autoRefresh.handleVisibilityChange)
 })
 </script>
 

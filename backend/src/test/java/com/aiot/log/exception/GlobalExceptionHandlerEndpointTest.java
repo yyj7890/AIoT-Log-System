@@ -74,7 +74,14 @@ class GlobalExceptionHandlerEndpointTest {
         ResponseEntity<String> response = restTemplate.exchange(
                 url("/api/devices"),
                 HttpMethod.POST,
-                new HttpEntity<String>("{}", jsonHeaders()),
+                new HttpEntity<String>(
+                        """
+                                {
+                                  "deviceCode": "VALIDATION-TEST",
+                                  "type": "TEST"
+                                }
+                                """,
+                        jsonHeaders()),
                 String.class
         );
 

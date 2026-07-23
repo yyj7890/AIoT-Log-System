@@ -133,11 +133,13 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
             if (isRuntimeLogTopic(topic)) {
                 DeviceRuntimeLogCreateRequest request = objectMapper.readValue(payload, DeviceRuntimeLogCreateRequest.class);
                 validateRequest(request);
+                validateTopicDeviceCode(topic, request.getDeviceCode());
                 logService.createDeviceRuntimeLog(request);
                 log.info("MQTT device runtime log handled. topic={}, qos={}", topic, message.getQos());
             } else {
                 DeviceReportCreateRequest request = objectMapper.readValue(payload, DeviceReportCreateRequest.class);
                 validateRequest(request);
+                validateTopicDeviceCode(topic, request.getDeviceCode());
                 deviceReportService.createReport(request);
                 log.info("MQTT device report handled. topic={}, qos={}", topic, message.getQos());
             }
@@ -146,7 +148,8 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
         } catch (Exception exception) {
             failedCount.incrementAndGet();
             lastError = exception.getMessage();
-            log.warn("MQTT device report ignored. topic={}, payload={}", topic, payload, exception);
+            log.warn("MQTT device message ignored. topic={}, payloadBytes={}, reason={}",
+                    topic, message.getPayload().length, exception.getMessage());
         }
     }
 
@@ -192,6 +195,20 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
 
     private boolean isRuntimeLogTopic(String topic) {
         return topic != null && topic.endsWith("/log");
+    }
+
+    private void validateTopicDeviceCode(String topic, String deviceCode) {
+        if (!StringUtils.hasText(topic)) {
+            throw new IllegalArgumentException("MQTT topic is missing");
+        }
+        String[] segments = topic.split("/", -1);
+        if (segments.length < 2 || !StringUtils.hasText(segments[segments.length - 2])) {
+            throw new IllegalArgumentException("MQTT topic does not contain a device code");
+        }
+        String topicDeviceCode = segments[segments.length - 2];
+        if (!topicDeviceCode.equals(deviceCode)) {
+            throw new IllegalArgumentException("MQTT topic device code does not match payload");
+        }
     }
 
     private void validateRequest(Object request) {

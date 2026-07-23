@@ -176,6 +176,28 @@ class LogServiceImplTest {
     }
 
     @Test
+    void qosOneDuplicateFailureDoesNotAppendOrChangePendingState() {
+        LogRecord existing = existingRuntimeLog(
+                "远程日志 MQTT（TLS 8883）连接失败，正在重试",
+                1,
+                LogLevel.ERROR,
+                LogType.ERROR,
+                LogStatus.PENDING);
+        stubExistingLog(existing);
+
+        LogVO result = logService.createDeviceRuntimeLog(runtimeRequest(
+                "mqtt_connection_failed",
+                "Remote log MQTT TLS connection failed and was retried",
+                LogLevel.ERROR,
+                LogType.ERROR));
+
+        assertEquals("设备运行上报（1 条）", result.getTitle());
+        assertEquals(LogStatus.PENDING, result.getStatus());
+        assertEquals("远程日志 MQTT（TLS 8883）连接失败，正在重试", result.getContent());
+        verify(logRecordMapper, never()).updateById(any());
+    }
+
+    @Test
     void appendsDifferentEventNormally() {
         LogRecord existing = existingRuntimeLog(
                 "Wi-Fi 已连接",
@@ -288,6 +310,27 @@ class LogServiceImplTest {
         assertEquals("远程日志 MQTT（TLS 8883）连接已恢复", recovered.getContent());
         verify(logRecordMapper).updateById(pendingIncident);
         verify(logRecordMapper).insert(any());
+    }
+
+    @Test
+    void nonMqttRecoveryEventDoesNotClosePendingMqttIncident() {
+        LogRecord pendingIncident = existingRuntimeLog(
+                "远程日志 MQTT（TLS 8883）连接失败，正在重试",
+                1,
+                LogLevel.ERROR,
+                LogType.ERROR,
+                LogStatus.PENDING);
+        when(logRecordMapper.selectOne(any())).thenReturn(null);
+
+        LogVO fallback = createNewRuntimeLog(runtimeRequest(
+                "local_ai_fallback_to_official",
+                "Local AI unavailable; official AI connected",
+                LogLevel.INFO,
+                LogType.RUNNING));
+
+        assertEquals(LogStatus.RESOLVED, fallback.getStatus());
+        assertEquals(LogStatus.PENDING, pendingIncident.getStatus());
+        verify(logRecordMapper, never()).updateById(pendingIncident);
     }
 
     private LogVO createNewRuntimeLog(DeviceRuntimeLogCreateRequest request) {
