@@ -1,6 +1,6 @@
 # AIoT 项目上下文
 
-更新时间：2026-07-23
+更新时间：2026-07-24
 
 这是新对话继续项目时的首要阅读文件。
 
@@ -47,6 +47,10 @@
 - Docker Compose 四服务部署；2026-07-13 已更新为首次运行自动生成本机私有 `.env` 与 `docker/local/`，不再使用公开默认数据库密码或匿名 MQTT
 
 ## 4. 当前状态
+
+2026-07-24 已在 `Remote-Hivemq` 分支完成设备中心改造源码，并确定作为 `v1.2.0-remote-mqtt` 发布：设备新增 `monitoringMode`（`LOG_ONLY` / `TELEMETRY`），Flyway V2 只增加字段且旧设备默认“仅运行日志”；侧栏主入口改为“设备中心”，设备列表可直接打开设备工作台，工作台按当前设备展示概览、独立日志、采集数据表和趋势图，传感器模式预留 AI 分析区。原 `/logs` 全局管理路由继续保留但不再作为侧栏主入口。远程 MQTT 页面可修改 HiveMQ 用户名和密码，密码不回显、不进入数据库，写入宿主机被忽略的私有文件后立即重连；远程 Compose 新增 `docker/local` 私有目录持久化挂载。正常切换官方AI的`local_ai_discovery_failed`和`local_ai_fallback_to_official`统一规范为`INFO/RUNNING/RESOLVED`，真实AI连接或协议故障仍保留告警。后端34项测试已全部验证：32项常规测试通过，另2项在隔离 MySQL 8.4.10 中真实执行且0跳过，确认空库执行V1+V2、已有V1设备/日志/上报数据升级到V2后全部保留并默认`LOG_ONLY`。前端4项测试和生产构建通过，5套 Compose 与镜像发布策略检查通过。群晖仍运行已发布的 `v1.1.9-remote-mqtt`，新版本需先完成发布工作流再升级。
+
+同日已启动本地远程源码版进行页面验收。首次启动发现其与群晖固定镜像都使用 `aiot-log-backend-remote`，HiveMQ按重复Client ID互相踢线；本地源码Compose已改为独立`aiot-log-backend-remote-local-source`，GHCR/TCR群晖Compose保持原值。修复后本地前端200、后端healthy、MySQL V2成功、远程MQTT持续连接且无最近错误。
 
 Docker 联调与群晖 NAS 成品镜像部署已通过：
 

@@ -70,6 +70,7 @@ mqtt:
   client-id: ${MQTT_CLIENT_ID:aiot-log-backend}
   username: ${MQTT_USERNAME:<mqtt-username>}
   password: ${MQTT_PASSWORD:<mqtt-password>}
+  remote-credential-file: ${MQTT_REMOTE_CREDENTIAL_FILE:}
   topic: ${MQTT_TOPIC:aiot/device/+/report}
   log-topic: ${MQTT_LOG_TOPIC:aiot/device/+/log}
   runtime-log-merge-window-seconds: ${MQTT_RUNTIME_LOG_MERGE_WINDOW_SECONDS:30}

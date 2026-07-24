@@ -57,13 +57,31 @@
     </div>
 
     <div v-if="status?.mode === 'remote'" class="content-section">
-      <div class="section-title">远程 MQTT 凭证</div>
-      <div class="section-body">
+      <div class="section-title">远程 HiveMQ 凭证</div>
+      <div class="section-body credential-body">
         <el-alert
-          type="info"
+          type="warning"
           :closable="false"
-          title="远程 HiveMQ 凭证仅从部署环境的私有配置读取，管理页面不会显示、保存或修改它们。UDP 19830 自动发现已关闭。"
+          title="保存后后端会立即使用新凭证重连。密码只写入宿主机私有配置文件，页面和接口都不会回显。"
         />
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="当前账号">{{ remoteCredential?.username || '未配置' }}</el-descriptions-item>
+          <el-descriptions-item label="密码状态">{{ remoteCredential?.passwordConfigured ? '已配置' : '未配置' }}</el-descriptions-item>
+          <el-descriptions-item label="持久化来源" :span="2">
+            {{ remoteCredential?.runtimeOverrideEnabled ? 'MQTT 页面私有配置（重启后继续生效）' : '部署环境私有配置' }}
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-form :model="remoteCredentialForm" label-width="120px" class="credential-form" @submit.prevent>
+          <el-form-item label="HiveMQ 用户名">
+            <el-input v-model="remoteCredentialForm.username" autocomplete="off" />
+          </el-form-item>
+          <el-form-item label="HiveMQ 密码">
+            <el-input v-model="remoteCredentialForm.password" type="password" show-password autocomplete="new-password" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :loading="savingRemoteCredential" @click="saveRemoteCredential">保存并立即重连</el-button>
+          </el-form-item>
+        </el-form>
       </div>
     </div>
 
@@ -98,17 +116,27 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import PageContainer from '@/components/PageContainer.vue'
-import { getMqttGlobalCredential, getMqttStatus, saveMqttGlobalCredential, setMqttAuthentication } from '@/api/mqtt'
+import {
+  getMqttGlobalCredential,
+  getMqttRemoteCredential,
+  getMqttStatus,
+  saveMqttGlobalCredential,
+  saveMqttRemoteCredential,
+  setMqttAuthentication
+} from '@/api/mqtt'
 import { LIVE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
 import { createAutoRefreshController } from '@/utils/autoRefresh'
-import type { MqttGlobalCredentialStatus, MqttStatus } from '@/types/mqtt'
+import type { MqttGlobalCredentialStatus, MqttRemoteCredentialStatus, MqttStatus } from '@/types/mqtt'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
 const status = ref<MqttStatus>()
 const credential = ref<MqttGlobalCredentialStatus>()
+const remoteCredential = ref<MqttRemoteCredentialStatus>()
 const savingCredential = ref(false)
+const savingRemoteCredential = ref(false)
 const credentialForm = ref({ username: '', password: '' })
+const remoteCredentialForm = ref({ username: '', password: '' })
 let statusRequestPending = false
 
 async function loadStatus(showLoading = true, includeCredential = true) {
@@ -122,6 +150,11 @@ async function loadStatus(showLoading = true, includeCredential = true) {
     status.value = mqttStatus
     if (mqttStatus.mode === 'remote') {
       credential.value = undefined
+      if (includeCredential) {
+        const remoteStatus = await getMqttRemoteCredential()
+        remoteCredential.value = remoteStatus
+        remoteCredentialForm.value.username = remoteStatus.username || ''
+      }
       return
     }
     if (includeCredential) {
@@ -136,6 +169,27 @@ async function loadStatus(showLoading = true, includeCredential = true) {
     if (showLoading) {
       loading.value = false
     }
+  }
+}
+
+async function saveRemoteCredential() {
+  if (!remoteCredentialForm.value.username || !remoteCredentialForm.value.password) {
+    ElMessage.warning('请填写 HiveMQ 用户名和密码')
+    return
+  }
+  await ElMessageBox.confirm(
+    '保存后后端会立即断开当前 MQTT 连接并使用新凭证重连。确认继续吗？',
+    '更新远程 HiveMQ 凭证',
+    { type: 'warning', confirmButtonText: '保存并重连', cancelButtonText: '取消' }
+  )
+  savingRemoteCredential.value = true
+  try {
+    remoteCredential.value = await saveMqttRemoteCredential(remoteCredentialForm.value)
+    remoteCredentialForm.value.password = ''
+    await loadStatus(true, false)
+    ElMessage.success(status.value?.connected ? '远程凭证已保存，HiveMQ 已重新连接' : '凭证已保存，正在等待 HiveMQ 重连')
+  } finally {
+    savingRemoteCredential.value = false
   }
 }
 

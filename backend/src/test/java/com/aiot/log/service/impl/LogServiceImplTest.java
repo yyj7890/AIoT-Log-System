@@ -107,9 +107,12 @@ class LogServiceImplTest {
         LogVO result = createNewRuntimeLog(runtimeRequest(
                 "local_ai_discovery_failed",
                 "No valid local AI discovery response this boot",
-                LogLevel.INFO,
-                LogType.RUNNING));
+                "WARN",
+                LogType.ERROR));
         assertEquals("本次启动未发现本地 AI 服务", result.getContent());
+        assertEquals(LogLevel.INFO, result.getLevel());
+        assertEquals(LogType.RUNNING, result.getLogType());
+        assertEquals(LogStatus.RESOLVED, result.getStatus());
     }
 
     @Test
@@ -127,9 +130,12 @@ class LogServiceImplTest {
         LogVO result = createNewRuntimeLog(runtimeRequest(
                 "local_ai_fallback_to_official",
                 "Local AI unavailable; official AI connected",
-                LogLevel.INFO,
-                LogType.RUNNING));
+                LogLevel.ERROR,
+                LogType.ERROR));
         assertEquals("本地 AI 不可用，已回退官方 AI", result.getContent());
+        assertEquals(LogLevel.INFO, result.getLevel());
+        assertEquals(LogType.RUNNING, result.getLogType());
+        assertEquals(LogStatus.RESOLVED, result.getStatus());
     }
 
     @Test

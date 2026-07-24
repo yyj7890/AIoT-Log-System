@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/yyj7890/aiot-log-backend:v1.1.9-remote-mqtt
+    image: ghcr.io/yyj7890/aiot-log-backend:v1.2.0-remote-mqtt
     env_file:
       - ./docker/local/hivemq-remote.env
     environment:
@@ -31,9 +31,12 @@ services:
       MQTT_MODE: remote
       MQTT_DISCOVERY_ENABLED: "false"
       MQTT_CLIENT_ID: aiot-log-backend-remote
+      MQTT_REMOTE_CREDENTIAL_FILE: /app/private-config/hivemq-remote-credentials.properties
       TZ: Asia/Shanghai
     ports:
       - "8080:8080"
+    volumes:
+      - ./docker/local:/app/private-config
     depends_on:
       mysql:
         condition: service_healthy
@@ -46,7 +49,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/yyj7890/aiot-log-frontend:v1.1.9-remote-mqtt
+    image: ghcr.io/yyj7890/aiot-log-frontend:v1.2.0-remote-mqtt
     ports:
       - "80:80"
     depends_on:

@@ -156,10 +156,15 @@ public class LogServiceImpl implements LogService {
     @Transactional
     public synchronized LogVO createDeviceRuntimeLog(DeviceRuntimeLogCreateRequest request) {
         Device device = getDeviceByCode(request.getDeviceCode());
-        String level = normalizeDeviceRuntimeLevel(request.getLevel());
+        boolean normalOfficialFallback = isNormalOfficialFallbackEvent(request);
+        String level = normalOfficialFallback
+                ? LogLevel.INFO
+                : normalizeDeviceRuntimeLevel(request.getLevel());
         validateLevel(level);
 
-        String logType = StringUtils.hasText(request.getLogType())
+        String logType = normalOfficialFallback
+                ? LogType.RUNNING
+                : StringUtils.hasText(request.getLogType())
                 ? request.getLogType()
                 : (LogLevel.INFO.equals(level) ? LogType.RUNNING : LogType.ERROR);
         validateLogType(logType);
@@ -534,6 +539,11 @@ public class LogServiceImpl implements LogService {
     private boolean isMqttRecoveryEvent(DeviceRuntimeLogCreateRequest request) {
         return "mqtt_reconnected".equals(request.getEventType())
                 || "mqtt_connection_recovered".equals(request.getEventType());
+    }
+
+    private boolean isNormalOfficialFallbackEvent(DeviceRuntimeLogCreateRequest request) {
+        return "local_ai_discovery_failed".equals(request.getEventType())
+                || "local_ai_fallback_to_official".equals(request.getEventType());
     }
 
     private String localizeRuntimeEvent(String eventType) {

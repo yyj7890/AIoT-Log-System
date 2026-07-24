@@ -26,7 +26,7 @@ class FlywayMigrationIntegrationTest {
     private static final String V1_MIGRATION = "db/migration/V1__create_initial_schema.sql";
 
     @Test
-    void emptyDatabaseExecutesV1AndCreatesBusinessTables() throws Exception {
+    void emptyDatabaseExecutesV1AndV2() throws Exception {
         String database = databaseName("empty");
         createDatabase(database);
         try {
@@ -34,14 +34,16 @@ class FlywayMigrationIntegrationTest {
             flyway.migrate();
 
             assertEquals(7, countBusinessTables(database));
-            assertMigrationRecord(database, "SQL");
+            assertMigrationRecord(database, "1", "SQL");
+            assertMigrationRecord(database, "2", "SQL");
+            assertMonitoringMode(database, "LOG_ONLY");
         } finally {
             dropDatabase(database);
         }
     }
 
     @Test
-    void existingV1DatabaseIsBaselinedWithoutLosingData() throws Exception {
+    void existingV1DatabaseIsBaselinedThenUpgradedToV2WithoutLosingData() throws Exception {
         String database = databaseName("legacy");
         createDatabase(database);
         try {
@@ -55,6 +57,19 @@ class FlywayMigrationIntegrationTest {
                     statement.setString(4, "NORMAL");
                     statement.executeUpdate();
                 }
+                try (Statement statement = connection.createStatement()) {
+                    statement.executeUpdate("""
+                            INSERT INTO logs(device_id, title, content, log_type, level, status, source)
+                            SELECT id, '迁移保留日志', 'V1日志内容', 'RUNNING', 'INFO', 'RESOLVED', 'DEVICE'
+                            FROM devices WHERE device_code = 'FLYWAY-KEEP-001'
+                            """);
+                    statement.executeUpdate("""
+                            INSERT INTO device_reports(
+                                device_id, temperature, humidity, voltage, signal_strength, status, message, reported_at)
+                            SELECT id, 25.50, 60.00, 3.30, -55, 'NORMAL', 'V1上报数据', CURRENT_TIMESTAMP
+                            FROM devices WHERE device_code = 'FLYWAY-KEEP-001'
+                            """);
+                }
             }
 
             flyway(database).migrate();
@@ -62,8 +77,20 @@ class FlywayMigrationIntegrationTest {
             assertEquals(1, countRows(
                     database,
                     "SELECT COUNT(*) FROM devices WHERE device_code = 'FLYWAY-KEEP-001'"));
+            assertEquals(1, countRows(
+                    database,
+                    "SELECT COUNT(*) FROM logs WHERE title = '迁移保留日志'"));
+            assertEquals(1, countRows(
+                    database,
+                    "SELECT COUNT(*) FROM device_reports WHERE message = 'V1上报数据'"));
+            assertEquals(1, countRows(
+                    database,
+                    "SELECT COUNT(*) FROM devices "
+                            + "WHERE device_code = 'FLYWAY-KEEP-001' AND monitoring_mode = 'LOG_ONLY'"));
             assertEquals(7, countBusinessTables(database));
-            assertMigrationRecord(database, "BASELINE");
+            assertMigrationRecord(database, "1", "BASELINE");
+            assertMigrationRecord(database, "2", "SQL");
+            assertMonitoringMode(database, "LOG_ONLY");
         } finally {
             dropDatabase(database);
         }
@@ -78,14 +105,29 @@ class FlywayMigrationIntegrationTest {
                 .load();
     }
 
-    private void assertMigrationRecord(String database, String expectedType) throws Exception {
+    private void assertMigrationRecord(String database, String version, String expectedType) throws Exception {
         try (Connection connection = connect(database);
              PreparedStatement statement = connection.prepareStatement(
-                     "SELECT type, success FROM flyway_schema_history WHERE version = '1'");
-             ResultSet resultSet = statement.executeQuery()) {
-            assertTrue(resultSet.next());
-            assertEquals(expectedType, resultSet.getString("type").toUpperCase(Locale.ROOT));
-            assertTrue(resultSet.getBoolean("success"));
+                     "SELECT type, success FROM flyway_schema_history WHERE version = ?")) {
+            statement.setString(1, version);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                assertTrue(resultSet.next());
+                assertEquals(expectedType, resultSet.getString("type").toUpperCase(Locale.ROOT));
+                assertTrue(resultSet.getBoolean("success"));
+            }
+        }
+    }
+
+    private void assertMonitoringMode(String database, String expectedDefault) throws Exception {
+        try (Connection connection = connect(database);
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT column_default FROM information_schema.columns "
+                             + "WHERE table_schema = ? AND table_name = 'devices' AND column_name = 'monitoring_mode'")) {
+            statement.setString(1, database);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                assertTrue(resultSet.next());
+                assertEquals(expectedDefault, resultSet.getString("column_default"));
+            }
         }
     }
 

@@ -1,0 +1,2 @@
+ALTER TABLE devices
+    ADD COLUMN monitoring_mode VARCHAR(32) NOT NULL DEFAULT 'LOG_ONLY' AFTER type;

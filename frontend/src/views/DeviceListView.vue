@@ -1,5 +1,5 @@
 <template>
-  <PageContainer title="设备管理" description="维护设备档案并查看设备运行状态">
+  <PageContainer title="设备中心" description="先添加设备，再进入设备工作台查看它自己的日志与采集数据">
     <template #actions>
       <el-button type="primary" :icon="Plus" @click="openCreate">新增设备</el-button>
     </template>
@@ -21,19 +21,26 @@
     </div>
 
     <div class="content-section">
-      <el-table v-loading="loading" :data="devices" row-key="id">
-        <el-table-column prop="name" label="设备名称" min-width="160" />
+      <el-table v-loading="loading" :data="devices" row-key="id" class="device-table" @row-click="openDevice">
+        <el-table-column label="设备名称" min-width="180">
+          <template #default="{ row }">
+            <el-link type="primary" :underline="false" @click.stop="openDevice(row)">{{ row.name }}</el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="deviceCode" label="设备编号" min-width="150" />
         <el-table-column prop="type" label="设备类型" min-width="130" />
+        <el-table-column label="内容" min-width="150">
+          <template #default="{ row }">{{ row.monitoringMode === 'TELEMETRY' ? '日志 + 采集数据' : '运行日志' }}</template>
+        </el-table-column>
         <el-table-column prop="location" label="安装位置" min-width="120" />
         <el-table-column label="状态" width="110">
           <template #default="{ row }"><StatusTag group="deviceStatus" :value="row.status" /></template>
         </el-table-column>
         <el-table-column prop="lastOnlineAt" label="最后在线" min-width="150" />
-        <el-table-column label="操作" width="230" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" :icon="View" @click="router.push(`/devices/${row.id}`)" />
+            <div class="table-actions" @click.stop>
+              <el-button size="small" type="primary" :icon="View" @click="openDevice(row)">打开设备</el-button>
               <el-button size="small" :icon="Edit" @click="openEdit(row)" />
               <el-button size="small" :icon="DocumentAdd" @click="openLog(row.id)" />
               <el-popconfirm title="确认删除该设备？" @confirm="remove(row.id)">
@@ -100,6 +107,10 @@ function openCreate() {
   deviceDialogVisible.value = true
 }
 
+function openDevice(device: Device) {
+  router.push(`/devices/${device.id}`)
+}
+
 function openEdit(device: Device) {
   currentDevice.value = device
   deviceDialogMode.value = 'edit'
@@ -128,3 +139,9 @@ function afterLogSaved() {
 
 onMounted(loadData)
 </script>
+
+<style scoped>
+.device-table :deep(.el-table__row) {
+  cursor: pointer;
+}
+</style>

@@ -2,6 +2,8 @@ package com.aiot.log.config;
 
 import com.aiot.log.dto.DeviceReportCreateRequest;
 import com.aiot.log.dto.DeviceRuntimeLogCreateRequest;
+import com.aiot.log.exception.BusinessException;
+import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.service.DeviceReportService;
 import com.aiot.log.service.LogService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,6 +73,18 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
             return;
         }
 
+        connect(false);
+    }
+
+    public synchronized void reconnect() {
+        closeCurrentClient();
+        if (!hasValidModeConfiguration()) {
+            throw new BusinessException(ErrorCode.MQTT_RECONNECT_FAILED, lastError);
+        }
+        connect(true);
+    }
+
+    private synchronized void connect(boolean throwOnFailure) {
         try {
             mqttClient = new MqttClient(
                     mqttProperties.getBrokerUrl(),
@@ -101,6 +115,30 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
             lastError = exception.getMessage();
             log.warn("MQTT subscriber could not connect to {}. HTTP reporting is still available.",
                     mqttProperties.getBrokerUrl(), exception);
+            if (throwOnFailure) {
+                throw new BusinessException(
+                        ErrorCode.MQTT_RECONNECT_FAILED,
+                        ErrorCode.MQTT_RECONNECT_FAILED.getMessage(),
+                        exception);
+            }
+        }
+    }
+
+    private void closeCurrentClient() {
+        MqttClient current = mqttClient;
+        mqttClient = null;
+        connected = false;
+        if (current == null) {
+            return;
+        }
+        try {
+            if (current.isConnected()) {
+                current.disconnectForcibly(1000, 1000, false);
+            }
+            current.close();
+            lastDisconnectedAt = LocalDateTime.now();
+        } catch (MqttException exception) {
+            log.warn("MQTT client could not be cleanly closed before credential reload.", exception);
         }
     }
 

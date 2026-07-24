@@ -1,8 +1,12 @@
 # 当前项目状态
 
-更新时间：2026-07-23
+更新时间：2026-07-24
 
 ## 当前阶段
+
+2026-07-24 设备中心与远程凭据页面源码实现完成，正在作为 `v1.2.0-remote-mqtt` 发布：设备通过 Flyway V2 新增 `monitoring_mode`，旧设备默认 `LOG_ONLY`，传感器类设备可选择 `TELEMETRY`。前端侧栏以“设备中心”为主入口，设备列表整行可打开设备工作台；工作台只查询当前 `deviceId` 的日志，并按设备展示概览、分页日志、采集数据、趋势可视化和后续 AI 分析占位。原全局 `/logs` 路由保留用于兼容管理，但不再出现在侧栏。远程 HiveMQ 用户名和密码可在 MQTT 页面保存并触发后端立即重连；接口只返回用户名及密码配置状态，密码保存在宿主机 `docker/local/hivemq-remote-credentials.properties` 私有文件，不写数据库、不回显、不进入仓库。`local_ai_discovery_failed`与`local_ai_fallback_to_official`表示系统已正常切换官方AI，现统一规范为`INFO/RUNNING/RESOLVED`，真实AI连接或协议错误仍保留原告警。后端32项常规测试通过；另2项Flyway集成测试已在隔离MySQL 8.4.10真实执行且0跳过，确认空库执行V1+V2，以及已有V1设备、日志、上报数据升级到V2后全部保留并默认`LOG_ONLY`。前端4项测试与生产构建通过；5套Compose和发布策略检查通过。下一步是完成GHCR/TCR固定镜像、来源证明与Release核验，再由用户在群晖升级验收。
+
+本地远程源码版现已运行于`http://127.0.0.1/`。启动时发现本地与群晖使用相同 MQTT Client ID 会互相断开，已把本地源码Compose改为`aiot-log-backend-remote-local-source`，群晖成品镜像Compose不变。重新创建后前端200、后端healthy、MySQL V2成功、远程MQTT连接稳定；当前凭据仍来自私有环境文件，页面保存、即时重连和重启持久化尚待人工验收。
 
 2026-07-15：`Remote-Hivemq` 分支已实现 HiveMQ Cloud 远程 MQTT 模式，且未替换默认局域网模式。后端可通过 `MQTT_MODE=remote` 使用 Paho `ssl://` TLS 订阅原有 `report`/`log` Topic，远程时强制关闭 UDP `19830` 响应器、隐藏远程 Broker 地址并禁止页面修改本地 Mosquitto 凭证。新增源码/GHCR 远程 Compose、Windows 启停脚本、群晖私有 `docker/local/hivemq-remote.env` 初始化和远程镜像部署包生成选项；该文件与局域网 `.env` 分离。远程编排不包含 Mosquitto、不映射 `1883` 或 UDP `19830`。首个远程版以 GHCR 标签 `v1.1.0-remote-mqtt` 发布；2026-07-16 的状态中文文案和 QoS 1 相邻重投修复独立发布为 `v1.1.1-remote-mqtt`，MQTT 状态页自动刷新独立发布为 `v1.1.2-remote-mqtt`，`WARN` 等级兼容和状态/日志列表 1 秒刷新独立发布为 `v1.1.3-remote-mqtt`；2026-07-17 已发布 `v1.1.4-remote-mqtt`，增加详情弹窗实时同步和本地 AI 回退事件中文化。旧版继续保留用于回退。局域网版固定为 `v1.0.0-lan`；`latest` 保持局域网语义并只由 `main` 分支推送更新。小智独立日志客户端已增加持久化远程 TLS 配置、ESP-IDF CA bundle、域名验证/SNI 和跳过 UDP 发现，未修改官方 AI、OTA 或 WebSocket 通道。真实 HiveMQ 信息未读取或写入项目。
 
@@ -71,6 +75,9 @@
 第一阶段管理功能和第二阶段 HTTP/MQTT 自动上报已完成，既有 Docker Compose 部署已验收。系统主体是通用 AIoT 日志管理与设备接入；小智真实硬件作为当前示例，已通过独立 MQTT 日志通道接入本地日志系统，并完成本地 AI 优先、官方 AI 回退的实机验证。GitHub README、Mermaid 架构图、截图规范和发布前安全检查清单已完成；实际展示截图尚待人工脱敏准备。2026-07-13 已将 Docker 配置改为本机私有配置自动生成、匿名 MQTT 关闭和 UDP `19830` 发布，并新增 GHCR 成品镜像工作流与拉取式部署脚本；新增群晖 DSM SSH 初始化脚本及无源码的成品镜像部署包生成脚本，解决 Container Manager 不执行 Windows 脚本和 NAS 无须上传前后端源码的问题。新用户 Docker 首次部署已调整为空白数据库，不再自动导入演示数据；默认关闭发现 Token 以允许未预置 Token 的设备自动发现；Docker MQTT 状态页更新全局凭证时会保留 Mosquitto 安全文件的容器读取权限。2026-07-14 已完成群晖 NAS Container Manager 成品镜像实机部署与设备自动发现连接验收，专题记录见 `synology-nas-deployment.md`。
 
 ## 已完成功能
+
+- 设备中心源码改造（尚未发布）：设备可选“仅运行日志”或“日志与采集数据”，点击设备进入独立工作台；日志请求固定当前设备，采集型设备展示数据表和趋势图
+- 远程 HiveMQ 页面凭据修改源码（尚未发布）：私有文件持久化、密码不回显、保存后立即重连
 
 - 设备、日志、标签、告警规则管理
 - 首页统计、设备详情和日志筛选

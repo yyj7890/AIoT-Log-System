@@ -1,5 +1,5 @@
 import { request } from './http'
-import type { MqttGlobalCredentialStatus, MqttStatus } from '@/types/mqtt'
+import type { MqttGlobalCredentialStatus, MqttRemoteCredentialStatus, MqttStatus } from '@/types/mqtt'
 
 export function getMqttStatus() {
   return request<MqttStatus>({
@@ -20,4 +20,12 @@ export function saveMqttGlobalCredential(data: { username: string; password: str
 
 export function setMqttAuthentication(enabled: boolean) {
   return request<MqttGlobalCredentialStatus>({ url: '/mqtt/global-credential/authentication', method: 'PUT', params: { enabled } })
+}
+
+export function getMqttRemoteCredential() {
+  return request<MqttRemoteCredentialStatus>({ url: '/mqtt/remote-credential', method: 'GET' })
+}
+
+export function saveMqttRemoteCredential(data: { username: string; password: string }) {
+  return request<MqttRemoteCredentialStatus>({ url: '/mqtt/remote-credential', method: 'PUT', data })
 }

@@ -349,14 +349,30 @@ Docker 包含前端/Nginx、Spring Boot、MySQL 和 Mosquitto。Docker 不负责
 | 业务 | 数据表 | 后端入口 | 前端页面 |
 | --- | --- | --- | --- |
 | 首页统计 | `devices`、`logs` | `/api/dashboard/summary` | `/dashboard` |
-| 设备管理 | `devices` | `/api/devices` | `/devices` |
-| 日志管理 | `logs`、`log_tags` | `/api/logs` | `/logs` |
+| 设备中心 | `devices` | `/api/devices` | `/devices`、`/devices/:id` |
+| 设备独立日志 | `logs`、`log_tags` | `/api/logs?deviceId=...` | `/devices/:id` 的运行日志页签 |
+| 全局日志兼容管理 | `logs`、`log_tags` | `/api/logs` | `/logs`（保留路由，不在侧栏主导航） |
 | 标签管理 | `tags`、`log_tags` | `/api/tags` | `/tags` |
 | 设备上报 | `device_reports`、`devices`、`logs` | `/api/device-reports` | `/devices/:id` |
 | 告警规则 | `alert_rules` | `/api/alert-rules` | `/alert-rules` |
-| MQTT 状态 | 运行内存状态 | `/api/mqtt/status` | `/mqtt` |
+| MQTT 状态与凭据 | 运行内存状态、宿主机私有凭据文件 | `/api/mqtt/status`、`/api/mqtt/remote-credential` | `/mqtt` |
 
-## 13. 两种运行架构
+## 13. 设备中心展示模型（2026-07-24）
+
+设备的自由文本 `type` 继续描述具体硬件类别，但不再承担页面能力判断。Flyway V2 为 `devices` 增加 `monitoring_mode`：
+
+- `LOG_ONLY`：小智、网关等以运行事件为主的设备，只展示概览和当前设备日志。
+- `TELEMETRY`：传感器、采集器等设备，同时展示当前设备日志、采集数据表和温度/湿度/电压/信号趋势。
+
+旧设备迁移后默认 `LOG_ONLY`，避免仅因类型名称相似而误判。用户可在新增或编辑设备时明确切换展示模式。所有日志查询都携带当前设备 ID；全局日志页只保留兼容和集中维护用途。AI 分析是设备数据页的后续能力，输入必须来自已保存的日志与上报数据，输出需保留时间和来源，不能覆盖原始记录。
+
+## 14. 远程 HiveMQ 页面凭据（2026-07-24）
+
+远程模式提供 `GET/PUT /api/mqtt/remote-credential`。GET 只返回用户名、密码是否已配置以及是否启用页面持久化覆盖；PUT 接收新用户名和密码，原子写入宿主机私有文件并让 Paho 订阅端立即关闭旧连接、使用新凭据重连。密码不通过响应返回、不写数据库、不写业务日志。
+
+远程 Compose 将 `docker/local` 挂载到后端 `/app/private-config`，运行时文件为 `hivemq-remote-credentials.properties`。首次运行仍可从 `hivemq-remote.env` 读取凭据；页面保存后私有运行时文件优先，容器和镜像更新继续复用。Broker 域名继续脱敏且不可在页面修改。由于 P1 登录权限仍暂停，此页面只允许在可信网络使用，系统不得直接暴露公网。
+
+## 15. 两种运行架构
 
 本地开发版：
 

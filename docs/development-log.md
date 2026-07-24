@@ -4,6 +4,18 @@
 
 完整早期过程保存在 `../history/docs-before-consolidation-2026-07-09.zip`，包括原始命令、长篇报错和逐步搭建过程。
 
+## 2026-07-24 设备中心与远程 HiveMQ 页面凭据
+
+问题：全局日志页把所有设备记录混在一起，设备详情只显示少量最近日志；自由文本设备类型无法稳定判断设备是否需要遥测图表。远程 HiveMQ 凭据只能修改部署环境文件，日常维护不方便。
+
+处理：新增 Flyway V2 的 `monitoring_mode`，旧设备默认 `LOG_ONLY`，采集设备可选 `TELEMETRY`；设备列表和侧栏改为设备中心，设备工作台内固定按 `deviceId` 查询日志，并为采集设备展示数据表与趋势图。远程凭据增加只返回状态的 API、宿主机私有文件持久化和 Paho 立即重连；Broker 与密码继续隐藏。
+
+验证：后端32项常规测试通过；另2项Flyway集成测试使用独立`mysql:8.4`容器中的MySQL 8.4.10真实执行，0失败、0跳过。空库依次执行V1和V2并到达版本2；旧库先保留V1设备、日志和传感器上报，再建立V1基线并执行V2，三类数据均保留且旧设备`monitoring_mode=LOG_ONLY`。临时数据库、容器和匿名卷均已清理，未连接项目或群晖数据卷。Flyway输出“当前版本已测试到MySQL 8.1”的升级建议，但MySQL 8.4两条实际迁移均成功。远程凭据新增2项私有文件保存/重载测试；前端4项测试、TypeScript检查和生产构建通过；5套Compose与镜像发布策略检查通过。尚未完成真实HiveMQ新凭据重连、镜像发布和群晖升级。
+
+本地源码启动问题：远程源码Compose原本与群晖成品Compose都固定使用`aiot-log-backend-remote`。两者同时连接同一HiveMQ时，Broker按MQTT Client ID唯一性持续踢掉旧连接，表现为约数秒一次的`connection lost → reconnected`循环。立即停止本地前后端后，将仅用于本地源码构建的`docker-compose.remote.yml`改为`aiot-log-backend-remote-local-source`；GHCR/TCR群晖Compose继续使用原Client ID。重新创建后本地MQTT保持已连接、无最近错误，前端和后端正常。结论：同一HiveMQ下并行运行的后端实例必须使用不同Client ID。
+
+报警等级调整与发布决定：`local_ai_discovery_failed`和`local_ai_fallback_to_official`表示本地AI不可用后已经正常使用官方AI，不属于需要处理的故障。后端现在无条件把这两类事件规范为`INFO`等级、`RUNNING`类型和`RESOLVED`状态，避免固件携带的`WARN/ERROR`造成误报警；真实`local_ai_connection_failed`以及官方AI连接或协议错误不降级。对应服务测试已覆盖固件上报较高等级时的规范化结果。该轮设备中心、Flyway V2、页面远程凭据和等级调整统一作为`v1.2.0-remote-mqtt`发布。
+
 ## 2026-07-23
 
 ### 前两阶段记录完整性复核

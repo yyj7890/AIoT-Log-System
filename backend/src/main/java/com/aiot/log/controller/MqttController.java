@@ -4,10 +4,13 @@ import com.aiot.log.common.ApiResponse;
 import com.aiot.log.config.MqttDeviceReportSubscriber;
 import com.aiot.log.config.MqttProperties;
 import com.aiot.log.dto.MqttGlobalCredentialUpdateRequest;
+import com.aiot.log.dto.MqttRemoteCredentialUpdateRequest;
 import com.aiot.log.exception.BusinessException;
 import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.service.MqttCredentialService;
+import com.aiot.log.service.RemoteMqttCredentialService;
 import com.aiot.log.vo.MqttGlobalCredentialStatusVO;
+import com.aiot.log.vo.MqttRemoteCredentialStatusVO;
 import com.aiot.log.vo.MqttStatusVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,12 +30,15 @@ public class MqttController {
     private final MqttProperties mqttProperties;
     private final MqttDeviceReportSubscriber mqttSubscriber;
     private final MqttCredentialService mqttCredentialService;
+    private final RemoteMqttCredentialService remoteMqttCredentialService;
 
     public MqttController(MqttProperties mqttProperties, MqttDeviceReportSubscriber mqttSubscriber,
-                          MqttCredentialService mqttCredentialService) {
+                          MqttCredentialService mqttCredentialService,
+                          RemoteMqttCredentialService remoteMqttCredentialService) {
         this.mqttProperties = mqttProperties;
         this.mqttSubscriber = mqttSubscriber;
         this.mqttCredentialService = mqttCredentialService;
+        this.remoteMqttCredentialService = remoteMqttCredentialService;
     }
 
     @GetMapping("/status")
@@ -81,9 +87,34 @@ public class MqttController {
         return ApiResponse.success(mqttCredentialService.setAuthenticationEnabled(enabled));
     }
 
+    @GetMapping("/remote-credential")
+    @Operation(summary = "获取远程 HiveMQ 凭证状态", description = "仅返回用户名和密码是否已配置，不返回密码")
+    public ApiResponse<MqttRemoteCredentialStatusVO> remoteCredential() {
+        ensureRemoteCredentialManagement();
+        return ApiResponse.success(remoteMqttCredentialService.getStatus());
+    }
+
+    @PutMapping("/remote-credential")
+    @Operation(summary = "保存远程 HiveMQ 凭证并重连", description = "凭证写入私有持久化文件，响应不返回密码")
+    public ApiResponse<MqttRemoteCredentialStatusVO> saveRemoteCredential(
+            @Valid @RequestBody MqttRemoteCredentialUpdateRequest request) {
+        ensureRemoteCredentialManagement();
+        MqttRemoteCredentialStatusVO status = remoteMqttCredentialService.save(request);
+        mqttSubscriber.reconnect();
+        return ApiResponse.success(status);
+    }
+
     private void ensureLanCredentialManagement() {
         if (mqttProperties.isRemoteMode()) {
             throw new BusinessException(ErrorCode.MQTT_REMOTE_CREDENTIAL_READ_ONLY);
+        }
+    }
+
+    private void ensureRemoteCredentialManagement() {
+        if (!mqttProperties.isRemoteMode()) {
+            throw new BusinessException(
+                    ErrorCode.MQTT_REMOTE_CREDENTIAL_READ_ONLY,
+                    "当前不是远程 MQTT 模式");
         }
     }
 }

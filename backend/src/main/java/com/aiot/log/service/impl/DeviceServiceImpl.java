@@ -28,6 +28,8 @@ import java.util.List;
 @Service
 public class DeviceServiceImpl implements DeviceService {
 
+    private static final String MONITORING_MODE_LOG_ONLY = "LOG_ONLY";
+    private static final String MONITORING_MODE_TELEMETRY = "TELEMETRY";
     private static final BigDecimal TEMPERATURE_WARNING = new BigDecimal("80.00");
     private static final BigDecimal VOLTAGE_LOW_WARNING = new BigDecimal("210.00");
     private static final int SIGNAL_LOW_WARNING = -95;
@@ -95,6 +97,7 @@ public class DeviceServiceImpl implements DeviceService {
         device.setName(request.getName());
         device.setDeviceCode(request.getDeviceCode());
         device.setType(request.getType());
+        device.setMonitoringMode(normalizeMonitoringMode(request.getMonitoringMode()));
         device.setLocation(request.getLocation());
         device.setStatus(StringUtils.hasText(request.getStatus()) ? request.getStatus() : DeviceStatus.NORMAL);
         device.setDescription(request.getDescription());
@@ -109,6 +112,7 @@ public class DeviceServiceImpl implements DeviceService {
         Device device = getExistingDevice(id);
         device.setName(request.getName());
         device.setType(request.getType());
+        device.setMonitoringMode(normalizeMonitoringMode(request.getMonitoringMode()));
         device.setLocation(request.getLocation());
         device.setStatus(StringUtils.hasText(request.getStatus()) ? request.getStatus() : DeviceStatus.NORMAL);
         device.setDescription(request.getDescription());
@@ -146,6 +150,17 @@ public class DeviceServiceImpl implements DeviceService {
         if (StringUtils.hasText(status) && !DeviceStatus.isValid(status)) {
             throw new BusinessException(ErrorCode.DEVICE_STATUS_INVALID);
         }
+    }
+
+    private String normalizeMonitoringMode(String monitoringMode) {
+        if (!StringUtils.hasText(monitoringMode)) {
+            return MONITORING_MODE_LOG_ONLY;
+        }
+        if (!MONITORING_MODE_LOG_ONLY.equals(monitoringMode)
+                && !MONITORING_MODE_TELEMETRY.equals(monitoringMode)) {
+            throw new BusinessException(ErrorCode.DEVICE_MONITORING_MODE_INVALID);
+        }
+        return monitoringMode;
     }
 
     private Long countLogs(Long deviceId, String logType, String status) {
@@ -236,6 +251,9 @@ public class DeviceServiceImpl implements DeviceService {
         vo.setName(device.getName());
         vo.setDeviceCode(device.getDeviceCode());
         vo.setType(device.getType());
+        vo.setMonitoringMode(StringUtils.hasText(device.getMonitoringMode())
+                ? device.getMonitoringMode()
+                : MONITORING_MODE_LOG_ONLY);
         vo.setLocation(device.getLocation());
         vo.setStatus(device.getStatus());
         vo.setDescription(device.getDescription());

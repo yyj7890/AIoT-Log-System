@@ -2,12 +2,14 @@ import type { LogRecord } from './log'
 import type { DeviceReport } from './report'
 
 export type DeviceStatus = 'NORMAL' | 'ABNORMAL' | 'OFFLINE' | 'MAINTENANCE'
+export type DeviceMonitoringMode = 'LOG_ONLY' | 'TELEMETRY'
 
 export interface Device {
   id: number
   name: string
   deviceCode: string
   type: string
+  monitoringMode: DeviceMonitoringMode
   location?: string
   status: DeviceStatus
   description?: string
@@ -25,6 +27,7 @@ export interface DevicePayload {
   name: string
   deviceCode?: string
   type: string
+  monitoringMode: DeviceMonitoringMode
   location?: string
   status: DeviceStatus
   description?: string

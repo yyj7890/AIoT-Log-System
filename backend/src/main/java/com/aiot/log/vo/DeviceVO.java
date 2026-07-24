@@ -9,6 +9,7 @@ public class DeviceVO {
     private String name;
     private String deviceCode;
     private String type;
+    private String monitoringMode;
     private String location;
     private String status;
     private String description;
@@ -51,6 +52,14 @@ public class DeviceVO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getMonitoringMode() {
+        return monitoringMode;
+    }
+
+    public void setMonitoringMode(String monitoringMode) {
+        this.monitoringMode = monitoringMode;
     }
 
     public String getLocation() {

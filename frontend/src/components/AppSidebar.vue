@@ -14,11 +14,7 @@
       </el-menu-item>
       <el-menu-item index="/devices">
         <el-icon><Cpu /></el-icon>
-        <span>设备管理</span>
-      </el-menu-item>
-      <el-menu-item index="/logs">
-        <el-icon><Document /></el-icon>
-        <span>日志管理</span>
+        <span>设备中心</span>
       </el-menu-item>
       <el-menu-item index="/alert-rules">
         <el-icon><Bell /></el-icon>
@@ -39,7 +35,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Bell, Connection, Cpu, DataAnalysis, Document, PriceTag } from '@element-plus/icons-vue'
+import { Bell, Connection, Cpu, DataAnalysis, PriceTag } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activePath = computed(() => {

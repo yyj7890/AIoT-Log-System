@@ -15,6 +15,7 @@ public enum ErrorCode {
     DEVICE_CODE_DUPLICATED(HttpStatus.CONFLICT, "设备编号已存在"),
     DEVICE_HAS_LOGS(HttpStatus.CONFLICT, "设备下存在日志，不能删除"),
     DEVICE_STATUS_INVALID(HttpStatus.BAD_REQUEST, "设备状态不合法"),
+    DEVICE_MONITORING_MODE_INVALID(HttpStatus.BAD_REQUEST, "设备展示模式不合法"),
 
     LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "日志不存在"),
     LOG_BATCH_ID_INVALID(HttpStatus.BAD_REQUEST, "日志编号不能为空"),
@@ -36,6 +37,9 @@ public enum ErrorCode {
     MQTT_REMOTE_CREDENTIAL_READ_ONLY(
             HttpStatus.BAD_REQUEST,
             "远程 MQTT 模式仅使用部署环境中的私有凭证，不能在页面修改本地 Mosquitto 凭证"),
+    MQTT_REMOTE_CREDENTIAL_READ_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取远程 MQTT 私有凭证"),
+    MQTT_REMOTE_CREDENTIAL_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "保存远程 MQTT 私有凭证失败"),
+    MQTT_RECONNECT_FAILED(HttpStatus.BAD_GATEWAY, "远程 MQTT 使用新凭证重连失败"),
     MQTT_CREDENTIAL_REQUIRED(HttpStatus.BAD_REQUEST, "请先保存全局 MQTT 用户名和密码"),
     MQTT_CREDENTIAL_READ_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取 MQTT 凭证状态"),
     MQTT_CREDENTIAL_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "保存 MQTT 全局凭证失败"),

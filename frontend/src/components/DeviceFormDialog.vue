@@ -10,6 +10,12 @@
       <el-form-item label="设备类型" prop="type">
         <el-input v-model="form.type" />
       </el-form-item>
+      <el-form-item label="展示模式" prop="monitoringMode">
+        <el-select v-model="form.monitoringMode" class="full">
+          <el-option label="仅运行日志（小智、网关等）" value="LOG_ONLY" />
+          <el-option label="日志与采集数据（传感器等）" value="TELEMETRY" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="安装位置">
         <el-input v-model="form.location" />
       </el-form-item>
@@ -55,6 +61,7 @@ const form = reactive<DevicePayload>({
   name: '',
   deviceCode: '',
   type: '',
+  monitoringMode: 'LOG_ONLY',
   location: '',
   status: 'NORMAL',
   description: ''
@@ -64,6 +71,7 @@ const rules: FormRules<DevicePayload> = {
   name: [{ required: true, message: '请输入设备名称', trigger: 'blur' }],
   deviceCode: [{ required: true, message: '请输入设备编号', trigger: 'blur' }],
   type: [{ required: true, message: '请输入设备类型', trigger: 'blur' }],
+  monitoringMode: [{ required: true, message: '请选择展示模式', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
@@ -73,6 +81,7 @@ watch(
     form.name = props.device?.name || ''
     form.deviceCode = props.device?.deviceCode || ''
     form.type = props.device?.type || ''
+    form.monitoringMode = props.device?.monitoringMode || 'LOG_ONLY'
     form.location = props.device?.location || ''
     form.status = (props.device?.status || 'NORMAL') as DeviceStatus
     form.description = props.device?.description || ''

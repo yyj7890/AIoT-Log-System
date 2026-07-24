@@ -23,3 +23,9 @@ export interface MqttGlobalCredentialStatus {
   anonymousAccessEnabled: boolean
   activationPending: boolean
 }
+
+export interface MqttRemoteCredentialStatus {
+  username: string
+  passwordConfigured: boolean
+  runtimeOverrideEnabled: boolean
+}

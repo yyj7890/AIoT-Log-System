@@ -13,6 +13,7 @@ public class MqttProperties {
     private String clientId = "aiot-log-backend";
     private String username = "";
     private String password = "";
+    private String remoteCredentialFile = "";
     private String topic = "aiot/device/+/report";
     private String logTopic = "aiot/device/+/log";
     private Integer runtimeLogMergeWindowSeconds = 30;
@@ -68,6 +69,14 @@ public class MqttProperties {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getRemoteCredentialFile() {
+        return remoteCredentialFile;
+    }
+
+    public void setRemoteCredentialFile(String remoteCredentialFile) {
+        this.remoteCredentialFile = remoteCredentialFile;
     }
 
     public String getTopic() {
