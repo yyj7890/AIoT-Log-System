@@ -65,7 +65,7 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 
 ## 7. HiveMQ 远程版本（实机验收通过）
 
-`Remote-Hivemq` 分支提供远程GHCR/TCR编排，当前均固定`v1.1.9-remote-mqtt`；群晖已通过TCR镜像完成原地升级，继续复用原MySQL数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
+`Remote-Hivemq` 分支提供远程GHCR/TCR编排，源码当前固定`v1.1.9-remote-mqtt`。群晖已完成1.1.9升级和1.1.8回退演练，当前为验收而运行`v1.1.8-remote-mqtt`，全过程复用原MySQL数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 
 国内镜像部署使用`docker-compose.remote.tcr.yml`，前后端固定为腾讯云TCR的`v1.1.9-remote-mqtt`。TCR只是GHCR固定镜像的同步源，工作流不重新构建并强制校验digest一致。两个仓库已设为公有并通过未登录客户端解析：后端顶层digest为`sha256:9450deb945abed9face18674d3301e9cbf7d96be61629ec0331b71181357999d`，前端为`sha256:60e63bee3f4175d8068ebd576212c2315ac35dcb8977d1863c0b4e248824d969`。
 
@@ -106,4 +106,6 @@ sh tools/initialize-synology-docker-config.sh
 
 同日继续原地升级至 `v1.1.8-remote-mqtt`：升级前完成备份，前后端拉取固定镜像，原 MySQL 数据卷、私有 HiveMQ 配置和端口映射继续复用，未执行 `down -v`。后端容器为 `healthy`，网页和 API 返回 200，HiveMQ `connected=true`。首次启动日志出现 `JdbcTableSchemaHistory` 创建记录和 `DbBaseline` 成功记录，原45条日志与设备数据全部保留；随后发送升级验证消息，MQTT收到/处理/失败为 `1/1/0`，新增 ID 46 `RESOLVED`，日志总数变为46。确认 Flyway 首次实卷基线、数据保留及升级后继续写入均正常。
 
-2026-07-23 通过腾讯云TCR公有镜像继续原地升级至`v1.1.9-remote-mqtt`：项目重新构建后，前端、后端运行时、MQTT状态、日志、Swagger UI和OpenAPI JSON全部返回HTTP 200，`X-Trace-Id`响应头生效，远程MQTT为`connected=true`。升级前46条日志完整保留；测试消息后MQTT收到/处理/失败为`2/2/0`，新增ID47 `RESOLVED`，日志总数47。确认TCR拉取、原数据卷复用、新版功能和升级后继续写入均正常；`v1.1.8`回退演练仍待执行。
+2026-07-23 通过腾讯云TCR公有镜像继续原地升级至`v1.1.9-remote-mqtt`：项目重新构建后，前端、后端运行时、MQTT状态、日志、Swagger UI和OpenAPI JSON全部返回HTTP 200，`X-Trace-Id`响应头生效，远程MQTT为`connected=true`。升级前46条日志完整保留；测试消息后MQTT收到/处理/失败为`2/2/0`，新增ID47 `RESOLVED`，日志总数47。
+
+2026-07-24 使用GHCR固定镜像直接回退`v1.1.8-remote-mqtt`，没有删除项目或数据卷，也不需要恢复数据库备份。前端、运行时、MQTT和日志接口恢复，47条日志与ID47完整保留，远程MQTT已连接；Swagger/OpenAPI仅返回旧版`code=500`包装且没有文档内容，`X-Trace-Id`消失，符合1.1.8功能边界。随后测试MQTT为`1/1/0`，新增ID48 `RESOLVED`，总数48，确认回退与继续写入均成功。

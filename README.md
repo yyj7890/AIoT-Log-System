@@ -96,7 +96,7 @@ Swagger UI：http://127.0.0.1:8080/swagger-ui.html
 OpenAPI JSON：http://127.0.0.1:8080/v3/api-docs/aiot-api
 ```
 
-群晖部署时将 `127.0.0.1:8080` 替换为 NAS 地址和后端宿主机映射端口，例如 `http://<NAS>:18080/swagger-ui.html`。文档仅限可信网络使用；可用 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。群晖当前运行的 `v1.1.9-remote-mqtt` 已包含并实测该功能。
+群晖部署时将 `127.0.0.1:8080` 替换为 NAS 地址和后端宿主机映射端口，例如 `http://<NAS>:18080/swagger-ui.html`。文档仅限可信网络使用；可用 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。该功能已在群晖 `v1.1.9-remote-mqtt` 实测通过；当前为完成回退演练而运行 `v1.1.8-remote-mqtt`，因此暂不可用。
 
 API 失败时使用真实 HTTP 状态，并在响应体返回稳定的 `errorCode` 和 `traceId`；响应头 `X-Trace-Id` 可用于关联后端日志。客户端程序应判断 `errorCode`，不要依赖中文 `message`。
 
