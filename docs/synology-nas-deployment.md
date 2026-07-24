@@ -65,7 +65,7 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 
 ## 7. HiveMQ 远程版本（实机验收通过）
 
-`Remote-Hivemq` 分支提供远程GHCR/TCR编排，源码当前固定`v1.1.9-remote-mqtt`。群晖已完成1.1.9升级和1.1.8回退演练，当前为验收而运行`v1.1.8-remote-mqtt`，全过程复用原MySQL数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
+`Remote-Hivemq` 分支提供远程GHCR/TCR编排，源码和群晖最终运行版本均为`v1.1.9-remote-mqtt`。群晖已完成1.1.9→1.1.8→1.1.9双向演练，全过程复用原MySQL数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 
 国内镜像部署使用`docker-compose.remote.tcr.yml`，前后端固定为腾讯云TCR的`v1.1.9-remote-mqtt`。TCR只是GHCR固定镜像的同步源，工作流不重新构建并强制校验digest一致。两个仓库已设为公有并通过未登录客户端解析：后端顶层digest为`sha256:9450deb945abed9face18674d3301e9cbf7d96be61629ec0331b71181357999d`，前端为`sha256:60e63bee3f4175d8068ebd576212c2315ac35dcb8977d1863c0b4e248824d969`。
 
@@ -109,3 +109,5 @@ sh tools/initialize-synology-docker-config.sh
 2026-07-23 通过腾讯云TCR公有镜像继续原地升级至`v1.1.9-remote-mqtt`：项目重新构建后，前端、后端运行时、MQTT状态、日志、Swagger UI和OpenAPI JSON全部返回HTTP 200，`X-Trace-Id`响应头生效，远程MQTT为`connected=true`。升级前46条日志完整保留；测试消息后MQTT收到/处理/失败为`2/2/0`，新增ID47 `RESOLVED`，日志总数47。
 
 2026-07-24 使用GHCR固定镜像直接回退`v1.1.8-remote-mqtt`，没有删除项目或数据卷，也不需要恢复数据库备份。前端、运行时、MQTT和日志接口恢复，47条日志与ID47完整保留，远程MQTT已连接；Swagger/OpenAPI仅返回旧版`code=500`包装且没有文档内容，`X-Trace-Id`消失，符合1.1.8功能边界。随后测试MQTT为`1/1/0`，新增ID48 `RESOLVED`，总数48，确认回退与继续写入均成功。
+
+同日再使用腾讯云TCR固定镜像升回`v1.1.9-remote-mqtt`：48条日志与ID48完整保留，前端、运行时、MQTT、日志、Swagger和OpenAPI全部返回200，`X-Trace-Id`恢复，远程MQTT已连接。最终测试MQTT为`2/2/0`，新增ID49 `RESOLVED`，总数49。确认双向切换与每次切换后继续写入均成功，最终运行版本为1.1.9。
