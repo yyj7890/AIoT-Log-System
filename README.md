@@ -115,11 +115,11 @@ docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
 
 两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前远程固定版本为 `v1.2.0-remote-mqtt`。该版本包含设备独立日志与采集视图、Flyway V2、页面管理远程 HiveMQ 凭据、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
 
-远程版同时支持腾讯云 TCR 国内镜像：
+远程版同时支持腾讯云 TCR 国内镜像；在国内网络或群晖拉取 GHCR 速度不理想时，可直接执行：
 
 ```text
-ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-backend:v1.2.0-remote-mqtt
-ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-frontend:v1.2.0-remote-mqtt
+docker pull ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-backend:v1.2.0-remote-mqtt
+docker pull ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-frontend:v1.2.0-remote-mqtt
 ```
 
 `.github/workflows/sync-tcr.yml` 从已经扫描并发布的 GHCR 固定镜像复制到 TCR，不重新构建，并强制校验两边 digest 一致。腾讯云命名空间必须先创建；发布凭证仅保存在 GitHub Actions 的 `TCR_USERNAME`、`TCR_PASSWORD` Secrets 中。群晖使用 `docker-compose.remote.tcr.yml`，GHCR 仍是主发布源。
