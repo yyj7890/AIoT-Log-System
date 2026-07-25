@@ -16,6 +16,8 @@
 
 报警等级调整与发布决定：`local_ai_discovery_failed`和`local_ai_fallback_to_official`表示本地AI不可用后已经正常使用官方AI，不属于需要处理的故障。后端现在无条件把这两类事件规范为`INFO`等级、`RUNNING`类型和`RESOLVED`状态，避免固件携带的`WARN/ERROR`造成误报警；真实`local_ai_connection_failed`以及官方AI连接或协议错误不降级。对应服务测试已覆盖固件上报较高等级时的规范化结果。该轮设备中心、Flyway V2、页面远程凭据和等级调整统一作为`v1.2.0-remote-mqtt`发布。
 
+发布结果（2026-07-25）：标签推送触发的GHCR前端、后端构建均成功，后端候选镜像通过漏洞门禁后才推送，并为实际digest生成来源证明；GitHub Release已创建。随后`Remote-Hivemq`分支回归、已发布镜像复扫、分支构建和腾讯云TCR同步全部成功。TCR前后端均由GHCR固定标签复制，未重新构建，并通过源与目标digest一致性校验。群晖当前仍为1.1.9，待用户按原项目原地升级到1.2.0。
+
 ## 2026-07-23
 
 ### 前两阶段记录完整性复核

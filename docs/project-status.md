@@ -1,10 +1,10 @@
 # 当前项目状态
 
-更新时间：2026-07-24
+更新时间：2026-07-25
 
 ## 当前阶段
 
-2026-07-24 设备中心与远程凭据页面源码实现完成，正在作为 `v1.2.0-remote-mqtt` 发布：设备通过 Flyway V2 新增 `monitoring_mode`，旧设备默认 `LOG_ONLY`，传感器类设备可选择 `TELEMETRY`。前端侧栏以“设备中心”为主入口，设备列表整行可打开设备工作台；工作台只查询当前 `deviceId` 的日志，并按设备展示概览、分页日志、采集数据、趋势可视化和后续 AI 分析占位。原全局 `/logs` 路由保留用于兼容管理，但不再出现在侧栏。远程 HiveMQ 用户名和密码可在 MQTT 页面保存并触发后端立即重连；接口只返回用户名及密码配置状态，密码保存在宿主机 `docker/local/hivemq-remote-credentials.properties` 私有文件，不写数据库、不回显、不进入仓库。`local_ai_discovery_failed`与`local_ai_fallback_to_official`表示系统已正常切换官方AI，现统一规范为`INFO/RUNNING/RESOLVED`，真实AI连接或协议错误仍保留原告警。后端32项常规测试通过；另2项Flyway集成测试已在隔离MySQL 8.4.10真实执行且0跳过，确认空库执行V1+V2，以及已有V1设备、日志、上报数据升级到V2后全部保留并默认`LOG_ONLY`。前端4项测试与生产构建通过；5套Compose和发布策略检查通过。下一步是完成GHCR/TCR固定镜像、来源证明与Release核验，再由用户在群晖升级验收。
+2026-07-25 `v1.2.0-remote-mqtt` 已发布：设备通过 Flyway V2 新增 `monitoring_mode`，旧设备默认 `LOG_ONLY`，传感器类设备可选择 `TELEMETRY`。前端侧栏以“设备中心”为主入口，设备列表整行可打开设备工作台；工作台只查询当前 `deviceId` 的日志，并按设备展示概览、分页日志、采集数据、趋势可视化和后续 AI 分析占位。原全局 `/logs` 路由保留用于兼容管理，但不再出现在侧栏。远程 HiveMQ 用户名和密码可在 MQTT 页面保存并触发后端立即重连；接口只返回用户名及密码配置状态，密码保存在宿主机 `docker/local/hivemq-remote-credentials.properties` 私有文件，不写数据库、不回显、不进入仓库。`local_ai_discovery_failed`与`local_ai_fallback_to_official`表示系统已正常切换官方AI，现统一规范为`INFO/RUNNING/RESOLVED`，真实AI连接或协议错误仍保留原告警。标签发布的前后端GHCR构建、漏洞门禁、来源证明和GitHub Release均成功；分支回归、已发布镜像复扫和腾讯云TCR同步均成功，TCR前后端均完成源与镜像digest一致性校验。下一步是用户在群晖原地升级并验收V2迁移、设备中心、遥测视图及页面保存凭据后的立即/重启重连。
 
 本地远程源码版现已运行于`http://127.0.0.1/`。启动时发现本地与群晖使用相同 MQTT Client ID 会互相断开，已把本地源码Compose改为`aiot-log-backend-remote-local-source`，群晖成品镜像Compose不变。重新创建后前端200、后端healthy、MySQL V2成功、远程MQTT连接稳定；当前凭据仍来自私有环境文件，页面保存、即时重连和重启持久化尚待人工验收。
 
