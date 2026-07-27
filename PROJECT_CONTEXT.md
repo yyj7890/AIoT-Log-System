@@ -54,7 +54,7 @@
 
 2026-07-27 提醒创建接口新增必填 `requestId`，Flyway V5 使用唯一索引保障同一 MCP 调用重试不会重复创建提醒；相同标识但不同内容返回冲突。
 
-2026-07-27 新增 AI MCP 操作记录第一版：Flyway V6 保存脱敏工具名、目标摘要、成功/失败和结果摘要；设备工作台新增全局记录页签。群晖提醒 MCP 适配器会对其三个提醒工具上报记录；Home Assistant/PC 的底层透明转发尚未接入审计。
+2026-07-27 新增 AI MCP 操作记录第一版：Flyway V6 保存脱敏工具名、目标摘要、成功/失败和结果摘要；设备工作台新增全局记录页签。小智整合分支中的群晖桥接器已包含提醒 MCP 适配器与 Home Assistant/PC 的透明转发审计源码；尚未部署群晖、配置私有 `IOT_API_URL` 或联调官方 MCP。
 
 2026-07-27 已完成“小智 MQTT 主动播报”第二阶段的后端源码实现：现有 HiveMQ Paho 连接新增固定测试 Opus 的 manifest/二进制帧发布能力及 `announcement/ack` 订阅；新增 Flyway V3 播报任务和 ACK 时间线表。固定测试接口默认关闭；测试资源由固件项目已有的中文 `welcome.ogg` 在本地仅拆分为 35 个 16 kHz、单声道、60 ms 的裸 Opus packet，不调用或部署 TTS。设备启动后，独立本地 MQTT 客户端完成真实 HiveMQ 固定语音联调，最新任务收到并持久化 `RECEIVED → PLAYED` 时间线，证明下行分帧、自动播放及 ACK 回传均正常。其后新增提醒核心源码：Flyway V4、提醒创建/查询/取消 API 与默认关闭的到期扫描；本机受控联调已验证一条一分钟后提醒从 `SCHEDULED → PUBLISHED`，并收到对应播报的 `RECEIVED → PLAYED` ACK。到期仅调用固定测试语音，未接入 MCP 或 TTS。未部署群晖或 TTS，未烧录设备。
 

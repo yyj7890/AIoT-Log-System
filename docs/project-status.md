@@ -22,7 +22,7 @@
 - 取消边界已受控验证：创建后立即取消的一分钟提醒，在原定时间过后仍为 `CANCELED` 且没有关联播报任务。
 - 失败边界已受控验证：临时关闭固定语音发布开关后，到期提醒进入 `FAILED`，且没有关联播报任务或 MQTT 音频发布。
 - 提醒创建接口新增必填 `requestId`，Flyway V5 以唯一索引保证调用重试不会重复创建提醒；当前已由单元测试验证相同请求标识返回原提醒，尚未进行 MCP 实机调用。
-- 新增 Flyway V6 与 `/api/mcp-tool-executions`，设备工作台新增“AI MCP 操作”页签显示全局脱敏记录。当前仅群晖桥接器的 IoT 提醒工具会上报记录；Home Assistant/PC MCP 的透明转发审计仍待实现，未部署群晖或联调官方 MCP。
+- 新增 Flyway V6 与 `/api/mcp-tool-executions`，设备工作台新增“AI MCP 操作”页签显示全局脱敏记录。小智 `feature/aiot-mcp-reminder-integration` 整合分支的群晖桥接器已实现 IoT 提醒工具和 Home Assistant/PC MCP 的透明转发审计；IoT API 路径与字段已完成本地契约核对，尚未部署群晖、填入私有 `IOT_API_URL` 或联调官方 MCP。
 
 2026-07-25 `v1.2.0-remote-mqtt` 已发布并完成群晖验收：设备通过 Flyway V2 新增 `monitoring_mode`，旧设备默认 `LOG_ONLY`，传感器类设备可选择 `TELEMETRY`。前端侧栏以“设备中心”为主入口，设备列表整行可打开设备工作台；工作台只查询当前 `deviceId` 的日志，并按设备展示概览、分页日志、采集数据、趋势可视化和后续 AI 分析占位。原全局 `/logs` 路由保留用于兼容管理，但不再出现在侧栏。远程 HiveMQ 用户名和密码可在 MQTT 页面保存并触发后端立即重连；接口只返回用户名及密码配置状态，密码保存在宿主机 `docker/local/hivemq-remote-credentials.properties` 私有文件，不写数据库、不回显、不进入仓库。`local_ai_discovery_failed`与`local_ai_fallback_to_official`表示系统已正常切换官方AI，现统一规范为`INFO/RUNNING/RESOLVED`，真实AI连接或协议错误仍保留原告警。标签发布的前后端GHCR构建、漏洞门禁、来源证明和GitHub Release均成功；分支回归、已发布镜像复扫和腾讯云TCR同步均成功，TCR前后端均完成源与镜像digest一致性校验。群晖确认原数据保留、设备独立日志自动刷新、页面保存凭据立即重连及后端重启后继续生效；当前没有采集型设备，因此遥测表与趋势图不作虚构实机结论。根目录 README 已补充可复制的腾讯云TCR `docker pull` 指令。前三阶段至此全部完成，下一阶段才是AI日志与遥测分析。
 
