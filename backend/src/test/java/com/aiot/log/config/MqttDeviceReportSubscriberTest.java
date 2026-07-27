@@ -2,6 +2,7 @@ package com.aiot.log.config;
 
 import com.aiot.log.dto.DeviceReportCreateRequest;
 import com.aiot.log.dto.DeviceRuntimeLogCreateRequest;
+import com.aiot.log.announcement.AnnouncementAckService;
 import com.aiot.log.service.DeviceReportService;
 import com.aiot.log.service.LogService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MqttDeviceReportSubscriberTest {
@@ -31,6 +33,9 @@ class MqttDeviceReportSubscriberTest {
 
     @Mock
     private LogService logService;
+
+    @Mock
+    private AnnouncementAckService announcementAckService;
 
     private MqttDeviceReportSubscriber subscriber;
 
@@ -44,7 +49,8 @@ class MqttDeviceReportSubscriberTest {
                 deviceReportService,
                 logService,
                 new ObjectMapper(),
-                validator);
+                validator,
+                announcementAckService);
     }
 
     @Test
@@ -94,6 +100,26 @@ class MqttDeviceReportSubscriberTest {
         assertEquals("DEVICE-002", request.getValue().getDeviceCode());
         assertEquals(1, subscriber.getHandledCount());
         assertEquals(0, subscriber.getFailedCount());
+    }
+
+    @Test
+    void routesAnnouncementAckWithoutAffectingReportOrLogServices() {
+        when(announcementAckService.record(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        subscriber.messageArrived(
+                "aiot/device/DEVICE-005/announcement/ack",
+                message("""
+                        {
+                          "protocol": "aiot-announcement-v1",
+                          "taskId": "test-task",
+                          "deviceCode": "DEVICE-005",
+                          "status": "received"
+                        }
+                        """, 1));
+
+        verify(announcementAckService).record(org.mockito.ArgumentMatchers.any());
+        verify(logService, never()).createDeviceRuntimeLog(org.mockito.ArgumentMatchers.any());
+        verify(deviceReportService, never()).createReport(org.mockito.ArgumentMatchers.any());
+        assertEquals(1, subscriber.getHandledCount());
     }
 
     @Test

@@ -1,8 +1,14 @@
 # HiveMQ Cloud 远程 MQTT 接入版本
 
-更新时间：2026-07-25
+更新时间：2026-07-27
 
 ## 1. 目的与状态
+
+### 2026-07-27：主动播报后端本地源码阶段
+
+远程后端新增固定测试 Opus 的 MQTT 发布和 ACK 接收源码：使用现有 TLS Paho 客户端发布 `announcement/command` 与 `announcement/audio/{taskId}/{frameIndex}`，订阅 `announcement/ack`，并通过 Flyway V3 保存任务和 `received`、`played`、`failed` 时间线。发布固定为 QoS 1、`retain=false`，音频为 16 kHz 单声道 60 ms 裸 Opus packet。现有 `/report`、`/log` 保持不变。
+
+本阶段使用固件仓库已有 `zh-CN/welcome.ogg` 在本地拆分出的 35 个裸 Opus packet 作为固定测试资源，不调用或部署 TTS。设备启动后，独立本机 MQTT Client ID 已通过真实 HiveMQ 完成一次受控任务：后端发布及持久化、设备 `received` ACK、自动播放和 `played` ACK 均已验证。固定测试入口仍默认关闭；后续再测试重复、过期、忙碌和与官方 AI 对话并发的边界。没有部署或群晖改动，也没有烧录设备。
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 

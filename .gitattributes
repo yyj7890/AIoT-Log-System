@@ -1,0 +1,2 @@
+# Announcement payload frames are opaque binary Opus packets, not text files.
+*.opus binary

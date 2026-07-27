@@ -1,8 +1,18 @@
 # 当前项目状态
 
-更新时间：2026-07-25
+更新时间：2026-07-27
 
 ## 当前阶段
+
+### 2026-07-27：固定 Opus MQTT 主动播报后端源码（真实固定语音联调通过）
+
+- 后端在既有 Paho MQTT 连接中新增 `aiot/device/+/announcement/ack` 订阅；既有 `report`、`log` 订阅、计数和入库逻辑保持不变。
+- 新增固定测试播报发布链：先以 QoS 1、`retain=false` 发布 `aiot/device/{deviceCode}/announcement/command` manifest，再按帧号递增发布 `aiot/device/{deviceCode}/announcement/audio/{taskId}/{frameIndex}` 原始二进制 Opus packet。
+- manifest 固定使用 `aiot-announcement-v1`、16 kHz、单声道、60 ms Opus packet stream，并为每一帧生成 8 位十六进制 CRC32。
+- 新增 Flyway V3 的播报任务与 ACK 时间线持久化；只接受 `received`、`played`、`failed`，按任务和状态幂等去重，安全保存失败原因。
+- `POST /api/announcements/fixed-test?deviceCode=...` 仅用于后续开发联调，默认由 `ANNOUNCEMENT_TEST_ENABLED=false` 禁用；测试资源仅由固件已有 `zh-CN/welcome.ogg` 本地拆分为 35 个裸 Opus packet，不调用或部署 TTS。
+- 真实联调使用 `tools/run-announcement-local-test.ps1` 读取被忽略的远程环境文件并临时启用测试开关；该脚本为本机源码验证使用独立 MQTT Client ID，不修改群晖配置或私有凭证文件。
+- 本地 Maven 测试 39 项通过、2 项既有 MySQL Flyway 集成测试因未提供 MySQL 而跳过；首次发送时设备未在线，任务仅记录为 `PUBLISHED`。设备启动后，使用独立本机 MQTT Client ID 的受控复测收到并持久化最新任务的 `RECEIVED → PLAYED` 时间线，确认 HiveMQ 下行、设备自动播放及 ACK 回传已打通；未部署 TTS/群晖、未烧录设备。
 
 2026-07-25 `v1.2.0-remote-mqtt` 已发布并完成群晖验收：设备通过 Flyway V2 新增 `monitoring_mode`，旧设备默认 `LOG_ONLY`，传感器类设备可选择 `TELEMETRY`。前端侧栏以“设备中心”为主入口，设备列表整行可打开设备工作台；工作台只查询当前 `deviceId` 的日志，并按设备展示概览、分页日志、采集数据、趋势可视化和后续 AI 分析占位。原全局 `/logs` 路由保留用于兼容管理，但不再出现在侧栏。远程 HiveMQ 用户名和密码可在 MQTT 页面保存并触发后端立即重连；接口只返回用户名及密码配置状态，密码保存在宿主机 `docker/local/hivemq-remote-credentials.properties` 私有文件，不写数据库、不回显、不进入仓库。`local_ai_discovery_failed`与`local_ai_fallback_to_official`表示系统已正常切换官方AI，现统一规范为`INFO/RUNNING/RESOLVED`，真实AI连接或协议错误仍保留原告警。标签发布的前后端GHCR构建、漏洞门禁、来源证明和GitHub Release均成功；分支回归、已发布镜像复扫和腾讯云TCR同步均成功，TCR前后端均完成源与镜像digest一致性校验。群晖确认原数据保留、设备独立日志自动刷新、页面保存凭据立即重连及后端重启后继续生效；当前没有采集型设备，因此遥测表与趋势图不作虚构实机结论。根目录 README 已补充可复制的腾讯云TCR `docker pull` 指令。前三阶段至此全部完成，下一阶段才是AI日志与遥测分析。
 

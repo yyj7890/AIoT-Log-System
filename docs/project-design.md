@@ -187,6 +187,20 @@ POST http://<服务器IP>:8080/api/device-reports
 
 ## 8. MQTT 设备接入
 
+### 8.4 小智固定 Opus 主动播报（第一阶段）
+
+主动播报复用远程 MQTT TLS 连接，但不替换现有 `report`、`log` 通道。第一阶段仅支持固定测试 Opus；不部署 TTS，也不实现提醒 MCP、排程或条件判断。
+
+```text
+后端 -> aiot/device/{deviceCode}/announcement/command
+后端 -> aiot/device/{deviceCode}/announcement/audio/{taskId}/{frameIndex}
+设备 -> aiot/device/{deviceCode}/announcement/ack
+```
+
+后端先发布 QoS 1、`retain=false` 的 `aiot-announcement-v1` manifest，再按从 0 递增的帧号发布原始二进制 Opus packet。固定格式为 Opus、16 kHz、单声道、60 ms；不使用 Ogg 容器或 Base64。manifest 包含 `taskId`、`deviceCode`、优先级、创建/过期时间、帧数及每帧 `index`、`bytes`、8 位十六进制 CRC32。
+
+设备 ACK 只允许 `received`、`played`、`failed`；后端校验 Topic 与 Payload 的设备编号、协议、任务编号和状态，并对同一任务同一状态幂等去重。`failed` 的 reason 只保存长度受限的安全文本。固定测试发布接口默认禁用；测试资源只从固件仓库已有的中文 `welcome.ogg` 在本地拆分为裸 Opus packet，不调用或部署 TTS。真实联调前仍须人工核对资源和 HiveMQ ACL。当前阶段尚未连接真实 Broker、未部署群晖或 TTS、未烧录固件。
+
 连接：
 
 ```text

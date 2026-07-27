@@ -16,6 +16,7 @@ public class MqttProperties {
     private String remoteCredentialFile = "";
     private String topic = "aiot/device/+/report";
     private String logTopic = "aiot/device/+/log";
+    private String announcementAckTopic = "aiot/device/+/announcement/ack";
     private Integer runtimeLogMergeWindowSeconds = 30;
     private Integer qos = 1;
 
@@ -93,6 +94,14 @@ public class MqttProperties {
 
     public void setLogTopic(String logTopic) {
         this.logTopic = logTopic;
+    }
+
+    public String getAnnouncementAckTopic() {
+        return announcementAckTopic;
+    }
+
+    public void setAnnouncementAckTopic(String announcementAckTopic) {
+        this.announcementAckTopic = announcementAckTopic;
     }
 
     public Integer getRuntimeLogMergeWindowSeconds() {

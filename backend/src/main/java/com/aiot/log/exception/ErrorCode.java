@@ -45,6 +45,12 @@ public enum ErrorCode {
     MQTT_CREDENTIAL_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "保存 MQTT 全局凭证失败"),
     MQTT_AUTH_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "更新 MQTT 认证开关失败"),
 
+    ANNOUNCEMENT_TEST_DISABLED(HttpStatus.FORBIDDEN, "固定测试播报未启用"),
+    ANNOUNCEMENT_TEST_AUDIO_UNAVAILABLE(HttpStatus.CONFLICT, "固定测试 Opus 音频资源不可用"),
+    ANNOUNCEMENT_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "播报任务不存在"),
+    ANNOUNCEMENT_ACK_INVALID(HttpStatus.BAD_REQUEST, "播报回执不合法"),
+    ANNOUNCEMENT_PUBLISH_FAILED(HttpStatus.BAD_GATEWAY, "播报 MQTT 发布失败"),
+
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "服务器内部错误");
 
     private final HttpStatus httpStatus;

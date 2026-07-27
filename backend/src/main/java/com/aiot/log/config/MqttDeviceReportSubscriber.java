@@ -2,6 +2,8 @@ package com.aiot.log.config;
 
 import com.aiot.log.dto.DeviceReportCreateRequest;
 import com.aiot.log.dto.DeviceRuntimeLogCreateRequest;
+import com.aiot.log.announcement.AnnouncementAck;
+import com.aiot.log.announcement.AnnouncementAckService;
 import com.aiot.log.exception.BusinessException;
 import com.aiot.log.exception.ErrorCode;
 import com.aiot.log.service.DeviceReportService;
@@ -38,6 +40,7 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
     private final LogService logService;
     private final ObjectMapper objectMapper;
     private final Validator validator;
+    private final AnnouncementAckService announcementAckService;
     private MqttClient mqttClient;
     private volatile boolean connected;
     private volatile LocalDateTime lastConnectedAt;
@@ -54,12 +57,14 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
             DeviceReportService deviceReportService,
             LogService logService,
             ObjectMapper objectMapper,
-            Validator validator) {
+            Validator validator,
+            AnnouncementAckService announcementAckService) {
         this.mqttProperties = mqttProperties;
         this.deviceReportService = deviceReportService;
         this.logService = logService;
         this.objectMapper = objectMapper;
         this.validator = validator;
+        this.announcementAckService = announcementAckService;
     }
 
     @Override
@@ -168,7 +173,13 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
         lastMessageAt = LocalDateTime.now();
         lastMessageTopic = topic;
         try {
-            if (isRuntimeLogTopic(topic)) {
+            if (isAnnouncementAckTopic(topic)) {
+                AnnouncementAck ack = objectMapper.readValue(payload, AnnouncementAck.class);
+                validateAnnouncementAckTopic(topic, ack.getDeviceCode());
+                boolean recorded = announcementAckService.record(ack);
+                log.info("MQTT announcement ACK handled. topic={}, status={}, recorded={}",
+                        topic, ack.getStatus(), recorded);
+            } else if (isRuntimeLogTopic(topic)) {
                 DeviceRuntimeLogCreateRequest request = objectMapper.readValue(payload, DeviceRuntimeLogCreateRequest.class);
                 validateRequest(request);
                 validateTopicDeviceCode(topic, request.getDeviceCode());
@@ -204,8 +215,10 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
             int qos = mqttProperties.getQos() == null ? 1 : mqttProperties.getQos();
             mqttClient.subscribe(mqttProperties.getTopic(), qos);
             mqttClient.subscribe(mqttProperties.getLogTopic(), qos);
-            log.info("MQTT subscribed reportTopic={}, logTopic={}, qos={}",
-                    mqttProperties.getTopic(), mqttProperties.getLogTopic(), qos);
+            mqttClient.subscribe(mqttProperties.getAnnouncementAckTopic(), qos);
+            log.info("MQTT subscribed reportTopic={}, logTopic={}, announcementAckTopic={}, qos={}",
+                    mqttProperties.getTopic(), mqttProperties.getLogTopic(),
+                    mqttProperties.getAnnouncementAckTopic(), qos);
         } catch (MqttException exception) {
             lastError = exception.getMessage();
             log.warn("MQTT subscribe failed. reportTopic={}, logTopic={}",
@@ -233,6 +246,33 @@ public class MqttDeviceReportSubscriber implements ApplicationRunner, MqttCallba
 
     private boolean isRuntimeLogTopic(String topic) {
         return topic != null && topic.endsWith("/log");
+    }
+
+    private boolean isAnnouncementAckTopic(String topic) {
+        return topic != null && topic.endsWith("/announcement/ack");
+    }
+
+    private void validateAnnouncementAckTopic(String topic, String deviceCode) {
+        String[] segments = topic == null ? new String[0] : topic.split("/", -1);
+        if (!isAnnouncementAckTopic(topic) || segments.length != 5 || !"aiot".equals(segments[0])
+                || !"device".equals(segments[1]) || !"announcement".equals(segments[3])
+                || !segments[2].equals(deviceCode)) {
+            throw new IllegalArgumentException("MQTT topic is not an announcement ACK topic");
+        }
+    }
+
+    public synchronized void publishAnnouncement(String topic, byte[] payload) {
+        if (mqttClient == null || !mqttClient.isConnected()) {
+            throw new BusinessException(ErrorCode.ANNOUNCEMENT_PUBLISH_FAILED);
+        }
+        try {
+            mqttClient.publish(topic, payload, 1, false);
+            log.info("MQTT announcement message published. topic={}, payloadBytes={}", topic, payload.length);
+        } catch (MqttException exception) {
+            lastError = exception.getMessage();
+            log.warn("MQTT announcement publish failed. topic={}, payloadBytes={}", topic, payload.length);
+            throw new BusinessException(ErrorCode.ANNOUNCEMENT_PUBLISH_FAILED);
+        }
     }
 
     private void validateTopicDeviceCode(String topic, String deviceCode) {

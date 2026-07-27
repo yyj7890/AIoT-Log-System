@@ -73,8 +73,12 @@ mqtt:
   remote-credential-file: ${MQTT_REMOTE_CREDENTIAL_FILE:}
   topic: ${MQTT_TOPIC:aiot/device/+/report}
   log-topic: ${MQTT_LOG_TOPIC:aiot/device/+/log}
+  announcement-ack-topic: ${MQTT_ANNOUNCEMENT_ACK_TOPIC:aiot/device/+/announcement/ack}
   runtime-log-merge-window-seconds: ${MQTT_RUNTIME_LOG_MERGE_WINDOW_SECONDS:30}
   qos: ${MQTT_QOS:1}
+announcement:
+  test-enabled: ${ANNOUNCEMENT_TEST_ENABLED:false}
+  fixed-test-resource: ${ANNOUNCEMENT_FIXED_TEST_RESOURCE:classpath:announcements/fixed-test/manifest.json}
   discovery:
     enabled: ${MQTT_DISCOVERY_ENABLED:true}
     port: ${MQTT_DISCOVERY_PORT:19830}

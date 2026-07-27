@@ -1,0 +1,148 @@
+{
+  "codec": "opus",
+  "sampleRate": 16000,
+  "channels": 1,
+  "frameDurationMs": 60,
+  "frames": [
+    {
+      "index": 0,
+      "resource": "000000.opus"
+    },
+    {
+      "index": 1,
+      "resource": "000001.opus"
+    },
+    {
+      "index": 2,
+      "resource": "000002.opus"
+    },
+    {
+      "index": 3,
+      "resource": "000003.opus"
+    },
+    {
+      "index": 4,
+      "resource": "000004.opus"
+    },
+    {
+      "index": 5,
+      "resource": "000005.opus"
+    },
+    {
+      "index": 6,
+      "resource": "000006.opus"
+    },
+    {
+      "index": 7,
+      "resource": "000007.opus"
+    },
+    {
+      "index": 8,
+      "resource": "000008.opus"
+    },
+    {
+      "index": 9,
+      "resource": "000009.opus"
+    },
+    {
+      "index": 10,
+      "resource": "000010.opus"
+    },
+    {
+      "index": 11,
+      "resource": "000011.opus"
+    },
+    {
+      "index": 12,
+      "resource": "000012.opus"
+    },
+    {
+      "index": 13,
+      "resource": "000013.opus"
+    },
+    {
+      "index": 14,
+      "resource": "000014.opus"
+    },
+    {
+      "index": 15,
+      "resource": "000015.opus"
+    },
+    {
+      "index": 16,
+      "resource": "000016.opus"
+    },
+    {
+      "index": 17,
+      "resource": "000017.opus"
+    },
+    {
+      "index": 18,
+      "resource": "000018.opus"
+    },
+    {
+      "index": 19,
+      "resource": "000019.opus"
+    },
+    {
+      "index": 20,
+      "resource": "000020.opus"
+    },
+    {
+      "index": 21,
+      "resource": "000021.opus"
+    },
+    {
+      "index": 22,
+      "resource": "000022.opus"
+    },
+    {
+      "index": 23,
+      "resource": "000023.opus"
+    },
+    {
+      "index": 24,
+      "resource": "000024.opus"
+    },
+    {
+      "index": 25,
+      "resource": "000025.opus"
+    },
+    {
+      "index": 26,
+      "resource": "000026.opus"
+    },
+    {
+      "index": 27,
+      "resource": "000027.opus"
+    },
+    {
+      "index": 28,
+      "resource": "000028.opus"
+    },
+    {
+      "index": 29,
+      "resource": "000029.opus"
+    },
+    {
+      "index": 30,
+      "resource": "000030.opus"
+    },
+    {
+      "index": 31,
+      "resource": "000031.opus"
+    },
+    {
+      "index": 32,
+      "resource": "000032.opus"
+    },
+    {
+      "index": 33,
+      "resource": "000033.opus"
+    },
+    {
+      "index": 34,
+      "resource": "000034.opus"
+    }
+  ]
+}
