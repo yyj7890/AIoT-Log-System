@@ -117,7 +117,7 @@ jobs:
           echo "::error::Unable to relay $source_image to Tencent TCR after three attempts."
           exit 1
 
-      - name: Verify source and mirror digest match
+      - name: Verify source and mirror image content match
         shell: bash
         env:
           IMAGE_TAG: ${{ needs.resolve-tag.outputs.image_tag }}
@@ -126,10 +126,16 @@ jobs:
           set -euo pipefail
           source_image="${SOURCE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
           target_image="${TARGET_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-          source_digest="$(docker buildx imagetools inspect "$source_image" | awk '/^Digest:/ {print $2; exit}')"
-          target_digest="$(docker buildx imagetools inspect "$target_image" | awk '/^Digest:/ {print $2; exit}')"
-          if [[ -z "$source_digest" || "$source_digest" != "$target_digest" ]]; then
-            echo "::error::Digest mismatch: GHCR=$source_digest TCR=$target_digest"
+          # GHCR attaches an attestation manifest to the published image index.
+          # A docker pull/tag/push relay preserves the executable config and layers
+          # but may produce a different top-level index digest at TCR. Compare the
+          # runnable image config digest instead of treating provenance metadata as
+          # a content mismatch.
+          docker pull "$target_image"
+          source_config_digest="$(docker image inspect "$source_image" --format '{{.Id}}')"
+          target_config_digest="$(docker image inspect "$target_image" --format '{{.Id}}')"
+          if [[ -z "$source_config_digest" || "$source_config_digest" != "$target_config_digest" ]]; then
+            echo "::error::Image config digest mismatch: GHCR=$source_config_digest TCR=$target_config_digest"
             exit 1
           fi
-          echo "Verified identical digest for $target_image: $target_digest"
+          echo "Verified identical runnable image config for $target_image: $target_config_digest"

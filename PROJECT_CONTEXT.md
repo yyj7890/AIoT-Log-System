@@ -48,7 +48,7 @@
 
 ## 4. 当前状态
 
-2026-07-27 已构建并发布 IoT `v1.2.1-remote-mqtt`：后端包含固定 Opus 播报、提醒 API、MCP 审计和 Flyway V3～V6；前端包含 AI MCP 操作记录页。GHCR 前后端与 GitHub Release 已成功；腾讯云 TCR 前端同步成功，后端曾因跨仓库 HTTP/2 `PROTOCOL_ERROR` 失败。同步工作流已改为 GitHub Runner 本地拉取 GHCR 后推送 TCR，并对瞬态传输最多重试三次；等待该工作流验证后才可确认后端 TCR 标签可用。离线 tar 包已可用于群晖更新。专用编排为 `docker-compose.remote.import.yml`，必须复用现有远程项目名、MySQL 卷和私有 `docker/local/hivemq-remote.env`。同日修正 Flyway 回归测试的过期表数断言，真实 MySQL 8.4 集成测试确认空库与既有 V1 库均可迁移至 V6。
+2026-07-27 已构建并发布 IoT `v1.2.1-remote-mqtt`：后端包含固定 Opus 播报、提醒 API、MCP 审计和 Flyway V3～V6；前端包含 AI MCP 操作记录页。GHCR 前后端与 GitHub Release 已成功；腾讯云 TCR 后端曾因跨仓库 HTTP/2 `PROTOCOL_ERROR` 失败。同步工作流已改为 GitHub Runner 本地拉取 GHCR 后推送 TCR，并对瞬态传输最多重试三次；传输已成功，随后发现旧校验错误比较含 GHCR 来源证明的顶层 index digest，现改为比较可运行镜像的 config digest，等待新工作流验证。离线 tar 包已用于群晖更新。专用编排为 `docker-compose.remote.import.yml`，必须复用现有远程项目名、MySQL 卷和私有 `docker/local/hivemq-remote.env`。同日修正 Flyway 回归测试的过期表数断言，真实 MySQL 8.4 集成测试确认空库与既有 V1 库均可迁移至 V6。
 
 2026-07-27 取消提醒边界联调通过：立即取消的一分钟提醒在原定时间后仍为 `CANCELED`，且未创建播报任务。
 

@@ -76,7 +76,7 @@ Assert-Match $tcrSync 'packages:\s*read' 'Tencent sync must have read-only acces
 Assert-Match $tcrSync 'docker pull "\$source_image"' 'Tencent images must be pulled from the scanned GHCR image without rebuilding.'
 Assert-Match $tcrSync 'docker push "\$target_image"' 'Tencent images must be pushed to the approved TCR target.'
 Assert-Match $tcrSync 'for attempt in 1 2 3' 'Tencent sync must retry transient registry transfers.'
-Assert-Match $tcrSync 'Digest mismatch' 'Tencent sync must fail when GHCR and mirror digests differ.'
+Assert-Match $tcrSync 'Image config digest mismatch' 'Tencent sync must fail when GHCR and mirror image content differs.'
 
 Assert-Match $frontendDockerfile '^FROM node:24-alpine3\.24 AS build' 'Frontend build image must use the maintained Node 24 Alpine line.'
 Assert-Match $frontendDockerfile '(?m)^FROM nginx:1\.30-alpine$' 'Frontend runtime image must use the maintained Nginx 1.30 Alpine line.'
