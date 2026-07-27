@@ -4,9 +4,9 @@
 
 ## 当前阶段
 
-### 2026-07-27：IoT `v1.3.0-remote-mqtt` 群晖离线导入候选包（尚未部署）
+### 2026-07-27：IoT `v1.2.1-remote-mqtt` 群晖离线导入候选包（尚未部署）
 
-- 已构建 `local/aiot-log-backend:v1.3.0-remote-mqtt` 与 `local/aiot-log-frontend:v1.3.0-remote-mqtt`，并导出 `dist/aiot-remote-mqtt-v1.3.0-images.tar`；包内标签和 SHA-256 已本地核验。
+- 已构建 `local/aiot-log-backend:v1.2.1-remote-mqtt` 与 `local/aiot-log-frontend:v1.2.1-remote-mqtt`，并导出 `dist/aiot-remote-mqtt-v1.2.1-images.tar`；包内标签和 SHA-256 已本地核验。
 - 后端构建完成 Java 打包，前端构建完成 TypeScript/Vite 生产构建。候选包包含本阶段的提醒 API、固定 Opus MQTT 发布/ACK、MCP 审计与 Flyway V3～V6。
 - 新增 `docker-compose.remote.import.yml` 供 Container Manager 离线导入使用；它固定复用既有远程项目名、`mysql-data` 卷和被忽略的 `docker/local/hivemq-remote.env`，不初始化新数据库、不修改 HiveMQ 私有配置。
 - 尚未导入群晖、未重建 IoT 容器、未执行数据库迁移或真实 MCP/MQTT 提醒联调；当前已发布且群晖验收的版本仍为 `v1.2.0-remote-mqtt`。

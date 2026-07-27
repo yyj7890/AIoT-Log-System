@@ -48,7 +48,7 @@
 
 ## 4. 当前状态
 
-2026-07-27 已构建供群晖离线导入的 IoT `v1.3.0-remote-mqtt` 候选镜像包：后端包含固定 Opus 播报、提醒 API、MCP 审计和 Flyway V3～V6；前端包含 AI MCP 操作记录页。包尚未导入或部署到群晖，不是 GHCR/TCR 发布版本。专用编排为 `docker-compose.remote.import.yml`，必须复用现有远程项目名、MySQL 卷和私有 `docker/local/hivemq-remote.env`。
+2026-07-27 已构建供群晖离线导入的 IoT `v1.2.1-remote-mqtt` 候选镜像包：后端包含固定 Opus 播报、提醒 API、MCP 审计和 Flyway V3～V6；前端包含 AI MCP 操作记录页。包尚未导入或部署到群晖，不是 GHCR/TCR 发布版本。专用编排为 `docker-compose.remote.import.yml`，必须复用现有远程项目名、MySQL 卷和私有 `docker/local/hivemq-remote.env`。
 
 2026-07-27 取消提醒边界联调通过：立即取消的一分钟提醒在原定时间后仍为 `CANCELED`，且未创建播报任务。
 
