@@ -63,6 +63,22 @@
           </div>
         </el-tab-pane>
 
+        <el-tab-pane label="AI MCP 操作" name="mcp">
+          <div class="content-section">
+            <div class="section-title">AI MCP 操作记录</div>
+            <div class="section-body">
+              <el-alert type="info" :closable="false" title="官方 MCP 当前不提供可靠的小智设备编号，以下为全局记录；提醒会在本设备的提醒记录中准确归属。" />
+              <el-table :data="mcpExecutions" style="margin-top: 12px">
+                <el-table-column prop="createdAt" label="时间" min-width="160" />
+                <el-table-column prop="toolName" label="工具" min-width="180" />
+                <el-table-column prop="targetSummary" label="目标" min-width="180" />
+                <el-table-column label="结果" width="100"><template #default="{ row }"><el-tag :type="row.status === 'SUCCEEDED' ? 'success' : 'danger'">{{ row.status === 'SUCCEEDED' ? '成功' : '失败' }}</el-tag></template></el-table-column>
+                <el-table-column prop="resultSummary" label="摘要" min-width="220" show-overflow-tooltip />
+              </el-table>
+            </div>
+          </div>
+        </el-tab-pane>
+
         <el-tab-pane v-if="device?.monitoringMode === 'TELEMETRY'" label="采集数据" name="data">
           <div class="content-section">
             <div class="section-title">数据趋势与可视化</div>
@@ -117,6 +133,7 @@ import LogFormDialog from '@/components/LogFormDialog.vue'
 import ReportTrendPanel from '@/components/ReportTrendPanel.vue'
 import DeviceLogsPanel from '@/components/DeviceLogsPanel.vue'
 import { getDeviceDetail } from '@/api/devices'
+import { getMcpToolExecutions, type McpToolExecution } from '@/api/mcpToolExecutions'
 import { getDeviceReportList } from '@/api/reports'
 import type { Device } from '@/types/device'
 import type { DeviceReport } from '@/types/report'
@@ -125,7 +142,8 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const device = ref<Device>()
-const activeTab = ref<'overview' | 'logs' | 'data'>('overview')
+const activeTab = ref<'overview' | 'logs' | 'data' | 'mcp'>('overview')
+const mcpExecutions = ref<McpToolExecution[]>([])
 const reportTrend = ref<DeviceReport[]>([])
 const reports = ref<DeviceReport[]>([])
 const reportPage = ref(1)
@@ -138,6 +156,7 @@ async function loadData() {
   try {
     const deviceId = Number(route.params.id)
     device.value = await getDeviceDetail(deviceId)
+    mcpExecutions.value = await getMcpToolExecutions()
     if (device.value.monitoringMode === 'TELEMETRY') {
       await loadReports()
     }
