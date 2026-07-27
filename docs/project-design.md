@@ -199,7 +199,11 @@ POST http://<服务器IP>:8080/api/device-reports
 
 后端先发布 QoS 1、`retain=false` 的 `aiot-announcement-v1` manifest，再按从 0 递增的帧号发布原始二进制 Opus packet。固定格式为 Opus、16 kHz、单声道、60 ms；不使用 Ogg 容器或 Base64。manifest 包含 `taskId`、`deviceCode`、优先级、创建/过期时间、帧数及每帧 `index`、`bytes`、8 位十六进制 CRC32。
 
-设备 ACK 只允许 `received`、`played`、`failed`；后端校验 Topic 与 Payload 的设备编号、协议、任务编号和状态，并对同一任务同一状态幂等去重。`failed` 的 reason 只保存长度受限的安全文本。固定测试发布接口默认禁用；测试资源只从固件仓库已有的中文 `welcome.ogg` 在本地拆分为裸 Opus packet，不调用或部署 TTS。真实联调前仍须人工核对资源和 HiveMQ ACL。当前阶段尚未连接真实 Broker、未部署群晖或 TTS、未烧录固件。
+设备 ACK 只允许 `received`、`played`、`failed`；后端校验 Topic 与 Payload 的设备编号、协议、任务编号和状态，并对同一任务同一状态幂等去重。`failed` 的 reason 只保存长度受限的安全文本。固定测试发布接口默认禁用；测试资源只从固件仓库已有的中文 `welcome.ogg` 在本地拆分为裸 Opus packet，不调用或部署 TTS。真实 HiveMQ 固定语音联调已收到 `received → played` ACK；未部署群晖或 TTS、未烧录固件。
+
+### 8.5 提醒核心（第三阶段起步）
+
+`reminders` 保存一次性提醒的目标设备、文本、到期时间和状态。`POST /api/reminders` 创建，`GET /api/reminders` 查询，`DELETE /api/reminders/{id}` 仅取消尚未触发的提醒。到期扫描默认由 `REMINDER_SCHEDULER_ENABLED=false` 关闭；启用后先以 `SCHEDULED → TRIGGERING` 的条件更新抢占任务，避免并发扫描重复发布，再调用固定 Opus 播报器并记录任务号。提醒文本只持久化，当前不生成语音；MCP、TTS、条件提醒、冷却和静音时段属于后续阶段。
 
 连接：
 

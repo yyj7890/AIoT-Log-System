@@ -79,6 +79,9 @@ mqtt:
 announcement:
   test-enabled: ${ANNOUNCEMENT_TEST_ENABLED:false}
   fixed-test-resource: ${ANNOUNCEMENT_FIXED_TEST_RESOURCE:classpath:announcements/fixed-test/manifest.json}
+reminder:
+  scheduler-enabled: ${REMINDER_SCHEDULER_ENABLED:false}
+  poll-interval-ms: ${REMINDER_POLL_INTERVAL_MS:30000}
   discovery:
     enabled: ${MQTT_DISCOVERY_ENABLED:true}
     port: ${MQTT_DISCOVERY_PORT:19830}

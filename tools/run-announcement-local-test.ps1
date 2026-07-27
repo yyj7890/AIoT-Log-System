@@ -1,5 +1,6 @@
 param(
-    [string]$RemoteEnvironmentFile = "D:\AI\IOT\docker\local\hivemq-remote.env"
+    [string]$RemoteEnvironmentFile = "D:\AI\IOT\docker\local\hivemq-remote.env",
+    [switch]$EnableReminderScheduler
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,6 +19,11 @@ Get-Content -Encoding UTF8 $RemoteEnvironmentFile | ForEach-Object {
 # Keep this local source test distinct from the deployed backend client.
 $env:MQTT_CLIENT_ID = 'aiot-log-backend-remote-local-announcement-test'
 $env:ANNOUNCEMENT_TEST_ENABLED = 'true'
+if ($EnableReminderScheduler) {
+    # Explicit opt-in: a local reminder smoke test may publish only the fixed
+    # test Opus resource when an already-created reminder reaches its time.
+    $env:REMINDER_SCHEDULER_ENABLED = 'true'
+}
 
 Set-Location 'D:\AI\IOT\backend'
 mvn -s D:\AI\IOT\tools\maven-settings.xml spring-boot:run
