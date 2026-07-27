@@ -50,6 +50,8 @@
 
 2026-07-27 取消提醒边界联调通过：立即取消的一分钟提醒在原定时间后仍为 `CANCELED`，且未创建播报任务。
 
+2026-07-27 发布失败边界联调通过：临时关闭固定语音发布开关后，到期提醒安全进入 `FAILED`，没有创建播报任务或发送 MQTT 音频。
+
 2026-07-27 已完成“小智 MQTT 主动播报”第二阶段的后端源码实现：现有 HiveMQ Paho 连接新增固定测试 Opus 的 manifest/二进制帧发布能力及 `announcement/ack` 订阅；新增 Flyway V3 播报任务和 ACK 时间线表。固定测试接口默认关闭；测试资源由固件项目已有的中文 `welcome.ogg` 在本地仅拆分为 35 个 16 kHz、单声道、60 ms 的裸 Opus packet，不调用或部署 TTS。设备启动后，独立本地 MQTT 客户端完成真实 HiveMQ 固定语音联调，最新任务收到并持久化 `RECEIVED → PLAYED` 时间线，证明下行分帧、自动播放及 ACK 回传均正常。其后新增提醒核心源码：Flyway V4、提醒创建/查询/取消 API 与默认关闭的到期扫描；本机受控联调已验证一条一分钟后提醒从 `SCHEDULED → PUBLISHED`，并收到对应播报的 `RECEIVED → PLAYED` ACK。到期仅调用固定测试语音，未接入 MCP 或 TTS。未部署群晖或 TTS，未烧录设备。
 
 2026-07-25 已发布并在群晖验收 `v1.2.0-remote-mqtt`：设备新增 `monitoringMode`（`LOG_ONLY` / `TELEMETRY`），Flyway V2 只增加字段且旧设备默认“仅运行日志”；侧栏主入口改为“设备中心”，设备列表可直接打开设备工作台，工作台按当前设备展示概览、独立日志、采集数据表和趋势图，传感器模式预留 AI 分析区。原 `/logs` 全局管理路由继续保留但不再作为侧栏主入口。远程 MQTT 页面可修改 HiveMQ 用户名和密码，密码不回显、不进入数据库，写入宿主机被忽略的私有文件后立即重连；远程 Compose 新增 `docker/local` 私有目录持久化挂载。正常切换官方AI的`local_ai_discovery_failed`和`local_ai_fallback_to_official`统一规范为`INFO/RUNNING/RESOLVED`，真实AI连接或协议故障仍保留告警。GitHub 标签发布、前后端 GHCR、漏洞门禁、来源证明、GitHub Release、回归和腾讯云TCR同步均已成功；TCR前后端均完成源与镜像digest一致性校验。群晖已确认原数据保留、设备独立日志自动刷新、页面保存凭据立即重连及后端重启后持续生效；无传感器设备时不虚构遥测视图实机结果。根目录 README 已提供可直接复制的 TCR `docker pull` 指令。
