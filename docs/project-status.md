@@ -4,12 +4,14 @@
 
 ## 当前阶段
 
-### 2026-07-27：IoT `v1.2.1-remote-mqtt` 群晖离线导入候选包（尚未部署）
+### 2026-07-27：IoT `v1.2.1-remote-mqtt` 发布与群晖离线导入包（尚未部署）
 
 - 已构建 `local/aiot-log-backend:v1.2.1-remote-mqtt` 与 `local/aiot-log-frontend:v1.2.1-remote-mqtt`，并导出 `dist/aiot-remote-mqtt-v1.2.1-images.tar`；包内标签和 SHA-256 已本地核验。
 - 后端构建完成 Java 打包，前端构建完成 TypeScript/Vite 生产构建。候选包包含本阶段的提醒 API、固定 Opus MQTT 发布/ACK、MCP 审计与 Flyway V3～V6。
 - 新增 `docker-compose.remote.import.yml` 供 Container Manager 离线导入使用；它固定复用既有远程项目名、`mysql-data` 卷和被忽略的 `docker/local/hivemq-remote.env`，不初始化新数据库、不修改 HiveMQ 私有配置。
-- 尚未导入群晖、未重建 IoT 容器、未执行数据库迁移或真实 MCP/MQTT 提醒联调；当前已发布且群晖验收的版本仍为 `v1.2.0-remote-mqtt`。
+- GHCR 前后端镜像、漏洞门禁、来源证明与 GitHub Release 已成功。腾讯云 TCR 前端同步成功；后端跨仓库复制时收到 HTTP/2 `PROTOCOL_ERROR`，需重试同步后才可给出国内镜像拉取命令。
+- GitHub 回归中发现 Flyway 集成测试仍断言旧的 7 张业务表；V3～V6 已使实际数量为 11。测试已更新为验证 11 张表和 V1～V6 全部迁移记录，并用一次性 MySQL 8.4 容器验证空库、既有 V1 库均成功迁移至 V6。
+- 尚未导入群晖、未重建 IoT 容器或真实 MCP/MQTT 提醒联调；当前群晖已验收版本仍为 `v1.2.0-remote-mqtt`。
 
 ### 2026-07-27：固定 Opus MQTT 主动播报后端源码（真实固定语音联调通过）
 

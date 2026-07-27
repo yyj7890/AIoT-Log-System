@@ -24,18 +24,23 @@ class FlywayMigrationIntegrationTest {
     private static final String USERNAME = System.getenv().getOrDefault("FLYWAY_TEST_DB_USERNAME", "root");
     private static final String PASSWORD = System.getenv().getOrDefault("FLYWAY_TEST_DB_PASSWORD", "");
     private static final String V1_MIGRATION = "db/migration/V1__create_initial_schema.sql";
+    private static final int EXPECTED_BUSINESS_TABLES = 11;
 
     @Test
-    void emptyDatabaseExecutesV1AndV2() throws Exception {
+    void emptyDatabaseExecutesAllMigrationsThroughV6() throws Exception {
         String database = databaseName("empty");
         createDatabase(database);
         try {
             Flyway flyway = flyway(database);
             flyway.migrate();
 
-            assertEquals(7, countBusinessTables(database));
+            assertEquals(EXPECTED_BUSINESS_TABLES, countBusinessTables(database));
             assertMigrationRecord(database, "1", "SQL");
             assertMigrationRecord(database, "2", "SQL");
+            assertMigrationRecord(database, "3", "SQL");
+            assertMigrationRecord(database, "4", "SQL");
+            assertMigrationRecord(database, "5", "SQL");
+            assertMigrationRecord(database, "6", "SQL");
             assertMonitoringMode(database, "LOG_ONLY");
         } finally {
             dropDatabase(database);
@@ -43,7 +48,7 @@ class FlywayMigrationIntegrationTest {
     }
 
     @Test
-    void existingV1DatabaseIsBaselinedThenUpgradedToV2WithoutLosingData() throws Exception {
+    void existingV1DatabaseIsBaselinedThenUpgradedThroughV6WithoutLosingData() throws Exception {
         String database = databaseName("legacy");
         createDatabase(database);
         try {
@@ -87,9 +92,13 @@ class FlywayMigrationIntegrationTest {
                     database,
                     "SELECT COUNT(*) FROM devices "
                             + "WHERE device_code = 'FLYWAY-KEEP-001' AND monitoring_mode = 'LOG_ONLY'"));
-            assertEquals(7, countBusinessTables(database));
+            assertEquals(EXPECTED_BUSINESS_TABLES, countBusinessTables(database));
             assertMigrationRecord(database, "1", "BASELINE");
             assertMigrationRecord(database, "2", "SQL");
+            assertMigrationRecord(database, "3", "SQL");
+            assertMigrationRecord(database, "4", "SQL");
+            assertMigrationRecord(database, "5", "SQL");
+            assertMigrationRecord(database, "6", "SQL");
             assertMonitoringMode(database, "LOG_ONLY");
         } finally {
             dropDatabase(database);
