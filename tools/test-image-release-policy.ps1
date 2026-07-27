@@ -72,7 +72,10 @@ Assert-Match $tcrSync 'secrets\.TCR_USERNAME' 'Tencent sync must use a repositor
 Assert-Match $tcrSync 'secrets\.TCR_PASSWORD' 'Tencent sync must use a repository password secret.'
 Assert-Match $tcrSync 'docker/setup-buildx-action@[0-9a-f]{40}' 'Tencent sync Buildx action must use an immutable SHA.'
 Assert-Match $tcrSync 'docker/login-action@[0-9a-f]{40}' 'Tencent sync login action must use an immutable SHA.'
-Assert-Match $tcrSync 'imagetools create' 'Tencent images must be copied from the scanned GHCR image without rebuilding.'
+Assert-Match $tcrSync 'packages:\s*read' 'Tencent sync must have read-only access to the published GHCR image.'
+Assert-Match $tcrSync 'docker pull "\$source_image"' 'Tencent images must be pulled from the scanned GHCR image without rebuilding.'
+Assert-Match $tcrSync 'docker push "\$target_image"' 'Tencent images must be pushed to the approved TCR target.'
+Assert-Match $tcrSync 'for attempt in 1 2 3' 'Tencent sync must retry transient registry transfers.'
 Assert-Match $tcrSync 'Digest mismatch' 'Tencent sync must fail when GHCR and mirror digests differ.'
 
 Assert-Match $frontendDockerfile '^FROM node:24-alpine3\.24 AS build' 'Frontend build image must use the maintained Node 24 Alpine line.'
