@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class Reminder {
     private Long id;
     private Long deviceId;
+    private String requestId;
     private String deviceCode;
     private String message;
     private LocalDateTime remindAt;
@@ -17,6 +18,7 @@ public class Reminder {
     private LocalDateTime updatedAt;
     public Long getId() { return id; } public void setId(Long id) { this.id = id; }
     public Long getDeviceId() { return deviceId; } public void setDeviceId(Long deviceId) { this.deviceId = deviceId; }
+    public String getRequestId() { return requestId; } public void setRequestId(String requestId) { this.requestId = requestId; }
     public String getDeviceCode() { return deviceCode; } public void setDeviceCode(String deviceCode) { this.deviceCode = deviceCode; }
     public String getMessage() { return message; } public void setMessage(String message) { this.message = message; }
     public LocalDateTime getRemindAt() { return remindAt; } public void setRemindAt(LocalDateTime remindAt) { this.remindAt = remindAt; }

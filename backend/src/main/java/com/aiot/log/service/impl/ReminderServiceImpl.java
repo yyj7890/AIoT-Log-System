@@ -13,6 +13,7 @@ import com.aiot.log.service.ReminderService;
 import com.aiot.log.vo.ReminderVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -30,12 +31,22 @@ public class ReminderServiceImpl implements ReminderService {
         this.announcementService = announcementService; this.properties = properties;
     }
     @Override public ReminderVO create(ReminderRequest request) {
+        String requestId = request.getRequestId().trim();
+        Reminder existing = reminderMapper.selectOne(new LambdaQueryWrapper<Reminder>().eq(Reminder::getRequestId, requestId));
+        if (existing != null) return idempotentResult(existing, request);
         Device device = deviceMapper.selectOne(new LambdaQueryWrapper<Device>().eq(Device::getDeviceCode, request.getDeviceCode()));
         if (device == null) throw new BusinessException(ErrorCode.DEVICE_NOT_FOUND);
         Reminder reminder = new Reminder();
-        reminder.setDeviceId(device.getId()); reminder.setDeviceCode(device.getDeviceCode());
+        reminder.setRequestId(requestId); reminder.setDeviceId(device.getId()); reminder.setDeviceCode(device.getDeviceCode());
         reminder.setMessage(request.getMessage().trim()); reminder.setRemindAt(request.getRemindAt()); reminder.setStatus("SCHEDULED");
-        reminderMapper.insert(reminder); return toVO(reminder);
+        try {
+            reminderMapper.insert(reminder);
+            return toVO(reminder);
+        } catch (DuplicateKeyException ex) {
+            Reminder concurrent = reminderMapper.selectOne(new LambdaQueryWrapper<Reminder>().eq(Reminder::getRequestId, requestId));
+            if (concurrent == null) throw ex;
+            return idempotentResult(concurrent, request);
+        }
     }
     @Override public List<ReminderVO> list(String deviceCode) {
         LambdaQueryWrapper<Reminder> query = new LambdaQueryWrapper<Reminder>().orderByDesc(Reminder::getRemindAt);
@@ -64,5 +75,10 @@ public class ReminderServiceImpl implements ReminderService {
             }
         }
     }
-    private ReminderVO toVO(Reminder r) { return new ReminderVO(r.getId(), r.getDeviceCode(), r.getMessage(), r.getRemindAt(), r.getStatus(), r.getDeliveryTaskId(), r.getTriggeredAt()); }
+    private ReminderVO idempotentResult(Reminder reminder, ReminderRequest request) {
+        if (!reminder.getDeviceCode().equals(request.getDeviceCode()) || !reminder.getMessage().equals(request.getMessage().trim())
+                || !reminder.getRemindAt().equals(request.getRemindAt())) throw new BusinessException(ErrorCode.REMINDER_IDEMPOTENCY_CONFLICT);
+        return toVO(reminder);
+    }
+    private ReminderVO toVO(Reminder r) { return new ReminderVO(r.getId(), r.getRequestId(), r.getDeviceCode(), r.getMessage(), r.getRemindAt(), r.getStatus(), r.getDeliveryTaskId(), r.getTriggeredAt()); }
 }

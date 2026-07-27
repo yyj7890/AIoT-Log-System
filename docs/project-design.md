@@ -203,7 +203,7 @@ POST http://<服务器IP>:8080/api/device-reports
 
 ### 8.5 提醒核心（第三阶段起步）
 
-`reminders` 保存一次性提醒的目标设备、文本、到期时间和状态。`POST /api/reminders` 创建，`GET /api/reminders` 查询，`DELETE /api/reminders/{id}` 仅取消尚未触发的提醒。到期扫描默认由 `REMINDER_SCHEDULER_ENABLED=false` 关闭；启用后先以 `SCHEDULED → TRIGGERING` 的条件更新抢占任务，避免并发扫描重复发布，再调用固定 Opus 播报器并记录任务号。提醒文本只持久化，当前不生成语音；MCP、TTS、条件提醒、冷却和静音时段属于后续阶段。
+`reminders` 保存一次性提醒的目标设备、文本、到期时间和状态。`POST /api/reminders` 创建时必须携带调用方生成的 `requestId`：同一标识和相同内容的重试返回原提醒，不会重复创建或播放；同一标识但内容不同返回冲突。`GET /api/reminders` 查询，`DELETE /api/reminders/{id}` 仅取消尚未触发的提醒。到期扫描默认由 `REMINDER_SCHEDULER_ENABLED=false` 关闭；启用后先以 `SCHEDULED → TRIGGERING` 的条件更新抢占任务，避免并发扫描重复发布，再调用固定 Opus 播报器并记录任务号。提醒文本只持久化，当前不生成语音；MCP、TTS、条件提醒、冷却和静音时段属于后续阶段。
 
 连接：
 

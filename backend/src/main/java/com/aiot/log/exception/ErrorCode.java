@@ -51,6 +51,7 @@ public enum ErrorCode {
     ANNOUNCEMENT_ACK_INVALID(HttpStatus.BAD_REQUEST, "播报回执不合法"),
     ANNOUNCEMENT_PUBLISH_FAILED(HttpStatus.BAD_GATEWAY, "播报 MQTT 发布失败"),
     REMINDER_NOT_CANCELLABLE(HttpStatus.CONFLICT, "提醒不存在或当前状态不能取消"),
+    REMINDER_IDEMPOTENCY_CONFLICT(HttpStatus.CONFLICT, "请求标识已用于不同提醒"),
 
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "服务器内部错误");
 
