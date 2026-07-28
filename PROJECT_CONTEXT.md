@@ -50,7 +50,7 @@
 
 2026-07-28 已发布 IoT `v1.2.3-remote-mqtt`：真实联调确认 `v1.2.2` 的 `LocalDateTime` 与 JVM 默认时区在运行容器内不一致，导致 wire `expiresAt` 比设备当前 UTC 落后约八小时，固件正确返回 `failed/expired`。本版直接以同一个 `Instant.now()` 与 `Instant.plus(5 minutes)` 生成 manifest UTC 时间，不再以本地时间和默认时区换算；数据库展示时间、MQTT Topic、音频帧和既有功能不变。GHCR 前后端与 GitHub Release 已成功，离线导入包为 `dist/aiot-remote-mqtt-v1.2.3-images.tar`；专用编排仍必须复用现有远程项目名、MySQL 卷和私有 `docker/local/hivemq-remote.env`。群晖实机已导入并运行 v1.2.3，设备侧修正当前 UTC epoch 与播放完成回执后，固定语音实际播出；command 接受、35 个 Opus 帧处理、`received`/`played` ACK 和扬声器输出均已验收。同日修正 Flyway 回归测试的过期表数断言，真实 MySQL 8.4 集成测试确认空库与既有 V1 库均可迁移至 V6。
 
-提醒桥接边界：桥接器创建的提醒会使用其私有 `DEFAULT_DEVICE_CODE`。实机已确认提醒可正常从 `SCHEDULED` 到 `PUBLISHED`，但若该值仍指向旧设备档案，已验收的新设备不会收到下行任务。部署或更换小智设备档案后，必须由管理员在桥接器私有环境文件中将 `DEFAULT_DEVICE_CODE` 更新为目标设备档案的编号并重建桥接器；`PUBLISHED` 仅代表后端已发布，最终交付仍以目标设备 `received`/`played` ACK 和实际播报为准。已发布的旧提醒不会因 retain=false 自动重播。
+提醒桥接边界：实机已确认提醒可正常从 `SCHEDULED` 到 `PUBLISHED`，但当前桥接器源码的提醒 MCP 工具直接使用官方小智调用传入的 `device_code`，尚未读取或向子进程传递私有 `DEFAULT_DEVICE_CODE`。因此仅修改该环境变量并重建桥接器不会改变目标设备，可能仍向旧设备档案发布。后续桥接器必须实现“私有默认设备编号优先于模型传入编号”的解析和子进程环境传递；部署或更换小智设备档案后才可由管理员在私有环境文件更新该值。`PUBLISHED` 仅代表后端已发布，最终交付仍以目标设备 `received`/`played` ACK 和实际播报为准。已发布的旧提醒不会因 retain=false 自动重播。
 
 2026-07-27 取消提醒边界联调通过：立即取消的一分钟提醒在原定时间后仍为 `CANCELED`，且未创建播报任务。
 
