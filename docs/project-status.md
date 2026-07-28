@@ -17,6 +17,7 @@
 
 - 后端在既有 Paho MQTT 连接中新增 `aiot/device/+/announcement/ack` 订阅；既有 `report`、`log` 订阅、计数和入库逻辑保持不变。
 - 新增固定测试播报发布链：先以 QoS 1、`retain=false` 发布 `aiot/device/{deviceCode}/announcement/command` manifest，再按帧号递增发布 `aiot/device/{deviceCode}/announcement/audio/{taskId}/{frameIndex}` 原始二进制 Opus packet。
+- 固件仅接受 UTC `Z` 格式的 manifest 时间；后端固定播报发布器已修正为将本地调度时间转换为 UTC ISO-8601 `Z` 再下发。此前无时区时间会被固件拒绝且不会产生 ACK。
 - manifest 固定使用 `aiot-announcement-v1`、16 kHz、单声道、60 ms Opus packet stream，并为每一帧生成 8 位十六进制 CRC32。
 - 新增 Flyway V3 的播报任务与 ACK 时间线持久化；只接受 `received`、`played`、`failed`，按任务和状态幂等去重，安全保存失败原因。
 - `POST /api/announcements/fixed-test?deviceCode=...` 仅用于后续开发联调，默认由 `ANNOUNCEMENT_TEST_ENABLED=false` 禁用；测试资源仅由固件已有 `zh-CN/welcome.ogg` 本地拆分为 35 个裸 Opus packet，不调用或部署 TTS。

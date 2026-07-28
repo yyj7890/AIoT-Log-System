@@ -34,6 +34,8 @@
 | `v1.2.0-remote-mqtt` | **已发布；群晖最终运行版本并完成验收** | 增加设备中心、设备独立日志、采集数据表与趋势图；MQTT页面可管理远程凭据 | Flyway V2增加设备监控模式；凭据私有文件持久化并立即重连；正常切换官方AI的事件统一为`INFO/RUNNING/RESOLVED` | GHCR/TCR前后端已发布，漏洞门禁、来源证明、Release、回归和digest一致性校验通过；群晖确认数据保留、独立日志刷新和凭据重连/重启持久化 |
 | `v1.2.1-remote-mqtt` | **GHCR/Release 已发布；TCR 后端改用本地中继重试；已用离线包更新群晖** | 固定 Opus 主动播报、提醒 API/排程、MCP 审计与前端记录 | Flyway V3～V6；下行 announcement/ACK、提醒幂等与固定音频播报 | GHCR 前后端、漏洞门禁与来源证明成功；TCR 前端成功，后端直接复制遇 HTTP/2 `PROTOCOL_ERROR` 后改为 Runner 本地拉取/推送、最多三次重试。中继传输已成功，校验已从受来源证明影响的顶层 index digest 改为可运行镜像 config digest。Flyway 回归测试已由旧表数 7 修正为 11 并以 MySQL 8.4 验证通过 |
 
+待发布修复：固定播报 manifest 的 `createdAt`、`expiresAt` 必须使用 UTC `Z` 时间。`v1.2.1` 使用无时区本地时间，固件按协议拒绝且不会产生 ACK；修复版将其转换为 UTC ISO-8601 并有单元测试覆盖。
+
 版本状态规则：只有固定标签、GitHub Release、前后端 GHCR 镜像清单均完成后才标记“已发布”；只有群晖实际拉取并完成数据、API、MQTT和页面检查后才标记“完成群晖升级”。源码提交或分支镜像不能代替固定版本发布。
 
 ### v1.2.0 发布记录（2026-07-25）

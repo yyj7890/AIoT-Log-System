@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -83,8 +84,13 @@ public class FixedTestAnnouncementService {
         for (AnnouncementAudioFrame frame : audio.frames()) {
             frames.add(new AnnouncementManifest.Frame(frame.index(), frame.payload().length, crc32(frame.payload())));
         }
-        return new AnnouncementManifest(PROTOCOL, taskId, deviceCode, PRIORITY, createdAt, expiresAt,
+        return new AnnouncementManifest(PROTOCOL, taskId, deviceCode, PRIORITY,
+                utcTimestamp(createdAt), utcTimestamp(expiresAt),
                 new AnnouncementManifest.Audio("opus", 16000, 1, 60, frames.size(), frames));
+    }
+
+    private String utcTimestamp(LocalDateTime value) {
+        return value.atZone(ZoneId.systemDefault()).toInstant().toString();
     }
 
     private void validateAudio(AnnouncementAudio audio) {
