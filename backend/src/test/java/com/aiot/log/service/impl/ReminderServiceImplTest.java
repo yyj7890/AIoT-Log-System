@@ -1,6 +1,6 @@
 package com.aiot.log.service.impl;
 
-import com.aiot.log.announcement.FixedTestAnnouncementService;
+import com.aiot.log.announcement.TextAnnouncementService;
 import com.aiot.log.config.ReminderProperties;
 import com.aiot.log.dto.ReminderRequest;
 import com.aiot.log.entity.Reminder;
@@ -29,7 +29,7 @@ class ReminderServiceImplTest {
         existing.setMessage("拿书"); existing.setRemindAt(due); existing.setStatus("SCHEDULED");
         when(reminderMapper.selectOne(any())).thenReturn(existing);
         ReminderServiceImpl service = new ReminderServiceImpl(reminderMapper, deviceMapper,
-                mock(FixedTestAnnouncementService.class), new ReminderProperties());
+                mock(TextAnnouncementService.class), new ReminderProperties());
         ReminderRequest request = new ReminderRequest();
         request.setRequestId("mcp-request-8"); request.setDeviceCode("DEVICE-001");
         request.setMessage("拿书"); request.setRemindAt(due);

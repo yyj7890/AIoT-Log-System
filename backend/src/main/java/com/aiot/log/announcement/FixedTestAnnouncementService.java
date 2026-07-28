@@ -45,16 +45,21 @@ public class FixedTestAnnouncementService {
     @Transactional
     public String publish(String deviceCode) {
         if (!properties.isTestEnabled()) throw new BusinessException(ErrorCode.ANNOUNCEMENT_TEST_DISABLED);
-        Device device = deviceMapper.selectOne(new LambdaQueryWrapper<Device>().eq(Device::getDeviceCode, deviceCode));
-        if (device == null) throw new BusinessException(ErrorCode.DEVICE_NOT_FOUND);
         AnnouncementAudio audio = audioSource.loadFixedTestAudio()
                 .orElseThrow(() -> new BusinessException(ErrorCode.ANNOUNCEMENT_TEST_AUDIO_UNAVAILABLE));
+        return publishAudio(deviceCode, audio, "fixed");
+    }
+
+    @Transactional
+    public String publishAudio(String deviceCode, AnnouncementAudio audio, String taskPrefix) {
+        Device device = deviceMapper.selectOne(new LambdaQueryWrapper<Device>().eq(Device::getDeviceCode, deviceCode));
+        if (device == null) throw new BusinessException(ErrorCode.DEVICE_NOT_FOUND);
         validateAudio(audio);
 
         Instant manifestCreatedAt = Instant.now();
         Instant manifestExpiresAt = manifestCreatedAt.plus(Duration.ofMinutes(5));
         LocalDateTime now = LocalDateTime.now();
-        String taskId = "fixed-" + UUID.randomUUID();
+        String taskId = taskPrefix + "-" + UUID.randomUUID();
         AnnouncementDelivery delivery = new AnnouncementDelivery();
         delivery.setTaskId(taskId);
         delivery.setDeviceId(device.getId());

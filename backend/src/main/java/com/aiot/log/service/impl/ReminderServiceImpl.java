@@ -1,6 +1,6 @@
 package com.aiot.log.service.impl;
 
-import com.aiot.log.announcement.FixedTestAnnouncementService;
+import com.aiot.log.announcement.TextAnnouncementService;
 import com.aiot.log.config.ReminderProperties;
 import com.aiot.log.dto.ReminderRequest;
 import com.aiot.log.entity.Device;
@@ -23,10 +23,10 @@ import java.util.List;
 public class ReminderServiceImpl implements ReminderService {
     private final ReminderMapper reminderMapper;
     private final DeviceMapper deviceMapper;
-    private final FixedTestAnnouncementService announcementService;
+    private final TextAnnouncementService announcementService;
     private final ReminderProperties properties;
     public ReminderServiceImpl(ReminderMapper reminderMapper, DeviceMapper deviceMapper,
-                               FixedTestAnnouncementService announcementService, ReminderProperties properties) {
+                               TextAnnouncementService announcementService, ReminderProperties properties) {
         this.reminderMapper = reminderMapper; this.deviceMapper = deviceMapper;
         this.announcementService = announcementService; this.properties = properties;
     }
@@ -67,7 +67,7 @@ public class ReminderServiceImpl implements ReminderService {
                     .eq(Reminder::getStatus, "SCHEDULED").set(Reminder::getStatus, "TRIGGERING"));
             if (claimed == 0) continue;
             try {
-                String taskId = announcementService.publish(reminder.getDeviceCode());
+                String taskId = announcementService.publish(reminder.getDeviceCode(), reminder.getMessage());
                 reminderMapper.update(null, new LambdaUpdateWrapper<Reminder>().eq(Reminder::getId, reminder.getId())
                         .set(Reminder::getStatus, "PUBLISHED").set(Reminder::getDeliveryTaskId, taskId).set(Reminder::getTriggeredAt, LocalDateTime.now()));
             } catch (RuntimeException ex) {

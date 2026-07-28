@@ -10,6 +10,8 @@
 
 本阶段使用固件仓库已有 `zh-CN/welcome.ogg` 在本地拆分出的 35 个裸 Opus packet 作为固定测试资源，不调用或部署 TTS。设备启动后，独立本机 MQTT Client ID 已通过真实 HiveMQ 完成一次受控任务：后端发布及持久化、设备 `received` ACK、自动播放和 `played` ACK 均已验证。固定测试入口仍默认关闭；后续再测试重复、过期、忙碌和与官方 AI 对话并发的边界。没有部署或群晖改动，也没有烧录设备。
 
+动态 TTS 第三阶段源码：IoT 不在 Java 容器内安装 Piper、ffmpeg 或编码器；未来私有本地网关负责文本到 16 kHz 单声道 60 ms 裸 Opus packet。启用 `ANNOUNCEMENT_TTS_ENABLED` 后，IoT 向私有 `ANNOUNCEMENT_TTS_BASE_URL` 的 `POST /v1/announcements/opus` 请求文本与音频参数，再验证帧并复用现有 MQTT 二进制发布和 ACK。HTTP 响应可仅在内网以 Base64 承载帧；MQTT 始终发布原始二进制、绝不使用 Ogg 或 Base64。默认关闭，未部署任何 TTS 服务。
+
 桥接器已将私有 `DEFAULT_DEVICE_CODE` 传给提醒 MCP 子进程，并以它优先于官方小智调用传入的 `device_code`。官方小智创建的一分钟提醒已实机投递到目标小智并主动播放。提醒状态 `PUBLISHED` 仍只表示后端已发布，验收仍以设备 `received`/`played` ACK 与实际播放为准；旧任务的 MQTT 消息为 `retain=false`，不会自动投递到新设备。当前播报固定测试 Opus，动态 TTS 尚未实现。
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。

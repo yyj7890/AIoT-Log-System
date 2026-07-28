@@ -9,6 +9,19 @@ public class AnnouncementProperties {
 
     private boolean testEnabled = false;
     private String fixedTestResource = "classpath:announcements/fixed-test/manifest.json";
+    private final Tts tts = new Tts();
+
+    public static class Tts {
+        private boolean enabled = false;
+        private String baseUrl = "";
+        private int timeoutMs = 10000;
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+        public int getTimeoutMs() { return timeoutMs; }
+        public void setTimeoutMs(int timeoutMs) { this.timeoutMs = timeoutMs; }
+    }
 
     public boolean isTestEnabled() {
         return testEnabled;
@@ -25,4 +38,5 @@ public class AnnouncementProperties {
     public void setFixedTestResource(String fixedTestResource) {
         this.fixedTestResource = fixedTestResource;
     }
+    public Tts getTts() { return tts; }
 }
