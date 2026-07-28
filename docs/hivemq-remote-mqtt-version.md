@@ -12,7 +12,7 @@
 
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 
-当前状态：**`v1.2.1-remote-mqtt` 已发布前后端 GHCR、来源证明及 GitHub Release，包含主动播报、提醒与 MCP 审计；腾讯云 TCR 后端直接跨仓库复制因 HTTP/2 `PROTOCOL_ERROR` 失败后，已改为 Runner 本地拉取 GHCR 后推送 TCR、最多重试三次。传输成功后发现旧校验错误比较了带 GHCR 来源证明的顶层 index digest，现改为比较可运行镜像 config digest，等待验证结果。离线导入包已完成群晖更新。真实凭证未写入仓库。**
+当前状态：**`v1.2.2-remote-mqtt` 已发布前后端 GHCR、来源证明及 GitHub Release，修复固定 Opus manifest UTC `Z` 时间格式，使已部署的 announcement 固件能接受下行任务。离线导入包已生成；群晖尚待更新并进行主动播放/ACK 复验。真实凭证未写入仓库。**
 
 ### 统一版本变更总表
 
@@ -32,9 +32,10 @@
 | `v1.1.8-remote-mqtt` | **已发布并完成回退验收** | 无功能变化；不含OpenAPI与新版错误追踪 | 接入 Flyway；空库执行 V1，旧库保留数据并建立 V1基线 | 从1.1.9回退后47条日志保留；MQTT`1/1/0`，新增ID48且总数48 |
 | `v1.1.9-remote-mqtt` | **已发布；已完成回退演练** | 包含OpenAPI、统一错误追踪、共享轮询控制器及对应回归 | 增加MQTT Topic/Payload一致性校验、Tomcat 10.1.57安全修复及完整回归入口；数据库仍为Flyway V1 | 首次升级新增ID47；回退1.1.8新增ID48；再升级后48条保留，MQTT`2/2/0`、新增ID49且总数49 |
 | `v1.2.0-remote-mqtt` | **已发布；群晖最终运行版本并完成验收** | 增加设备中心、设备独立日志、采集数据表与趋势图；MQTT页面可管理远程凭据 | Flyway V2增加设备监控模式；凭据私有文件持久化并立即重连；正常切换官方AI的事件统一为`INFO/RUNNING/RESOLVED` | GHCR/TCR前后端已发布，漏洞门禁、来源证明、Release、回归和digest一致性校验通过；群晖确认数据保留、独立日志刷新和凭据重连/重启持久化 |
-| `v1.2.1-remote-mqtt` | **GHCR/Release 已发布；TCR 后端改用本地中继重试；已用离线包更新群晖** | 固定 Opus 主动播报、提醒 API/排程、MCP 审计与前端记录 | Flyway V3～V6；下行 announcement/ACK、提醒幂等与固定音频播报 | GHCR 前后端、漏洞门禁与来源证明成功；TCR 前端成功，后端直接复制遇 HTTP/2 `PROTOCOL_ERROR` 后改为 Runner 本地拉取/推送、最多三次重试。中继传输已成功，校验已从受来源证明影响的顶层 index digest 改为可运行镜像 config digest。Flyway 回归测试已由旧表数 7 修正为 11 并以 MySQL 8.4 验证通过 |
+| `v1.2.1-remote-mqtt` | **GHCR/Release/TCR 已发布；已用离线包更新群晖** | 固定 Opus 主动播报、提醒 API/排程、MCP 审计与前端记录 | Flyway V3～V6；下行 announcement/ACK、提醒幂等与固定音频播报 | GHCR 前后端、漏洞门禁与来源证明成功；TCR 后端最初直接复制遇 HTTP/2 `PROTOCOL_ERROR`，后改为 Runner 本地拉取/推送、最多三次重试，并以可运行镜像 config digest 验证。Flyway 回归测试已由旧表数 7 修正为 11 并以 MySQL 8.4 验证通过 |
+| `v1.2.2-remote-mqtt` | **GHCR/Release 已发布；离线包已生成；待群晖验收** | 固定 Opus 下行协议修复 | manifest 的 `createdAt`、`expiresAt` 改为 UTC ISO-8601 `Z`；不改变 MQTT Topic、音频帧、提醒表或既有功能 | `v1.2.1` 无时区本地时间导致固件静默拒绝并无 ACK；修复已通过后端回归和 GHCR 发布，待导入群晖后以固定直发和一分钟提醒复验 |
 
-待发布修复：固定播报 manifest 的 `createdAt`、`expiresAt` 必须使用 UTC `Z` 时间。`v1.2.1` 使用无时区本地时间，固件按协议拒绝且不会产生 ACK；修复版将其转换为 UTC ISO-8601 并有单元测试覆盖。
+`v1.2.2` 已发布该 UTC manifest 修复；此前 `v1.2.1` 使用无时区本地时间，固件按协议拒绝且不会产生 ACK。
 
 版本状态规则：只有固定标签、GitHub Release、前后端 GHCR 镜像清单均完成后才标记“已发布”；只有群晖实际拉取并完成数据、API、MQTT和页面检查后才标记“完成群晖升级”。源码提交或分支镜像不能代替固定版本发布。
 
