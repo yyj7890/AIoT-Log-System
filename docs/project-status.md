@@ -6,6 +6,9 @@
 
 ### 2026-07-28：IoT `v1.2.2-remote-mqtt` UTC manifest 修复与群晖离线导入包
 
+- 真实设备联调定位到容器内本地时间与 JVM 默认时区混用：wire `expiresAt` 比设备 UTC 当前时间落后约八小时，造成固件正确返回 `failed/expired`。待发布后端修复直接使用 `Instant.now()` 与 `Instant.plus(5 minutes)` 生成 manifest，不改变数据库本地展示时间、Topic、Opus 帧或既有功能。
+- 该修复将作为 `v1.2.3-remote-mqtt` 发布；在新镜像导入群晖前，不应将 `PUBLISHED` 视为播放成功，必须以设备 `received`/`played` ACK 验收。
+
 - 已构建并导出 `local/aiot-log-backend:v1.2.2-remote-mqtt` 与 `local/aiot-log-frontend:v1.2.2-remote-mqtt` 的离线包 `dist/aiot-remote-mqtt-v1.2.2-images.tar`；包内标签和 SHA-256 已本地核验。
 - 后端构建完成 Java 打包，前端构建完成 TypeScript/Vite 生产构建。候选包包含本阶段的提醒 API、固定 Opus MQTT 发布/ACK、MCP 审计与 Flyway V3～V6。
 - `v1.2.1` 固定 Opus manifest 使用无时区时间，固件按协议拒绝且不会 ACK；`v1.2.2` 已改为 UTC ISO-8601 `Z`。新 `docker-compose.remote.import.yml` 固定复用既有远程项目名、`mysql-data` 卷和被忽略的 `docker/local/hivemq-remote.env`，不初始化新数据库、不修改 HiveMQ 私有配置。

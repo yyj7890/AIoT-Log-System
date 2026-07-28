@@ -48,7 +48,7 @@
 
 ## 4. 当前状态
 
-2026-07-28 已发布 IoT `v1.2.2-remote-mqtt`：修复固定 Opus manifest 的 `createdAt`/`expiresAt`。`v1.2.1` 曾发布无时区本地时间，固件只接受 UTC `Z` 格式而静默拒绝，造成后端显示 `PUBLISHED`、设备无声且无 ACK；`v1.2.2` 将其转换为 UTC ISO-8601 `Z`，并由单元测试验证。GHCR 前后端与 GitHub Release 已成功；离线包 `dist/aiot-remote-mqtt-v1.2.2-images.tar` 已生成并校验，专用编排 `docker-compose.remote.import.yml` 固定使用该版本，必须复用现有远程项目名、MySQL 卷和私有 `docker/local/hivemq-remote.env`。同日修正 Flyway 回归测试的过期表数断言，真实 MySQL 8.4 集成测试确认空库与既有 V1 库均可迁移至 V6。
+2026-07-28 已发布 IoT `v1.2.2-remote-mqtt`：修复固定 Opus manifest 的 `createdAt`/`expiresAt`。真实联调随后发现 `LocalDateTime` 与 JVM 默认时区在运行容器内不一致，导致 wire `expiresAt` 比设备当前 UTC 落后约八小时，固件正确返回 `failed/expired`。待发布修复改为直接以 `Instant.now()` 与 `Instant.plus(5 minutes)` 生成 manifest UTC 时间，不再以本地时间和默认时区换算；数据库展示时间、MQTT Topic、音频帧和既有功能不变。GHCR 前后端与 GitHub Release 已成功；专用编排仍必须复用现有远程项目名、MySQL 卷和私有 `docker/local/hivemq-remote.env`。同日修正 Flyway 回归测试的过期表数断言，真实 MySQL 8.4 集成测试确认空库与既有 V1 库均可迁移至 V6。
 
 2026-07-27 取消提醒边界联调通过：立即取消的一分钟提醒在原定时间后仍为 `CANCELED`，且未创建播报任务。
 

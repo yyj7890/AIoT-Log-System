@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.time.Duration;
 import java.util.Optional;
 import java.time.Instant;
 
@@ -61,8 +62,9 @@ class FixedTestAnnouncementServiceTest {
         assertEquals("55BC801D", manifest.path("audio").path("frames").get(0).path("crc32").asText());
         assertTrue(manifest.path("createdAt").asText().endsWith("Z"));
         assertTrue(manifest.path("expiresAt").asText().endsWith("Z"));
-        assertTrue(Instant.parse(manifest.path("expiresAt").asText())
-                .isAfter(Instant.parse(manifest.path("createdAt").asText())));
+        Instant createdAt = Instant.parse(manifest.path("createdAt").asText());
+        Instant expiresAt = Instant.parse(manifest.path("expiresAt").asText());
+        assertEquals(Duration.ofMinutes(5), Duration.between(createdAt, expiresAt));
         verify(deliveryMapper).insert(any(AnnouncementDelivery.class));
     }
 }

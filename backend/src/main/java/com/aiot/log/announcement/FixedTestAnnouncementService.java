@@ -12,8 +12,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,6 +51,8 @@ public class FixedTestAnnouncementService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ANNOUNCEMENT_TEST_AUDIO_UNAVAILABLE));
         validateAudio(audio);
 
+        Instant manifestCreatedAt = Instant.now();
+        Instant manifestExpiresAt = manifestCreatedAt.plus(Duration.ofMinutes(5));
         LocalDateTime now = LocalDateTime.now();
         String taskId = "fixed-" + UUID.randomUUID();
         AnnouncementDelivery delivery = new AnnouncementDelivery();
@@ -63,7 +66,7 @@ public class FixedTestAnnouncementService {
         deliveryMapper.insert(delivery);
 
         try {
-            AnnouncementManifest manifest = buildManifest(taskId, deviceCode, now, delivery.getExpiresAt(), audio);
+            AnnouncementManifest manifest = buildManifest(taskId, deviceCode, manifestCreatedAt, manifestExpiresAt, audio);
             mqttGateway.publish(commandTopic(deviceCode), objectMapper.writeValueAsBytes(manifest));
             for (AnnouncementAudioFrame frame : audio.frames()) {
                 mqttGateway.publish(audioTopic(deviceCode, taskId, frame.index()), frame.payload());
@@ -78,19 +81,15 @@ public class FixedTestAnnouncementService {
         }
     }
 
-    private AnnouncementManifest buildManifest(String taskId, String deviceCode, LocalDateTime createdAt,
-                                                LocalDateTime expiresAt, AnnouncementAudio audio) {
+    private AnnouncementManifest buildManifest(String taskId, String deviceCode, Instant createdAt,
+                                                Instant expiresAt, AnnouncementAudio audio) {
         List<AnnouncementManifest.Frame> frames = new ArrayList<>();
         for (AnnouncementAudioFrame frame : audio.frames()) {
             frames.add(new AnnouncementManifest.Frame(frame.index(), frame.payload().length, crc32(frame.payload())));
         }
         return new AnnouncementManifest(PROTOCOL, taskId, deviceCode, PRIORITY,
-                utcTimestamp(createdAt), utcTimestamp(expiresAt),
+                createdAt.toString(), expiresAt.toString(),
                 new AnnouncementManifest.Audio("opus", 16000, 1, 60, frames.size(), frames));
-    }
-
-    private String utcTimestamp(LocalDateTime value) {
-        return value.atZone(ZoneId.systemDefault()).toInstant().toString();
     }
 
     private void validateAudio(AnnouncementAudio audio) {

@@ -14,6 +14,8 @@
 
 当前状态：**`v1.2.2-remote-mqtt` 已发布前后端 GHCR、来源证明及 GitHub Release，修复固定 Opus manifest UTC `Z` 时间格式，使已部署的 announcement 固件能接受下行任务。离线导入包已生成；群晖尚待更新并进行主动播放/ACK 复验。真实凭证未写入仓库。**
 
+真实联调补充：`v1.2.2` 的 `LocalDateTime` 到 UTC 转换仍依赖运行容器的 JVM 默认时区；在当前部署中造成 wire `expiresAt` 比设备 UTC 落后约八小时，固件正确返回 `failed/expired`。下一修复版直接使用 `Instant.now()` 与 `Instant.plus(5 minutes)` 生成 manifest 的 `createdAt`、`expiresAt`，不改变数据库展示时间、MQTT Topic 或音频格式。
+
 ### 统一版本变更总表
 
 本表是固定镜像版本差异的统一入口。历史章节继续保存问题原因和验收过程，但判断“某个镜像版本修改了什么”时以本表为准。前端和后端使用同一个固定标签成对发布；某一端没有功能变化时仍可能同步重建，以保持部署标签一致。
@@ -34,6 +36,7 @@
 | `v1.2.0-remote-mqtt` | **已发布；群晖最终运行版本并完成验收** | 增加设备中心、设备独立日志、采集数据表与趋势图；MQTT页面可管理远程凭据 | Flyway V2增加设备监控模式；凭据私有文件持久化并立即重连；正常切换官方AI的事件统一为`INFO/RUNNING/RESOLVED` | GHCR/TCR前后端已发布，漏洞门禁、来源证明、Release、回归和digest一致性校验通过；群晖确认数据保留、独立日志刷新和凭据重连/重启持久化 |
 | `v1.2.1-remote-mqtt` | **GHCR/Release/TCR 已发布；已用离线包更新群晖** | 固定 Opus 主动播报、提醒 API/排程、MCP 审计与前端记录 | Flyway V3～V6；下行 announcement/ACK、提醒幂等与固定音频播报 | GHCR 前后端、漏洞门禁与来源证明成功；TCR 后端最初直接复制遇 HTTP/2 `PROTOCOL_ERROR`，后改为 Runner 本地拉取/推送、最多三次重试，并以可运行镜像 config digest 验证。Flyway 回归测试已由旧表数 7 修正为 11 并以 MySQL 8.4 验证通过 |
 | `v1.2.2-remote-mqtt` | **GHCR/Release 已发布；离线包已生成；待群晖验收** | 固定 Opus 下行协议修复 | manifest 的 `createdAt`、`expiresAt` 改为 UTC ISO-8601 `Z`；不改变 MQTT Topic、音频帧、提醒表或既有功能 | `v1.2.1` 无时区本地时间导致固件静默拒绝并无 ACK；修复已通过后端回归和 GHCR 发布，待导入群晖后以固定直发和一分钟提醒复验 |
+| `v1.2.3-remote-mqtt` | **待发布** | manifest UTC 时钟修复 | 下行 `createdAt`、`expiresAt` 直接由同一个 `Instant` 生成，过期时间固定为 5 分钟 | 真实设备发现容器 `LocalDateTime`/JVM 默认时区混用会使 `expiresAt` 落后设备 UTC 约八小时；固件正确返回 `failed/expired`，本版消除该时区换算 |
 
 `v1.2.2` 已发布该 UTC manifest 修复；此前 `v1.2.1` 使用无时区本地时间，固件按协议拒绝且不会产生 ACK。
 
