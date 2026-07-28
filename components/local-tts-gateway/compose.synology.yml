@@ -1,0 +1,20 @@
+name: xiaozhi-local-tts
+services:
+  local-tts-gateway:
+    image: local/xiaozhi-local-tts:0.1.0
+    container_name: xiaozhi-local-tts
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18090:8090"
+    environment:
+      PIPER_MODEL: /models/voice.onnx
+    volumes:
+      - ./models:/models:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    mem_limit: 512m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

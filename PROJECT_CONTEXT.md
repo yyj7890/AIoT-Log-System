@@ -54,6 +54,8 @@
 
 动态 TTS 第三阶段源码已完成首版：私有本地网关负责 Piper 文本合成、PCM/Opus 编码与 60 ms 分帧，IoT 后端仅请求网关、验证返回帧并复用既有 MQTT/ACK 交付。`ANNOUNCEMENT_TTS_ENABLED` 默认关闭，未部署网关时提醒仍使用固定测试语音；未部署 Piper、未修改群晖或固件。
 
+本地 TTS 网关离线交付已构建：`components/local-tts-gateway` 使用 Piper、ffmpeg 和仅本机 HTTP 接口，镜像标签为 `local/xiaozhi-local-tts:0.1.0`，离线包为 `dist/xiaozhi-local-tts-0.1.0.tar`。模型不打入镜像，群晖后续以只读 `./models` 卷挂载；无模型时网关安全返回 503。仅完成本机构建/验证，未导入或部署群晖。
+
 2026-07-27 取消提醒边界联调通过：立即取消的一分钟提醒在原定时间后仍为 `CANCELED`，且未创建播报任务。
 
 2026-07-27 发布失败边界联调通过：临时关闭固定语音发布开关后，到期提醒安全进入 `FAILED`，没有创建播报任务或发送 MQTT 音频。
