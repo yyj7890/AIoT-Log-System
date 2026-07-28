@@ -10,6 +10,8 @@
 
 本阶段使用固件仓库已有 `zh-CN/welcome.ogg` 在本地拆分出的 35 个裸 Opus packet 作为固定测试资源，不调用或部署 TTS。设备启动后，独立本机 MQTT Client ID 已通过真实 HiveMQ 完成一次受控任务：后端发布及持久化、设备 `received` ACK、自动播放和 `played` ACK 均已验证。固定测试入口仍默认关闭；后续再测试重复、过期、忙碌和与官方 AI 对话并发的边界。没有部署或群晖改动，也没有烧录设备。
 
+提醒的设备选择由官方 MCP 桥接器的私有 `DEFAULT_DEVICE_CODE` 决定；它必须与已订阅 announcement Topic 的目标设备档案一致。提醒状态 `PUBLISHED` 只表示后端已向该编号的 Topic 发布，不能证明当前小智已收到或播放。设备档案变更后需要人工更新桥接器私有环境文件并重建桥接器；旧任务的 MQTT 消息为 `retain=false`，不会自动投递到新设备。
+
 本文记录 AIoT-Log-System `Remote-Hivemq` 分支的远程 MQTT 接入版本。它用于 IoT 设备与家中群晖不在同一网络时的日志传输。
 
 当前状态：**`v1.2.3-remote-mqtt` 已发布前后端 GHCR、来源证明及 GitHub Release；下行 manifest 直接用 UTC `Instant` 生成，消除容器默认时区造成的过期时间偏差。群晖已导入并完成固定 Opus 主动播放与 ACK 实机验收。真实凭证未写入仓库。**
