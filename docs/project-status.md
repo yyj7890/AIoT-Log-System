@@ -7,14 +7,14 @@
 ### 2026-07-28：IoT `v1.2.3-remote-mqtt` UTC 时钟修复与群晖离线导入包
 
 - 真实设备联调定位到容器内本地时间与 JVM 默认时区混用：wire `expiresAt` 比设备 UTC 当前时间落后约八小时，造成固件正确返回 `failed/expired`。待发布后端修复直接使用 `Instant.now()` 与 `Instant.plus(5 minutes)` 生成 manifest，不改变数据库本地展示时间、Topic、Opus 帧或既有功能。
-- `v1.2.3-remote-mqtt` 已发布；在新镜像导入群晖前，不应将 `PUBLISHED` 视为播放成功，必须以设备 `received`/`played` ACK 验收。
+- `v1.2.3-remote-mqtt` 已发布并由群晖导入；固定测试已收到设备 `received`/`played` ACK 且扬声器实际播放，`PUBLISHED` 不再是唯一验收依据。
 
 - 已构建并导出 `local/aiot-log-backend:v1.2.3-remote-mqtt` 与 `local/aiot-log-frontend:v1.2.3-remote-mqtt` 的离线包 `dist/aiot-remote-mqtt-v1.2.3-images.tar`；包内标签和 SHA-256 已本地核验。
 - 后端构建完成 Java 打包，前端构建完成 TypeScript/Vite 生产构建。候选包包含本阶段的提醒 API、固定 Opus MQTT 发布/ACK、MCP 审计与 Flyway V3～V6。
 - `v1.2.1` 固定 Opus manifest 使用无时区时间，固件按协议拒绝且不会 ACK；`v1.2.2` 已改为 UTC ISO-8601 `Z`。新 `docker-compose.remote.import.yml` 固定复用既有远程项目名、`mysql-data` 卷和被忽略的 `docker/local/hivemq-remote.env`，不初始化新数据库、不修改 HiveMQ 私有配置。
 - GHCR 前后端镜像、漏洞门禁、来源证明与 GitHub Release 已成功。腾讯云 TCR 后端最初直接跨仓库复制遇到 HTTP/2 `PROTOCOL_ERROR`，现已改为 GitHub Runner 本地拉取后推送、最多重试三次，并以可运行镜像 config digest 完成验证；本次离线导入不依赖国内镜像。
 - GitHub 回归中发现 Flyway 集成测试仍断言旧的 7 张业务表；V3～V6 已使实际数量为 11。测试已更新为验证 11 张表和 V1～V6 全部迁移记录，并用一次性 MySQL 8.4 容器验证空库、既有 V1 库均成功迁移至 V6。
-- `v1.2.1` 已完成群晖部署并验证提醒创建与后端发布，但因 UTC manifest 缺陷设备未播放；`v1.2.3` 尚未导入群晖，待重建 IoT 容器后复验固定直发、`received/played` ACK 与一分钟提醒。桥接器和已烧录固件无需为本次修复更新。
+- `v1.2.1` 已完成群晖部署并验证提醒创建与后端发布，但因 UTC manifest 缺陷设备未播放；`v1.2.3` 已导入群晖并完成固定直发验收：时间窗口为正、35 个 Opus 帧均被处理、收到 `received/played` ACK，扬声器实际播放固定中文语音。下一步才是以真实 TTS 资源替换固定测试音频并复验一分钟提醒。桥接器和固件后续改动必须保持该已验收链路。
 
 ### 2026-07-27：固定 Opus MQTT 主动播报后端源码（真实固定语音联调通过）
 
