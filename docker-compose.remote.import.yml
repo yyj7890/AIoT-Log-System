@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: local/aiot-log-backend:v1.2.3-remote-mqtt
+    image: local/aiot-log-backend:v1.2.4-remote-mqtt
     env_file:
       - ./docker/local/hivemq-remote.env
     environment:
@@ -52,7 +52,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: local/aiot-log-frontend:v1.2.3-remote-mqtt
+    image: local/aiot-log-frontend:v1.2.4-remote-mqtt
     ports:
       - "80:80"
     depends_on:

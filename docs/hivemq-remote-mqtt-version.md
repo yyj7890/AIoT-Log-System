@@ -12,7 +12,7 @@
 
 动态 TTS 第三阶段源码：IoT 不在 Java 容器内安装 Piper、ffmpeg 或编码器；未来私有本地网关负责文本到 16 kHz 单声道 60 ms 裸 Opus packet。启用 `ANNOUNCEMENT_TTS_ENABLED` 后，IoT 向私有 `ANNOUNCEMENT_TTS_BASE_URL` 的 `POST /v1/announcements/opus` 请求文本与音频参数，再验证帧并复用现有 MQTT 二进制发布和 ACK。HTTP 响应可仅在内网以 Base64 承载帧；MQTT 始终发布原始二进制、绝不使用 Ogg 或 Base64。默认关闭，未部署任何 TTS 服务。
 
-本机已构建 `local/xiaozhi-local-tts:0.1.0` 和离线包 `dist/xiaozhi-local-tts-0.1.0.tar`。群晖独立项目模板在 `components/local-tts-gateway/compose.synology.yml`：仅绑定本机端口、只读模型卷、临时目录 64 MB、内存上限 512 MB。模型不包含在镜像中；无模型请求返回安全 503。尚未导入或部署群晖。
+本机已构建 `local/xiaozhi-local-tts:0.1.0` 和离线包 `dist/xiaozhi-local-tts-0.1.0.tar`。群晖独立项目模板在 `components/local-tts-gateway/compose.synology.yml`：仅绑定私有网络端口、只读模型卷、临时目录 64 MB、内存上限 512 MB。模型不包含在镜像中；无模型请求返回安全 503。用户已导入、构建并启动该独立网关，私有 HTTP 接口已返回合法 Opus 帧；IoT 后端尚未升级或启用动态 TTS。
 
 桥接器已将私有 `DEFAULT_DEVICE_CODE` 传给提醒 MCP 子进程，并以它优先于官方小智调用传入的 `device_code`。官方小智创建的一分钟提醒已实机投递到目标小智并主动播放。提醒状态 `PUBLISHED` 仍只表示后端已发布，验收仍以设备 `received`/`played` ACK 与实际播放为准；旧任务的 MQTT 消息为 `retain=false`，不会自动投递到新设备。当前播报固定测试 Opus，动态 TTS 尚未实现。
 

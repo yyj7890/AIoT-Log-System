@@ -2,9 +2,11 @@ package com.aiot.log.announcement;
 
 import com.aiot.log.config.AnnouncementProperties;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +19,12 @@ public class HttpTextToOpusSource implements TextToOpusSource {
         var tts = properties.getTts();
         if (!tts.isEnabled() || tts.getBaseUrl().isBlank() || text == null || text.isBlank()) return Optional.empty();
         try {
-            Response response = RestClient.create(tts.getBaseUrl()).post().uri("/v1/announcements/opus")
+            Duration timeout = Duration.ofMillis(Math.max(1, tts.getTimeoutMs()));
+            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+            requestFactory.setConnectTimeout(timeout);
+            requestFactory.setReadTimeout(timeout);
+            Response response = RestClient.builder().baseUrl(tts.getBaseUrl()).requestFactory(requestFactory).build()
+                    .post().uri("/v1/announcements/opus")
                     .contentType(MediaType.APPLICATION_JSON).body(new Request(text.trim(), 16000, 1, 60))
                     .retrieve().body(Response.class);
             if (response == null || response.frames() == null) return Optional.empty();

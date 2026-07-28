@@ -52,7 +52,7 @@
 
 提醒桥接边界：桥接器已实现并部署“私有 `DEFAULT_DEVICE_CODE` 优先于模型传入编号”的解析及子进程环境传递。实机已验证官方小智创建的一分钟提醒会投递到已验收设备并实际播报。`PUBLISHED` 仅代表后端已发布，最终交付仍以目标设备 `received`/`played` ACK 和实际播报为准；已发布的旧提醒不会因 retain=false 自动重播。当前到期播报仍是固定中文测试 Opus，不会朗读提醒文本；下一阶段才接入群晖本地 TTS 生成新的裸 Opus 帧。
 
-动态 TTS 第三阶段源码已完成首版：私有本地网关负责 Piper 文本合成、PCM/Opus 编码与 60 ms 分帧，IoT 后端仅请求网关、验证返回帧并复用既有 MQTT/ACK 交付。`ANNOUNCEMENT_TTS_ENABLED` 默认关闭，未部署网关时提醒仍使用固定测试语音；未部署 Piper、未修改群晖或固件。
+动态 TTS 第三阶段源码已完成：私有本地网关负责 Piper 文本合成、PCM/Opus 编码与 60 ms 分帧，IoT 后端仅请求网关、验证返回帧并复用既有 MQTT/ACK 交付。网关已由用户独立部署并通过私有网络接口测试；IoT 当前仍为 v1.2.3 固定测试语音，待升级含动态 TTS 的 v1.2.4 镜像并显式启用 `ANNOUNCEMENT_TTS_ENABLED`。HTTP 连接和读取超时受 `ANNOUNCEMENT_TTS_TIMEOUT_MS` 限制；网关不可用时本次投递安全失败，不会输出文本、音频或私密配置。
 
 本地 TTS 网关离线交付已构建：`components/local-tts-gateway` 使用 Piper、ffmpeg 和仅本机 HTTP 接口，镜像标签为 `local/xiaozhi-local-tts:0.1.0`，离线包为 `dist/xiaozhi-local-tts-0.1.0.tar`。模型不打入镜像，群晖后续以只读 `./models` 卷挂载；无模型时网关安全返回 503。仅完成本机构建/验证，未导入或部署群晖。
 
