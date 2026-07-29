@@ -79,6 +79,15 @@
           </div>
         </el-tab-pane>
 
+        <el-tab-pane label="提醒" name="reminders">
+          <div class="content-section">
+            <div class="section-title">本设备提醒</div>
+            <div class="section-body">
+              <ReminderTable v-if="device" :device-code="device.deviceCode" />
+            </div>
+          </div>
+        </el-tab-pane>
+
         <el-tab-pane v-if="device?.monitoringMode === 'TELEMETRY'" label="采集数据" name="data">
           <div class="content-section">
             <div class="section-title">数据趋势与可视化</div>
@@ -132,6 +141,7 @@ import StatusTag from '@/components/StatusTag.vue'
 import LogFormDialog from '@/components/LogFormDialog.vue'
 import ReportTrendPanel from '@/components/ReportTrendPanel.vue'
 import DeviceLogsPanel from '@/components/DeviceLogsPanel.vue'
+import ReminderTable from '@/components/ReminderTable.vue'
 import { getDeviceDetail } from '@/api/devices'
 import { getMcpToolExecutions, type McpToolExecution } from '@/api/mcpToolExecutions'
 import { getDeviceReportList } from '@/api/reports'
@@ -142,7 +152,7 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const device = ref<Device>()
-const activeTab = ref<'overview' | 'logs' | 'data' | 'mcp'>('overview')
+const activeTab = ref<'overview' | 'logs' | 'data' | 'mcp' | 'reminders'>('overview')
 const mcpExecutions = ref<McpToolExecution[]>([])
 const reportTrend = ref<DeviceReport[]>([])
 const reports = ref<DeviceReport[]>([])

@@ -54,6 +54,8 @@
 
 动态 TTS 第三阶段已完成实机验收：私有本地网关负责 Piper 文本合成、PCM/Opus 编码与 60 ms 分帧，IoT 后端请求网关、验证返回帧并复用既有 MQTT/ACK 交付。用户已部署网关并升级 IoT 至 v1.2.4、显式启用 `ANNOUNCEMENT_TTS_ENABLED`；官方小智创建的一分钟提醒已按提醒文本主动播报。HTTP 连接和读取超时受 `ANNOUNCEMENT_TTS_TIMEOUT_MS` 限制；网关不可用时本次投递安全失败，不会输出文本、音频或私密配置。
 
+提醒管理页面待发布：复用既有提醒查询/取消 API，不新增数据库或 MQTT 行为；提供全局筛选和设备详情页签，只允许取消尚未触发的 `SCHEDULED` 提醒。提醒仍必须由官方小智 MCP 创建，页面不绕过现有语音创建流程。
+
 本地 TTS 网关离线交付已构建：`components/local-tts-gateway` 使用 Piper、ffmpeg 和仅本机 HTTP 接口，镜像标签为 `local/xiaozhi-local-tts:0.1.0`，离线包为 `dist/xiaozhi-local-tts-0.1.0.tar`。模型不打入镜像，群晖后续以只读 `./models` 卷挂载；无模型时网关安全返回 503。仅完成本机构建/验证，未导入或部署群晖。
 
 2026-07-27 取消提醒边界联调通过：立即取消的一分钟提醒在原定时间后仍为 `CANCELED`，且未创建播报任务。

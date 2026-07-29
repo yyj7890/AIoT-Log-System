@@ -18,6 +18,8 @@
 
 - 动态 TTS 已完成私有网关、文本播报服务和提醒接入；网关返回 Opus 帧后复用既有 manifest、二进制 MQTT 与 ACK。用户已独立部署 Piper 网关、升级 IoT 至 v1.2.4 并启用私有网关配置；官方小智创建的一分钟提醒已实际主动播报提醒文本。HTTP 连接和读取均受超时限制，网关失败不泄露文本、音频或私密配置。
 
+- 提醒管理前端已完成源码实现，待发布镜像：全局页面可按设备编号筛选，设备工作台增加提醒页签；展示计划/实际触发时间、发布任务和状态，且仅允许取消 `SCHEDULED` 提醒。复用既有 `GET /api/reminders` 与 `DELETE /api/reminders/{id}`，不改变提醒创建、TTS、MQTT 或 ACK 逻辑。
+
 ### 2026-07-27：固定 Opus MQTT 主动播报后端源码（真实固定语音联调通过）
 
 - 后端在既有 Paho MQTT 连接中新增 `aiot/device/+/announcement/ack` 订阅；既有 `report`、`log` 订阅、计数和入库逻辑保持不变。

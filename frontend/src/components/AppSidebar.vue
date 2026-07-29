@@ -20,6 +20,10 @@
         <el-icon><Bell /></el-icon>
         <span>告警规则</span>
       </el-menu-item>
+      <el-menu-item index="/reminders">
+        <el-icon><AlarmClock /></el-icon>
+        <span>提醒管理</span>
+      </el-menu-item>
       <el-menu-item index="/mqtt">
         <el-icon><Connection /></el-icon>
         <span>MQTT 状态</span>
@@ -35,13 +39,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Bell, Connection, Cpu, DataAnalysis, PriceTag } from '@element-plus/icons-vue'
+import { AlarmClock, Bell, Connection, Cpu, DataAnalysis, PriceTag } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activePath = computed(() => {
   if (route.path.startsWith('/devices')) return '/devices'
   if (route.path.startsWith('/logs')) return '/logs'
   if (route.path.startsWith('/alert-rules')) return '/alert-rules'
+  if (route.path.startsWith('/reminders')) return '/reminders'
   if (route.path.startsWith('/mqtt')) return '/mqtt'
   return route.path
 })
