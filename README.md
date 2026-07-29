@@ -27,6 +27,9 @@ AIoT-Log-System 解决 AIoT 设备在日常运行中“状态分散、日志难�
 - API 错误响应提供稳定业务错误码和请求追踪号，便于前后端联调和日志定位。
 - 自动化回归覆盖MQTT、故障状态、Flyway迁移、前端轮询和Docker数据卷保护。
 - 提供本地开发脚本和 Docker Compose 四服务部署。
+- `Remote-Hivemq` 分支支持官方小智语音创建/取消提醒：提醒持久化后按时触发，并通过 HiveMQ 向指定小智设备主动播报。
+- 提醒播报使用私有本地 Piper TTS 网关生成 16 kHz 单声道裸 Opus 帧；IoT 复用既有 MQTT QoS 1 下行与设备 `received` / `played` ACK，不替换官方小智 AI、OTA 或对话链路。
+- 管理页面提供“提醒管理”入口和设备详情“提醒”页签，可查看计划时间、触发状态、播报任务，并仅允许取消未触发提醒。
 
 ## 技术栈
 
@@ -96,7 +99,7 @@ Swagger UI：http://127.0.0.1:8080/swagger-ui.html
 OpenAPI JSON：http://127.0.0.1:8080/v3/api-docs/aiot-api
 ```
 
-群晖部署时将 `127.0.0.1:8080` 替换为 NAS 地址和后端宿主机映射端口，例如 `http://<NAS>:18080/swagger-ui.html`。文档仅限可信网络使用；可用 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。群晖当前运行并已验收`v1.2.0-remote-mqtt`；原有数据保留、设备独立日志自动刷新和远程 HiveMQ 凭据保存/重连均正常。
+群晖部署时将 `127.0.0.1:8080` 替换为 NAS 地址和后端宿主机映射端口，例如 `http://<NAS>:18080/swagger-ui.html`。文档仅限可信网络使用；可用 `OPENAPI_ENABLED=false` 和 `SWAGGER_UI_ENABLED=false` 关闭。远程 MQTT 固定镜像已发布至 `v1.2.3-remote-mqtt`；用户的私有离线 `v1.2.4-remote-mqtt` 部署已额外完成动态 TTS 提醒播报验收。
 
 API 失败时使用真实 HTTP 状态，并在响应体返回稳定的 `errorCode` 和 `traceId`；响应头 `X-Trace-Id` 可用于关联后端日志。客户端程序应判断 `errorCode`，不要依赖中文 `message`。
 
@@ -113,7 +116,7 @@ docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
 
 首次运行会由初始化器生成被忽略的 `docker/local/hivemq-remote.env`，用户只在该私有文件中填写 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 和 `MQTT_PASSWORD`；公开模板是 `config/hivemq-remote.env.example`。该文件与原局域网 Docker 的 `.env` 分离，切换模式不会覆盖原配置。远程 Compose 只运行 MySQL、后端和前端，不包含 Mosquitto、TCP `1883` 或 UDP `19830`。不要把私有配置、真实域名、凭证或设备数据提交、上传或截图公开。实现与验证状态见 [HiveMQ 远程版本记录](docs/hivemq-remote-mqtt-version.md)。
 
-两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前远程固定版本为 `v1.2.0-remote-mqtt`。该版本包含设备独立日志与采集视图、Flyway V2、页面管理远程 HiveMQ 凭据、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；已在群晖完成数据保留、独立日志刷新、凭据立即重连及重启持久化验收。旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
+两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前已发布远程固定版本为 `v1.2.3-remote-mqtt`。该公开版本包含设备独立日志与采集视图、Flyway、提醒/固定 Opus 播报基础链路、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；私有离线 `v1.2.4-remote-mqtt` 已在群晖完成动态 Piper TTS 提醒播报验收，并包含提醒管理页面源码。旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
 
 远程版同时支持腾讯云 TCR 国内镜像；在国内网络或群晖拉取 GHCR 速度不理想时，可直接执行：
 
@@ -125,8 +128,8 @@ docker pull ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-frontend:v1.2.0-remo
 `.github/workflows/sync-tcr.yml` 从已经扫描并发布的 GHCR 固定镜像复制到 TCR，不重新构建，并强制校验两边 digest 一致。腾讯云命名空间必须先创建；发布凭证仅保存在 GitHub Actions 的 `TCR_USERNAME`、`TCR_PASSWORD` Secrets 中。群晖使用 `docker-compose.remote.tcr.yml`，GHCR 仍是主发布源。
 
 ```text
-docker pull ghcr.io/yyj7890/aiot-log-backend:v1.2.0-remote-mqtt
-docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.2.0-remote-mqtt
+docker pull ghcr.io/yyj7890/aiot-log-backend:v1.2.3-remote-mqtt
+docker pull ghcr.io/yyj7890/aiot-log-frontend:v1.2.3-remote-mqtt
 ```
 
 ### 首次本地配置（公开模板）
@@ -219,6 +222,8 @@ gh attestation verify oci://ghcr.io/yyj7890/aiot-log-frontend:<fixed-tag> -R yyj
 - 已验证 MQTT 全局账号密码认证、关闭匿名访问后，设备仍能持续上报。
 - 已验证启动事件汇总、中文运行日志、日志自动刷新和批量删除交互。
 - 已验证本地 AI 可用时的实际 WebSocket 对话，以及本地 AI 不可用时回退官方 AI。
+- 已验证官方小智通过 MCP 创建一条一分钟提醒后，IoT 调用私有 Piper TTS、经 HiveMQ 下行至小智并实际主动播报提醒文本。
+- 已验证提醒取消在原定时间后仍不会创建播报任务；提醒管理页面支持查看和取消尚未触发的提醒。
 
 ## 自动化回归
 

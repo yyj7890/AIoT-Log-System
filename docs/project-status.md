@@ -20,6 +20,8 @@
 
 - 提醒管理前端已完成源码实现，待发布镜像：全局页面可按设备编号筛选，设备工作台增加提醒页签；展示计划/实际触发时间、发布任务和状态，且仅允许取消 `SCHEDULED` 提醒。复用既有 `GET /api/reminders` 与 `DELETE /api/reminders/{id}`，不改变提醒创建、TTS、MQTT 或 ACK 逻辑。
 
+- 项目主页 README 已补充远程提醒、动态 Piper TTS、设备 ACK、提醒管理和 `v1.2.3` 公开镜像与私有离线 `v1.2.4` 的边界说明；未写入任何私有网络地址、凭证、Token 或真实设备数据。
+
 ### 2026-07-27：固定 Opus MQTT 主动播报后端源码（真实固定语音联调通过）
 
 - 后端在既有 Paho MQTT 连接中新增 `aiot/device/+/announcement/ack` 订阅；既有 `report`、`log` 订阅、计数和入库逻辑保持不变。
