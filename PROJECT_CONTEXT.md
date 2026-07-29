@@ -19,6 +19,7 @@
 ## 3. 已完成功能
 
 - 2026-07-29 新增设备档案和零件清单源码：设备可保存厂商、型号、序列号、固件版本；设备工作台可人工维护屏幕、开发板、麦克风、扬声器等零件。设备 HTTP/MQTT 上报新增可选 `batteryPercent` 和 `charging`，详情展示最近一次真实上报的电压/电量；通用平台不能可靠自动识别物理零件，未伪造自动检测结果。前端类型检查和生产构建已通过；后端已加入 `backend/mvnw.cmd`，以 JDK 17 执行的 42 个测试通过；隔离 MySQL 8.4 已验证空库与既有 V1 数据库均可迁移至 V7 并保留历史数据。
+- 2026-07-29 已构建设备档案版本的私有远程离线镜像包 `dist/aiot-remote-mqtt-v1.2.7-images.tar`，导入编排固定使用 `local/aiot-log-backend:v1.2.7-remote-mqtt` 与 `local/aiot-log-frontend:v1.2.7-remote-mqtt`；待人工导入群晖，必须继续复用现有远程项目名、MySQL 数据卷与 `docker/local/hivemq-remote.env`。
 
 - `Local AI server discovered` 统一显示为“已发现本地 AI 服务”，仅表示发现成功，不能被翻译为已连接；只有 `local_ai_connected` / `Local AI server connected` 才显示为“已连接本地 AI 服务”。2026-07-12 曾实机验证设备在本机服务可用时建立 WebSocket 实际对话；本地服务不可用时固件应安全回退官方小智服务。
 

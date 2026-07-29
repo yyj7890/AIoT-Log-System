@@ -8,6 +8,7 @@
 - 新增设备零件清单，可在设备工作台维护屏幕、开发板、麦克风、扬声器等零件；当前明确标记为人工维护，不虚构自动识别结果。
 - 既有 HTTP/MQTT 遥测上报新增可选 `batteryPercent`、`charging`，设备工作台显示最近一次真实上报的电压与电量。
 - 已完成前端 `vue-tsc` 类型检查和生产构建；后端已加入 `backend/mvnw.cmd` 并使用 JDK 17 执行 `./mvnw.cmd test`，42 个测试通过。Windows 不再依赖全局 `mvn` 命令；首次执行会下载项目固定 Maven 3.9.16。另以隔离 MySQL 8.4 容器执行 `FlywayMigrationIntegrationTest`：空库和既有 V1 数据库均成功迁移至 V7，历史数据保留，2 项迁移回归均通过；测试容器已删除。
+- 已构建远程离线镜像包 `dist/aiot-remote-mqtt-v1.2.7-images.tar`，其中包含同标签的前端和后端镜像；`docker-compose.remote.import.yml` 已固定引用 `v1.2.7-remote-mqtt`。该包待导入群晖并完成页面验收。
 
 ## 当前阶段
 
