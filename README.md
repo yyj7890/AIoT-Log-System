@@ -116,7 +116,7 @@ docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
 
 首次运行会由初始化器生成被忽略的 `docker/local/hivemq-remote.env`，用户只在该私有文件中填写 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 和 `MQTT_PASSWORD`；公开模板是 `config/hivemq-remote.env.example`。该文件与原局域网 Docker 的 `.env` 分离，切换模式不会覆盖原配置。远程 Compose 只运行 MySQL、后端和前端，不包含 Mosquitto、TCP `1883` 或 UDP `19830`。不要把私有配置、真实域名、凭证或设备数据提交、上传或截图公开。实现与验证状态见 [HiveMQ 远程版本记录](docs/hivemq-remote-mqtt-version.md)。
 
-两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前已发布远程固定版本为 `v1.2.3-remote-mqtt`。该公开版本包含设备独立日志与采集视图、Flyway、提醒/固定 Opus 播报基础链路、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；私有离线 `v1.2.4-remote-mqtt` 已在群晖完成动态 Piper TTS 提醒播报验收，并包含提醒管理页面源码。旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
+两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前已发布远程固定版本为 `v1.2.3-remote-mqtt`。该公开版本包含设备独立日志与采集视图、Flyway、提醒/固定 Opus 播报基础链路、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；私有离线 `v1.2.4-remote-mqtt` 已在群晖完成动态 Piper TTS 提醒播报验收，私有离线 `v1.2.5-remote-mqtt` 已构建提醒管理页面镜像、待人工导入群晖。旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
 
 远程版同时支持腾讯云 TCR 国内镜像；在国内网络或群晖拉取 GHCR 速度不理想时，可直接执行：
 
