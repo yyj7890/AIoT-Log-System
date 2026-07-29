@@ -24,10 +24,10 @@ class FlywayMigrationIntegrationTest {
     private static final String USERNAME = System.getenv().getOrDefault("FLYWAY_TEST_DB_USERNAME", "root");
     private static final String PASSWORD = System.getenv().getOrDefault("FLYWAY_TEST_DB_PASSWORD", "");
     private static final String V1_MIGRATION = "db/migration/V1__create_initial_schema.sql";
-    private static final int EXPECTED_BUSINESS_TABLES = 11;
+    private static final int EXPECTED_BUSINESS_TABLES = 12;
 
     @Test
-    void emptyDatabaseExecutesAllMigrationsThroughV6() throws Exception {
+    void emptyDatabaseExecutesAllMigrationsThroughV7() throws Exception {
         String database = databaseName("empty");
         createDatabase(database);
         try {
@@ -41,6 +41,7 @@ class FlywayMigrationIntegrationTest {
             assertMigrationRecord(database, "4", "SQL");
             assertMigrationRecord(database, "5", "SQL");
             assertMigrationRecord(database, "6", "SQL");
+            assertMigrationRecord(database, "7", "SQL");
             assertMonitoringMode(database, "LOG_ONLY");
         } finally {
             dropDatabase(database);
@@ -48,7 +49,7 @@ class FlywayMigrationIntegrationTest {
     }
 
     @Test
-    void existingV1DatabaseIsBaselinedThenUpgradedThroughV6WithoutLosingData() throws Exception {
+    void existingV1DatabaseIsBaselinedThenUpgradedThroughV7WithoutLosingData() throws Exception {
         String database = databaseName("legacy");
         createDatabase(database);
         try {
@@ -99,6 +100,7 @@ class FlywayMigrationIntegrationTest {
             assertMigrationRecord(database, "4", "SQL");
             assertMigrationRecord(database, "5", "SQL");
             assertMigrationRecord(database, "6", "SQL");
+            assertMigrationRecord(database, "7", "SQL");
             assertMonitoringMode(database, "LOG_ONLY");
         } finally {
             dropDatabase(database);

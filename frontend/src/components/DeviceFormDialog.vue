@@ -10,6 +10,10 @@
       <el-form-item label="设备类型" prop="type">
         <el-input v-model="form.type" />
       </el-form-item>
+      <el-form-item label="厂商"><el-input v-model="form.manufacturer" /></el-form-item>
+      <el-form-item label="型号"><el-input v-model="form.model" /></el-form-item>
+      <el-form-item label="序列号"><el-input v-model="form.serialNumber" /></el-form-item>
+      <el-form-item label="固件版本"><el-input v-model="form.firmwareVersion" /></el-form-item>
       <el-form-item label="展示模式" prop="monitoringMode">
         <el-select v-model="form.monitoringMode" class="full">
           <el-option label="仅运行日志（小智、网关等）" value="LOG_ONLY" />
@@ -61,6 +65,10 @@ const form = reactive<DevicePayload>({
   name: '',
   deviceCode: '',
   type: '',
+  manufacturer: '',
+  model: '',
+  serialNumber: '',
+  firmwareVersion: '',
   monitoringMode: 'LOG_ONLY',
   location: '',
   status: 'NORMAL',
@@ -81,6 +89,10 @@ watch(
     form.name = props.device?.name || ''
     form.deviceCode = props.device?.deviceCode || ''
     form.type = props.device?.type || ''
+    form.manufacturer = props.device?.manufacturer || ''
+    form.model = props.device?.model || ''
+    form.serialNumber = props.device?.serialNumber || ''
+    form.firmwareVersion = props.device?.firmwareVersion || ''
     form.monitoringMode = props.device?.monitoringMode || 'LOG_ONLY'
     form.location = props.device?.location || ''
     form.status = (props.device?.status || 'NORMAL') as DeviceStatus

@@ -97,6 +97,10 @@ public class DeviceServiceImpl implements DeviceService {
         device.setName(request.getName());
         device.setDeviceCode(request.getDeviceCode());
         device.setType(request.getType());
+        device.setManufacturer(request.getManufacturer());
+        device.setModel(request.getModel());
+        device.setSerialNumber(request.getSerialNumber());
+        device.setFirmwareVersion(request.getFirmwareVersion());
         device.setMonitoringMode(normalizeMonitoringMode(request.getMonitoringMode()));
         device.setLocation(request.getLocation());
         device.setStatus(StringUtils.hasText(request.getStatus()) ? request.getStatus() : DeviceStatus.NORMAL);
@@ -112,6 +116,10 @@ public class DeviceServiceImpl implements DeviceService {
         Device device = getExistingDevice(id);
         device.setName(request.getName());
         device.setType(request.getType());
+        device.setManufacturer(request.getManufacturer());
+        device.setModel(request.getModel());
+        device.setSerialNumber(request.getSerialNumber());
+        device.setFirmwareVersion(request.getFirmwareVersion());
         device.setMonitoringMode(normalizeMonitoringMode(request.getMonitoringMode()));
         device.setLocation(request.getLocation());
         device.setStatus(StringUtils.hasText(request.getStatus()) ? request.getStatus() : DeviceStatus.NORMAL);
@@ -221,6 +229,8 @@ public class DeviceServiceImpl implements DeviceService {
             vo.setTemperature(report.getTemperature());
             vo.setHumidity(report.getHumidity());
             vo.setVoltage(report.getVoltage());
+            vo.setBatteryPercent(report.getBatteryPercent());
+            vo.setCharging(report.getCharging());
             vo.setSignalStrength(report.getSignalStrength());
             vo.setStatus(report.getStatus());
             vo.setMessage(report.getMessage());
@@ -251,6 +261,10 @@ public class DeviceServiceImpl implements DeviceService {
         vo.setName(device.getName());
         vo.setDeviceCode(device.getDeviceCode());
         vo.setType(device.getType());
+        vo.setManufacturer(device.getManufacturer());
+        vo.setModel(device.getModel());
+        vo.setSerialNumber(device.getSerialNumber());
+        vo.setFirmwareVersion(device.getFirmwareVersion());
         vo.setMonitoringMode(StringUtils.hasText(device.getMonitoringMode())
                 ? device.getMonitoringMode()
                 : MONITORING_MODE_LOG_ONLY);

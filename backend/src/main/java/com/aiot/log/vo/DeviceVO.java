@@ -9,6 +9,10 @@ public class DeviceVO {
     private String name;
     private String deviceCode;
     private String type;
+    private String manufacturer;
+    private String model;
+    private String serialNumber;
+    private String firmwareVersion;
     private String monitoringMode;
     private String location;
     private String status;
@@ -53,6 +57,14 @@ public class DeviceVO {
     public void setType(String type) {
         this.type = type;
     }
+    public String getManufacturer() { return manufacturer; }
+    public void setManufacturer(String manufacturer) { this.manufacturer = manufacturer; }
+    public String getModel() { return model; }
+    public void setModel(String model) { this.model = model; }
+    public String getSerialNumber() { return serialNumber; }
+    public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
+    public String getFirmwareVersion() { return firmwareVersion; }
+    public void setFirmwareVersion(String firmwareVersion) { this.firmwareVersion = firmwareVersion; }
 
     public String getMonitoringMode() {
         return monitoringMode;

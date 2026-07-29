@@ -12,6 +12,8 @@ public class DeviceReportVO {
     private BigDecimal temperature;
     private BigDecimal humidity;
     private BigDecimal voltage;
+    private BigDecimal batteryPercent;
+    private Boolean charging;
     private Integer signalStrength;
     private String status;
     private String message;
@@ -75,6 +77,10 @@ public class DeviceReportVO {
     public void setVoltage(BigDecimal voltage) {
         this.voltage = voltage;
     }
+    public BigDecimal getBatteryPercent() { return batteryPercent; }
+    public void setBatteryPercent(BigDecimal batteryPercent) { this.batteryPercent = batteryPercent; }
+    public Boolean getCharging() { return charging; }
+    public void setCharging(Boolean charging) { this.charging = charging; }
 
     public Integer getSignalStrength() {
         return signalStrength;

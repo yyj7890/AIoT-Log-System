@@ -8,6 +8,8 @@ export interface DeviceReport {
   temperature?: number
   humidity?: number
   voltage?: number
+  batteryPercent?: number
+  charging?: boolean
   signalStrength?: number
   status: DeviceStatus
   message?: string
@@ -22,6 +24,8 @@ export interface DeviceReportPayload {
   temperature?: number
   humidity?: number
   voltage?: number
+  batteryPercent?: number
+  charging?: boolean
   signalStrength?: number
   status?: DeviceStatus
   message?: string

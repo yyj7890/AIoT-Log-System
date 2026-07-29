@@ -9,17 +9,19 @@
     </template>
 
     <div v-loading="loading">
-      <div class="device-summary">
+        <div class="device-summary">
         <div>
           <div class="summary-label">当前状态</div>
           <StatusTag group="deviceStatus" :value="device?.status" />
         </div>
         <div><div class="summary-label">最后在线</div><div>{{ device?.lastOnlineAt || '-' }}</div></div>
         <div><div class="summary-label">安装位置</div><div>{{ device?.location || '-' }}</div></div>
-        <div>
-          <div class="summary-label">展示内容</div>
-          <div>{{ device?.monitoringMode === 'TELEMETRY' ? '运行日志与采集数据' : '运行日志' }}</div>
-        </div>
+          <div>
+            <div class="summary-label">展示内容</div>
+            <div>{{ device?.monitoringMode === 'TELEMETRY' ? '运行日志与采集数据' : '运行日志' }}</div>
+          </div>
+          <div><div class="summary-label">最近电压</div><div>{{ formatMetric(latestReport?.voltage, ' V') }}</div></div>
+          <div><div class="summary-label">当前电量</div><div>{{ latestReport?.batteryPercent == null ? '-' : `${latestReport.batteryPercent}%${latestReport.charging ? '（充电中）' : ''}` }}</div></div>
       </div>
 
       <el-tabs v-model="activeTab" class="device-tabs">
@@ -32,6 +34,10 @@
                   <el-descriptions-item label="设备名称">{{ device?.name }}</el-descriptions-item>
                   <el-descriptions-item label="设备编号">{{ device?.deviceCode }}</el-descriptions-item>
                   <el-descriptions-item label="设备类型">{{ device?.type }}</el-descriptions-item>
+                  <el-descriptions-item label="厂商">{{ device?.manufacturer || '-' }}</el-descriptions-item>
+                  <el-descriptions-item label="型号">{{ device?.model || '-' }}</el-descriptions-item>
+                  <el-descriptions-item label="序列号">{{ device?.serialNumber || '-' }}</el-descriptions-item>
+                  <el-descriptions-item label="固件版本">{{ device?.firmwareVersion || '-' }}</el-descriptions-item>
                   <el-descriptions-item label="设备描述">{{ device?.description || '-' }}</el-descriptions-item>
                 </el-descriptions>
               </div>
@@ -50,6 +56,24 @@
             <div class="section-body">
               <el-button type="primary" plain @click="activeTab = 'logs'">查看该设备全部日志</el-button>
               <el-button v-if="device?.monitoringMode === 'TELEMETRY'" type="success" plain @click="activeTab = 'data'">查看采集数据与趋势</el-button>
+            </div>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="零件清单" name="components">
+          <div class="content-section">
+            <div class="section-title">设备零件</div>
+            <div class="section-body">
+              <el-alert type="info" :closable="false" title="零件清单由人工确认和维护；设备主动上报硬件清单前，系统不会猜测屏幕、开发板或麦克风型号。" />
+              <div class="component-actions"><el-button type="primary" @click="openComponentDialog()">新增零件</el-button></div>
+              <el-table :data="components">
+                <el-table-column prop="name" label="零件" min-width="130" />
+                <el-table-column prop="category" label="类别" min-width="100" />
+                <el-table-column prop="model" label="型号/规格" min-width="140" />
+                <el-table-column prop="quantity" label="数量" width="80" />
+                <el-table-column prop="notes" label="备注" min-width="150" show-overflow-tooltip />
+                <el-table-column label="操作" width="150"><template #default="{ row }"><el-button link type="primary" @click="openComponentDialog(row)">编辑</el-button><el-button link type="danger" @click="removeComponent(row.id)">删除</el-button></template></el-table-column>
+              </el-table>
             </div>
           </div>
         </el-tab-pane>
@@ -129,11 +153,16 @@
     </div>
 
     <LogFormDialog :visible="logDialogVisible" mode="create" :default-device-id="device?.id" @cancel="logDialogVisible = false" @success="afterLogSaved" />
+    <el-dialog v-model="componentDialogVisible" :title="editingComponent ? '编辑零件' : '新增零件'" width="500px">
+      <el-form :model="componentForm" label-width="88px"><el-form-item label="零件名称" required><el-input v-model="componentForm.name" /></el-form-item><el-form-item label="类别"><el-input v-model="componentForm.category" placeholder="如：显示、主控、音频、电源" /></el-form-item><el-form-item label="型号/规格"><el-input v-model="componentForm.model" /></el-form-item><el-form-item label="数量"><el-input-number v-model="componentForm.quantity" :min="1" /></el-form-item><el-form-item label="备注"><el-input v-model="componentForm.notes" type="textarea" /></el-form-item></el-form>
+      <template #footer><el-button @click="componentDialogVisible = false">取消</el-button><el-button type="primary" @click="saveComponent">保存</el-button></template>
+    </el-dialog>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { Back, DocumentAdd } from '@element-plus/icons-vue'
 import PageContainer from '@/components/PageContainer.vue'
@@ -147,6 +176,8 @@ import { getMcpToolExecutions, type McpToolExecution } from '@/api/mcpToolExecut
 import { getDeviceReportList } from '@/api/reports'
 import type { Device } from '@/types/device'
 import type { DeviceReport } from '@/types/report'
+import type { DeviceComponent, DeviceComponentPayload } from '@/types/component'
+import { createDeviceComponent, deleteDeviceComponent, getDeviceComponents, updateDeviceComponent } from '@/api/components'
 import { PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
 import { usePageAutoRefresh } from '@/utils/autoRefresh'
 
@@ -154,7 +185,7 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const device = ref<Device>()
-const activeTab = ref<'overview' | 'logs' | 'data' | 'mcp' | 'reminders'>('overview')
+const activeTab = ref<'overview' | 'components' | 'logs' | 'data' | 'mcp' | 'reminders'>('overview')
 const mcpExecutions = ref<McpToolExecution[]>([])
 const reportTrend = ref<DeviceReport[]>([])
 const reports = ref<DeviceReport[]>([])
@@ -162,6 +193,11 @@ const reportPage = ref(1)
 const reportPageSize = ref(10)
 const reportTotal = ref(0)
 const logDialogVisible = ref(false)
+const components = ref<DeviceComponent[]>([])
+const componentDialogVisible = ref(false)
+const editingComponent = ref<DeviceComponent>()
+const componentForm = reactive<DeviceComponentPayload>({ name: '', category: '', model: '', quantity: 1, notes: '' })
+const latestReport = computed(() => device.value?.recentReports?.[0])
 let requestPending = false
 
 async function loadData(showLoading = true) {
@@ -171,6 +207,7 @@ async function loadData(showLoading = true) {
   try {
     const deviceId = Number(route.params.id)
     device.value = await getDeviceDetail(deviceId)
+    components.value = await getDeviceComponents(deviceId)
     mcpExecutions.value = await getMcpToolExecutions()
     if (device.value.monitoringMode === 'TELEMETRY') {
       await loadReports()
@@ -197,6 +234,33 @@ async function loadReports() {
 function afterLogSaved() {
   logDialogVisible.value = false
   void loadData()
+}
+
+function openComponentDialog(component?: DeviceComponent) {
+  editingComponent.value = component
+  componentForm.name = component?.name || ''
+  componentForm.category = component?.category || ''
+  componentForm.model = component?.model || ''
+  componentForm.quantity = component?.quantity || 1
+  componentForm.notes = component?.notes || ''
+  componentDialogVisible.value = true
+}
+
+async function saveComponent() {
+  if (!componentForm.name.trim()) return ElMessage.warning('请输入零件名称')
+  const deviceId = Number(route.params.id)
+  if (editingComponent.value) await updateDeviceComponent(deviceId, editingComponent.value.id, componentForm)
+  else await createDeviceComponent(deviceId, componentForm)
+  componentDialogVisible.value = false
+  components.value = await getDeviceComponents(deviceId)
+  ElMessage.success('零件清单已保存')
+}
+
+async function removeComponent(id: number) {
+  await ElMessageBox.confirm('确定删除该零件吗？', '删除确认', { type: 'warning' })
+  await deleteDeviceComponent(Number(route.params.id), id)
+  components.value = await getDeviceComponents(Number(route.params.id))
+  ElMessage.success('已删除')
 }
 
 function formatMetric(value: number | undefined, unit: string) {
@@ -230,6 +294,7 @@ onMounted(loadData)
 .detail-stats {
   grid-template-columns: repeat(3, minmax(120px, 1fr));
 }
+.component-actions { margin: 12px 0; }
 
 @media (max-width: 900px) {
   .device-summary {

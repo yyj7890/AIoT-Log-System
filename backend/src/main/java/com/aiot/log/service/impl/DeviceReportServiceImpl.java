@@ -63,6 +63,8 @@ public class DeviceReportServiceImpl implements DeviceReportService {
         report.setTemperature(request.getTemperature());
         report.setHumidity(request.getHumidity());
         report.setVoltage(request.getVoltage());
+        report.setBatteryPercent(request.getBatteryPercent());
+        report.setCharging(request.getCharging());
         report.setSignalStrength(request.getSignalStrength());
         report.setStatus(reportStatus);
         report.setMessage(request.getMessage());
@@ -274,6 +276,8 @@ public class DeviceReportServiceImpl implements DeviceReportService {
         vo.setTemperature(report.getTemperature());
         vo.setHumidity(report.getHumidity());
         vo.setVoltage(report.getVoltage());
+        vo.setBatteryPercent(report.getBatteryPercent());
+        vo.setCharging(report.getCharging());
         vo.setSignalStrength(report.getSignalStrength());
         vo.setStatus(report.getStatus());
         vo.setMessage(report.getMessage());

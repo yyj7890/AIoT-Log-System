@@ -9,6 +9,10 @@ export interface Device {
   name: string
   deviceCode: string
   type: string
+  manufacturer?: string
+  model?: string
+  serialNumber?: string
+  firmwareVersion?: string
   monitoringMode: DeviceMonitoringMode
   location?: string
   status: DeviceStatus
@@ -27,6 +31,10 @@ export interface DevicePayload {
   name: string
   deviceCode?: string
   type: string
+  manufacturer?: string
+  model?: string
+  serialNumber?: string
+  firmwareVersion?: string
   monitoringMode: DeviceMonitoringMode
   location?: string
   status: DeviceStatus

@@ -27,6 +27,12 @@ public class DeviceReportCreateRequest {
     @DecimalMax(value = "1000.0", message = "电压不能高于 1000")
     private BigDecimal voltage;
 
+    @DecimalMin(value = "0.0", message = "电量不能低于 0")
+    @DecimalMax(value = "100.0", message = "电量不能高于 100")
+    private BigDecimal batteryPercent;
+
+    private Boolean charging;
+
     @Min(value = -120, message = "信号强度不能低于 -120")
     @Max(value = 0, message = "信号强度不能高于 0")
     private Integer signalStrength;
@@ -69,6 +75,10 @@ public class DeviceReportCreateRequest {
     public void setVoltage(BigDecimal voltage) {
         this.voltage = voltage;
     }
+    public BigDecimal getBatteryPercent() { return batteryPercent; }
+    public void setBatteryPercent(BigDecimal batteryPercent) { this.batteryPercent = batteryPercent; }
+    public Boolean getCharging() { return charging; }
+    public void setCharging(Boolean charging) { this.charging = charging; }
 
     public Integer getSignalStrength() {
         return signalStrength;
