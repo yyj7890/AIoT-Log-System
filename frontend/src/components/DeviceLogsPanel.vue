@@ -59,7 +59,7 @@ import StatusTag from '@/components/StatusTag.vue'
 import { getLogList } from '@/api/logs'
 import { LIVE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
 import { useEnumStore } from '@/stores/enumStore'
-import { createAutoRefreshController } from '@/utils/autoRefresh'
+import { usePageAutoRefresh } from '@/utils/autoRefresh'
 import type { LogQuery, LogRecord } from '@/types/log'
 
 const props = defineProps<{ deviceId: number }>()
@@ -162,7 +162,7 @@ function scheduleSearch() {
   }, 300)
 }
 
-const autoRefresh = createAutoRefreshController({
+usePageAutoRefresh({
   intervalMs: LIVE_REFRESH_INTERVAL_MS,
   isHidden: () => document.hidden,
   isPending: () => requestPending,
@@ -177,15 +177,11 @@ watch(() => props.deviceId, (deviceId) => {
 watch(() => [query.logType, query.level, query.status, query.keyword], scheduleSearch)
 
 onMounted(() => {
-  document.addEventListener('visibilitychange', autoRefresh.handleVisibilityChange)
-  autoRefresh.start()
   void loadData()
 })
 
 onBeforeUnmount(() => {
   if (searchTimer) clearTimeout(searchTimer)
-  autoRefresh.stop()
-  document.removeEventListener('visibilitychange', autoRefresh.handleVisibilityChange)
 })
 </script>
 

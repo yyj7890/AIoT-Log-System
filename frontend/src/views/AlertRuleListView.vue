@@ -94,6 +94,8 @@ import { getDeviceList } from '@/api/devices'
 import { useEnumStore } from '@/stores/enumStore'
 import type { AlertRule, AlertRulePayload, AlertRuleQuery } from '@/types/alertRule'
 import type { Device } from '@/types/device'
+import { PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { usePageAutoRefresh } from '@/utils/autoRefresh'
 
 const enumStore = useEnumStore()
 const loading = ref(false)
@@ -112,6 +114,7 @@ const form = reactive<AlertRulePayload>({
   level: 'WARNING',
   enabled: true
 })
+let requestPending = false
 
 const rulesConfig: FormRules = {
   name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
@@ -126,14 +129,27 @@ async function loadOptions() {
   devices.value = devicePage.records
 }
 
-async function loadData() {
-  loading.value = true
+async function loadData(showLoading = true) {
+  if (requestPending) return
+  requestPending = true
+  if (showLoading) loading.value = true
   try {
     rules.value = await getAlertRules(query)
   } finally {
-    loading.value = false
+    requestPending = false
+    if (showLoading) loading.value = false
   }
 }
+
+usePageAutoRefresh({
+  intervalMs: PAGE_REFRESH_INTERVAL_MS,
+  isHidden: () => document.hidden,
+  isPending: () => requestPending,
+  refresh: () => {
+    void loadData(false)
+    if (!dialogVisible.value) void loadOptions()
+  }
+})
 
 function reset() {
   Object.assign(query, { deviceId: undefined, enabled: undefined })

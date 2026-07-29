@@ -1,1 +1,2 @@
 export const LIVE_REFRESH_INTERVAL_MS = 1000
+export const PAGE_REFRESH_INTERVAL_MS = 5000

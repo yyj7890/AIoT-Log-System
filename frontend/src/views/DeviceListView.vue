@@ -72,6 +72,8 @@ import LogFormDialog from '@/components/LogFormDialog.vue'
 import { deleteDevice, getDeviceList } from '@/api/devices'
 import { useEnumStore } from '@/stores/enumStore'
 import type { Device, DeviceQuery } from '@/types/device'
+import { PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { usePageAutoRefresh } from '@/utils/autoRefresh'
 
 const router = useRouter()
 const enumStore = useEnumStore()
@@ -84,17 +86,23 @@ const deviceDialogMode = ref<'create' | 'edit'>('create')
 const logDialogVisible = ref(false)
 const defaultDeviceId = ref<number>()
 const query = reactive<DeviceQuery>({ page: 1, pageSize: 10, keyword: '', type: '', status: '' })
+let requestPending = false
 
-async function loadData() {
-  loading.value = true
+async function loadData(showLoading = true) {
+  if (requestPending) return
+  requestPending = true
+  if (showLoading) loading.value = true
   try {
     const page = await getDeviceList(query)
     devices.value = page.records
     total.value = page.total
   } finally {
-    loading.value = false
+    requestPending = false
+    if (showLoading) loading.value = false
   }
 }
+
+usePageAutoRefresh({ intervalMs: PAGE_REFRESH_INTERVAL_MS, isHidden: () => document.hidden, isPending: () => requestPending, refresh: () => void loadData(false) })
 
 function reset() {
   Object.assign(query, { page: 1, pageSize: 10, keyword: '', type: '', status: '' })

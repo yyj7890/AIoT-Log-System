@@ -35,20 +35,28 @@ import { ElMessage } from 'element-plus'
 import PageContainer from '@/components/PageContainer.vue'
 import { createTag, deleteTag, getTagList } from '@/api/tags'
 import type { Tag } from '@/types/tag'
+import { PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { usePageAutoRefresh } from '@/utils/autoRefresh'
 
 const loading = ref(false)
 const saving = ref(false)
 const tags = ref<Tag[]>([])
 const form = reactive({ name: '', color: '#409EFF' })
+let requestPending = false
 
-async function loadData() {
-  loading.value = true
+async function loadData(showLoading = true) {
+  if (requestPending) return
+  requestPending = true
+  if (showLoading) loading.value = true
   try {
     tags.value = await getTagList()
   } finally {
-    loading.value = false
+    requestPending = false
+    if (showLoading) loading.value = false
   }
 }
+
+usePageAutoRefresh({ intervalMs: PAGE_REFRESH_INTERVAL_MS, isHidden: () => document.hidden, isPending: () => requestPending, refresh: () => void loadData(false) })
 
 async function submit() {
   if (!form.name.trim()) {

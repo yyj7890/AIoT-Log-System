@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import PageContainer from '@/components/PageContainer.vue'
 import {
@@ -125,7 +125,7 @@ import {
   setMqttAuthentication
 } from '@/api/mqtt'
 import { LIVE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
-import { createAutoRefreshController } from '@/utils/autoRefresh'
+import { usePageAutoRefresh } from '@/utils/autoRefresh'
 import type { MqttGlobalCredentialStatus, MqttRemoteCredentialStatus, MqttStatus } from '@/types/mqtt'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -193,7 +193,7 @@ async function saveRemoteCredential() {
   }
 }
 
-const autoRefresh = createAutoRefreshController({
+usePageAutoRefresh({
   intervalMs: LIVE_REFRESH_INTERVAL_MS,
   isHidden: () => document.hidden,
   isPending: () => statusRequestPending,
@@ -229,13 +229,6 @@ async function enableAuthentication() {
 
 onMounted(() => {
   void loadStatus()
-  autoRefresh.start()
-  document.addEventListener('visibilitychange', autoRefresh.handleVisibilityChange)
-})
-
-onBeforeUnmount(() => {
-  autoRefresh.stop()
-  document.removeEventListener('visibilitychange', autoRefresh.handleVisibilityChange)
 })
 </script>
 

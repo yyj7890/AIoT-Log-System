@@ -30,6 +30,7 @@ AIoT-Log-System 解决 AIoT 设备在日常运行中“状态分散、日志难�
 - `Remote-Hivemq` 分支支持官方小智语音创建/取消提醒：提醒持久化后按时触发，并通过 HiveMQ 向指定小智设备主动播报。
 - 提醒播报使用私有本地 Piper TTS 网关生成 16 kHz 单声道裸 Opus 帧；IoT 复用既有 MQTT QoS 1 下行与设备 `received` / `played` ACK，不替换官方小智 AI、OTA 或对话链路。
 - 管理页面提供“提醒管理”入口和设备详情“提醒”页签，可查看计划时间、触发状态、播报任务，并仅允许取消未触发提醒。
+- 管理页面会自动刷新：普通数据页每 5 秒更新，运行日志保持 1 秒实时刷新；切回页面、窗口重新聚焦或网络恢复时立即同步新内容。
 
 ## 技术栈
 
@@ -116,7 +117,7 @@ docker-remote-ghcr-update.cmd   拉取并启动远程 GHCR 成品镜像版
 
 首次运行会由初始化器生成被忽略的 `docker/local/hivemq-remote.env`，用户只在该私有文件中填写 `MQTT_BROKER_URL=ssl://<private-host>:8883`、`MQTT_USERNAME` 和 `MQTT_PASSWORD`；公开模板是 `config/hivemq-remote.env.example`。该文件与原局域网 Docker 的 `.env` 分离，切换模式不会覆盖原配置。远程 Compose 只运行 MySQL、后端和前端，不包含 Mosquitto、TCP `1883` 或 UDP `19830`。不要把私有配置、真实域名、凭证或设备数据提交、上传或截图公开。实现与验证状态见 [HiveMQ 远程版本记录](docs/hivemq-remote-mqtt-version.md)。
 
-两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前已发布远程固定版本为 `v1.2.3-remote-mqtt`。该公开版本包含设备独立日志与采集视图、Flyway、提醒/固定 Opus 播报基础链路、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；私有离线 `v1.2.4-remote-mqtt` 已在群晖完成动态 Piper TTS 提醒播报验收，私有离线 `v1.2.5-remote-mqtt` 已构建提醒管理页面镜像、待人工导入群晖。旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
+两个 GHCR 包同时保存局域网版和远程版：局域网版固定标签为 `v1.0.0-lan`，当前已发布远程固定版本为 `v1.2.3-remote-mqtt`。该公开版本包含设备独立日志与采集视图、Flyway、提醒/固定 Opus 播报基础链路、OpenAPI、统一错误追踪、自动化回归和镜像安全发布链；私有离线 `v1.2.4-remote-mqtt` 已在群晖完成动态 Piper TTS 提醒播报验收，私有离线 `v1.2.5-remote-mqtt` 已构建提醒管理页面镜像，私有离线 `v1.2.6-remote-mqtt` 已构建全页面自动刷新。旧远程版继续保留用于回退。`latest`保留给`main`的局域网版，且只有明确推送`main`分支时才允许更新；远程版本标签不会覆盖它。
 
 远程版同时支持腾讯云 TCR 国内镜像；在国内网络或群晖拉取 GHCR 速度不理想时，可直接执行：
 

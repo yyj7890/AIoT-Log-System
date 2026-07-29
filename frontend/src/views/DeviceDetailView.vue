@@ -147,6 +147,8 @@ import { getMcpToolExecutions, type McpToolExecution } from '@/api/mcpToolExecut
 import { getDeviceReportList } from '@/api/reports'
 import type { Device } from '@/types/device'
 import type { DeviceReport } from '@/types/report'
+import { PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { usePageAutoRefresh } from '@/utils/autoRefresh'
 
 const route = useRoute()
 const router = useRouter()
@@ -160,9 +162,12 @@ const reportPage = ref(1)
 const reportPageSize = ref(10)
 const reportTotal = ref(0)
 const logDialogVisible = ref(false)
+let requestPending = false
 
-async function loadData() {
-  loading.value = true
+async function loadData(showLoading = true) {
+  if (requestPending) return
+  requestPending = true
+  if (showLoading) loading.value = true
   try {
     const deviceId = Number(route.params.id)
     device.value = await getDeviceDetail(deviceId)
@@ -171,9 +176,12 @@ async function loadData() {
       await loadReports()
     }
   } finally {
-    loading.value = false
+    requestPending = false
+    if (showLoading) loading.value = false
   }
 }
+
+usePageAutoRefresh({ intervalMs: PAGE_REFRESH_INTERVAL_MS, isHidden: () => document.hidden, isPending: () => requestPending, refresh: () => void loadData(false) })
 
 async function loadReports() {
   const deviceId = Number(route.params.id)

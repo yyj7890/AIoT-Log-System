@@ -32,10 +32,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { cancelReminder, getReminderList } from '@/api/reminders'
 import type { Reminder, ReminderStatus } from '@/types/reminder'
+import { PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { usePageAutoRefresh } from '@/utils/autoRefresh'
 
 const props = defineProps<{ deviceCode?: string }>()
 const reminders = ref<Reminder[]>([])
 const loading = ref(false)
+let requestPending = false
 
 const labels: Record<ReminderStatus, string> = {
   SCHEDULED: '已安排', TRIGGERING: '触发中', PUBLISHED: '已发布', FAILED: '失败', CANCELED: '已取消'
@@ -50,10 +53,17 @@ function statusType(status: ReminderStatus) {
   return 'primary'
 }
 
-async function load() {
-  loading.value = true
-  try { reminders.value = await getReminderList(props.deviceCode) } finally { loading.value = false }
+async function load(showLoading = true) {
+  if (requestPending) return
+  requestPending = true
+  if (showLoading) loading.value = true
+  try { reminders.value = await getReminderList(props.deviceCode) } finally {
+    requestPending = false
+    if (showLoading) loading.value = false
+  }
 }
+
+usePageAutoRefresh({ intervalMs: PAGE_REFRESH_INTERVAL_MS, isHidden: () => document.hidden, isPending: () => requestPending, refresh: () => void load(false) })
 
 async function cancel(reminder: Reminder) {
   await ElMessageBox.confirm(`取消“${reminder.message}”的提醒？`, '确认取消', { type: 'warning', confirmButtonText: '取消提醒', cancelButtonText: '返回' })
@@ -62,7 +72,7 @@ async function cancel(reminder: Reminder) {
   await load()
 }
 
-watch(() => props.deviceCode, load, { immediate: true })
+watch(() => props.deviceCode, () => void load(), { immediate: true })
 </script>
 
 <style scoped>

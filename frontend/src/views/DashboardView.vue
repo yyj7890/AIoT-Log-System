@@ -43,9 +43,12 @@ import PageContainer from '@/components/PageContainer.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { getDashboardSummary } from '@/api/dashboard'
 import type { DashboardSummary } from '@/types/dashboard'
+import { PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { usePageAutoRefresh } from '@/utils/autoRefresh'
 
 const loading = ref(false)
 const summary = ref<DashboardSummary>()
+let requestPending = false
 
 const stats = computed(() => [
   { label: '设备总数', value: summary.value?.deviceTotal ?? 0 },
@@ -56,14 +59,19 @@ const stats = computed(() => [
   { label: '待处理日志', value: summary.value?.pendingLogCount ?? 0 }
 ])
 
-async function loadData() {
-  loading.value = true
+async function loadData(showLoading = true) {
+  if (requestPending) return
+  requestPending = true
+  if (showLoading) loading.value = true
   try {
     summary.value = await getDashboardSummary()
   } finally {
-    loading.value = false
+    requestPending = false
+    if (showLoading) loading.value = false
   }
 }
+
+usePageAutoRefresh({ intervalMs: PAGE_REFRESH_INTERVAL_MS, isHidden: () => document.hidden, isPending: () => requestPending, refresh: () => void loadData(false) })
 
 onMounted(loadData)
 </script>

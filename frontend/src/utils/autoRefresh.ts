@@ -52,3 +52,26 @@ export function createAutoRefreshController(options: AutoRefreshOptions): AutoRe
     handleVisibilityChange
   }
 }
+
+export function usePageAutoRefresh(options: AutoRefreshOptions): AutoRefreshController {
+  const controller = createAutoRefreshController(options)
+
+  onMounted(() => {
+    document.addEventListener('visibilitychange', controller.handleVisibilityChange)
+    window.addEventListener('focus', controller.resume)
+    window.addEventListener('online', controller.resume)
+    window.addEventListener('pageshow', controller.resume)
+    controller.start()
+  })
+
+  onBeforeUnmount(() => {
+    controller.stop()
+    document.removeEventListener('visibilitychange', controller.handleVisibilityChange)
+    window.removeEventListener('focus', controller.resume)
+    window.removeEventListener('online', controller.resume)
+    window.removeEventListener('pageshow', controller.resume)
+  })
+
+  return controller
+}
+import { onBeforeUnmount, onMounted } from 'vue'
