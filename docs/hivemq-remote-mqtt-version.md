@@ -32,6 +32,7 @@
 
 | 固定标签 | 状态 | 前端/页面变化 | 后端/数据库变化 | 部署与兼容说明 |
 | --- | --- | --- | --- | --- |
+| `v1.2.9-remote-mqtt` | **私有离线包已构建，待群晖导入与实机验收** | 环境监测可编辑已有空间，补填坐标无需删除重建 | 无数据库变更，复用 V8～V10 | 导入 `dist/aiot-remote-mqtt-v1.2.9-images.tar`，SHA-256 `0ebd377c551a491f1bd726bad0aae7991a64fba33cac99f6cb76a81cff0d3197`；复用项目名、MySQL 卷、`hivemq-remote.env` 和 PEM，不得 `down -v` |
 | `v1.2.8-remote-mqtt` | **私有离线包已构建，待群晖导入与实机验收** | 日志页与设备工作台日志刷新收紧至 0.5 秒，慢请求结束后最多 50 ms 补刷；新增环境空间与环境播报规则页面 | Flyway V8～V10：环境空间、室外天气/AQI读数、规则与播报事件；仅私有天气服务与动态 TTS 可触发投递 | 导入 `dist/aiot-remote-mqtt-v1.2.8-images.tar`，SHA-256 `f595c27fc5e2bb578ee0e8a80babf541f051027c709eb9985fb516156b3a9884`；复用现有项目名、MySQL 卷、`hivemq-remote.env` 和 PEM，不得 `down -v` |
 | `v1.2.7-remote-mqtt` | **私有离线包已构建，待群晖导入验收** | 设备档案增加厂商、型号、序列号、固件版本；设备工作台新增零件清单 | Flyway V7 新增设备零件表、设备档案字段与可选电量/充电上报字段 | 导入 `dist/aiot-remote-mqtt-v1.2.7-images.tar`，复用现有远程项目名、MySQL 卷与私有 HiveMQ 配置；不得 `down -v` |
 | `v1.0.0-lan` | 已发布 | 局域网管理页面基线 | 本地 Mosquitto、HTTP/MQTT 上报及日志管理基线 | 固定局域网版；`latest` 继续保持局域网语义 |
