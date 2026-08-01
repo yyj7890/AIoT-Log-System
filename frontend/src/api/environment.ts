@@ -9,3 +9,5 @@ export const refreshEnvironmentOutdoor = (id: number) => request<EnvironmentOutd
 export const getEnvironmentAnnouncementRules = (spaceId?:number) => request<EnvironmentAnnouncementRule[]>({ url: '/environment-announcement-rules', method: 'GET', params: spaceId ? { spaceId } : undefined })
 export const createEnvironmentAnnouncementRule = (data: Omit<EnvironmentAnnouncementRule,'id'>) => request<EnvironmentAnnouncementRule>({ url: '/environment-announcement-rules', method: 'POST', data })
 export const deleteEnvironmentAnnouncementRule = (id:number) => request<void>({ url: `/environment-announcement-rules/${id}`, method: 'DELETE' })
+export const getEnvironmentWeatherConfig = () => request<{apiHost:string;jwtKid:string;jwtProjectId:string;privateKeyConfigured:boolean;configured:boolean}>({url:'/environment-weather-config',method:'GET'})
+export const saveEnvironmentWeatherConfig = (data:{apiHost:string;jwtKid:string;jwtProjectId:string;privateKeyPem?:string}) => request<{privateKeyConfigured:boolean;configured:boolean}>({url:'/environment-weather-config',method:'PUT',data})

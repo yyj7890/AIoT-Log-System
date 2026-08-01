@@ -32,6 +32,7 @@
 
 | 固定标签 | 状态 | 前端/页面变化 | 后端/数据库变化 | 部署与兼容说明 |
 | --- | --- | --- | --- | --- |
+| `v1.3.1-remote-mqtt` | **私有离线包已构建，待群晖导入验收** | 环境监测页增加天气服务配置对话框 | 私有天气配置/PEM 页面保存并跨重启持久化；不写数据库 | 导入 `dist/aiot-remote-mqtt-v1.3.1-images.tar`，SHA-256 `8b781487c38ee6f98547d1b925d1af53cfc60cb5120b9cc4fa0314c54a69e1a1`；复用项目名、MySQL 卷和私有目录，不得 `down -v` |
 | `v1.3.0-remote-mqtt` | **源码已验证；离线包待 Docker 恢复后构建** | 复用 v1.2.9 的环境空间编辑入口 | 修复和风实时天气端点为 `/v7/weather/now`；无数据库变更 | 当前不得导入；包生成后才可复用项目名、MySQL 卷、`hivemq-remote.env` 和 PEM 升级，且不得 `down -v` |
 | `v1.2.9-remote-mqtt` | **私有离线包已构建，待群晖导入与实机验收** | 环境监测可编辑已有空间，补填坐标无需删除重建 | 无数据库变更，复用 V8～V10 | 导入 `dist/aiot-remote-mqtt-v1.2.9-images.tar`，SHA-256 `0ebd377c551a491f1bd726bad0aae7991a64fba33cac99f6cb76a81cff0d3197`；复用项目名、MySQL 卷、`hivemq-remote.env` 和 PEM，不得 `down -v` |
 | `v1.2.8-remote-mqtt` | **私有离线包已构建，待群晖导入与实机验收** | 日志页与设备工作台日志刷新收紧至 0.5 秒，慢请求结束后最多 50 ms 补刷；新增环境空间与环境播报规则页面 | Flyway V8～V10：环境空间、室外天气/AQI读数、规则与播报事件；仅私有天气服务与动态 TTS 可触发投递 | 导入 `dist/aiot-remote-mqtt-v1.2.8-images.tar`，SHA-256 `f595c27fc5e2bb578ee0e8a80babf541f051027c709eb9985fb516156b3a9884`；复用现有项目名、MySQL 卷、`hivemq-remote.env` 和 PEM，不得 `down -v` |
