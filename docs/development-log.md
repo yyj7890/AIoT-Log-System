@@ -12,6 +12,8 @@
 
 补充：实机页面显示天气服务已配置但空间未填写坐标，刷新按钮被正确禁用。原页面只能创建或删除空间，无法补填坐标；现增加编辑空间入口，复用既有 `PUT /api/environment-spaces/{id}`，不改变空间、规则或读数数据。
 
+补充故障修复：真实刷新返回统一“室外天气服务请求失败”。核对和风 JWT 官方文档后，确认代码错误请求了 `/v7/grid-weather/now`；实时天气的正确端点是 `/v7/weather/now`，坐标参数为“经度,纬度”。空气质量接口 `/airquality/v1/current/{纬度}/{经度}` 保持不变。
+
 验证：设置 `JAVA_HOME=C:\Program Files\Java\jdk-17` 后，后端 Maven 42 项测试通过（真实 MySQL 的 2 项条件测试跳过）；前端 TypeScript 检查和 Vite 生产构建通过。已构建、重新导入并校验私有离线包 `dist/aiot-remote-mqtt-v1.2.8-images.tar`，SHA-256 为 `f595c27fc5e2bb578ee0e8a80babf541f051027c709eb9985fb516156b3a9884`；5 套 Compose 部署回归通过。源码已提交并推送 `Remote-Hivemq` 的 `a2f9e74`。尚未进行群晖真实天气、动态 TTS 和小智实机投递验收。
 
 ## 2026-08-01 小智日志刷新延迟

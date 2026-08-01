@@ -32,7 +32,7 @@ MQTT 认证设计：当前采用全局设备账号模式。MQTT 状态页注册�
 
 ## 环境天气与小智条件播报
 
-环境空间由 `environment_spaces` 保存名称、展示地址、经纬度和主小智设备。天气服务仅能通过后端私有 `ENVIRONMENT_WEATHER_*` 配置请求；`POST /api/environment-spaces/{id}/outdoor/refresh` 获取并保存真实天气/AQI，未配置时返回明确错误，页面不得生成模拟数据。
+环境空间由 `environment_spaces` 保存名称、展示地址、经纬度和主小智设备。天气服务仅能通过后端私有 `ENVIRONMENT_WEATHER_*` 配置请求；`POST /api/environment-spaces/{id}/outdoor/refresh` 使用和风 `/v7/weather/now`（经度,纬度）和 `/airquality/v1/current/{纬度}/{经度}` 获取并保存真实天气/AQI，未配置时返回明确错误，页面不得生成模拟数据。
 
 `environment_announcement_rules` 支持温度或 AQI 的绝对阈值、相邻读数变化幅度、连续命中次数、冷却和静音时段（含跨午夜）。每次判定均在 `environment_announcement_events` 留痕：`CLEAR` 打断连续命中，`OBSERVED` 表示待确认，`SUPPRESSED` 表示被静音、冷却、未绑定设备或未启用动态 TTS 阻止，`PUBLISHED`/`FAILED` 关联既有播报任务。只有已启用空间、有效主设备、私有动态 TTS、连续确认且不在静音和冷却窗口内才允许投递；禁止退化为固定测试 Opus。
 

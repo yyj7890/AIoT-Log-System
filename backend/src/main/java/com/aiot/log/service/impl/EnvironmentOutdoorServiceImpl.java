@@ -48,7 +48,7 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
             String host = properties.getApiHost().replaceAll("/$", "");
             String lat = space.getLatitude().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
             String lon = space.getLongitude().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
-            JsonNode weather = request(host + "/v7/grid-weather/now?location=" + lon + "," + lat);
+            JsonNode weather = request(host + "/v7/weather/now?location=" + lon + "," + lat + "&lang=zh");
             JsonNode air = request(host + "/airquality/v1/current/" + lat + "/" + lon);
             JsonNode now = weather.path("now");
             JsonNode index = air.path("indexes").isArray() && !air.path("indexes").isEmpty() ? air.path("indexes").get(0) : json.createObjectNode();
