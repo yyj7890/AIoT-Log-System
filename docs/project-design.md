@@ -321,6 +321,12 @@ Docker 包含前端/Nginx、Spring Boot、MySQL 和 Mosquitto。Docker 不负责
 
 成品镜像部署使用 `docker-compose.ghcr.yml` 与 `docker-ghcr-start.cmd`、`docker-ghcr-update.cmd`、`docker-ghcr-stop.cmd`。该编排仅引用 GHCR 的前端和后端镜像，MySQL、Mosquitto、命名卷及私有 `.env`/`docker/local/` 生成策略与源码构建版一致。仓库内 GitHub Actions 在 `main` 或版本标签推送后构建镜像；首次发布后必须将 GitHub Packages 可见性设为 Public，才能作为公开部署入口。源码构建版和 GHCR 成品镜像版不得同时运行。
 
+### 部署更新预检与故障定位
+
+每次群晖更新必须先确认 Container Manager 项目实际使用的 **YAML 配置**、镜像标签和 `docker/local` 挂载，而不能仅覆盖 File Station 中同名文件；已有项目应在“项目 → 详情 → YAML 配置”中编辑并部署新设置。部署前预检以下项目：前端宿主机端口、后端端口和 MySQL 端口是否已被群晖服务占用；目标镜像标签是否已经导入；`IOT_CONFIG_DIR` 是否指向 `/app/private-config`；私有目录是否含有预期的持久化配置文件。不得使用“清理”或 `down -v` 作为普通升级手段。
+
+可预见的失败必须直接给出出错阶段和位置：Compose 端口绑定错误应显示冲突端口与服务名；私有配置加载错误应显示缺失文件类别而非密钥内容；外部 API 错误应区分认证、HTTP 状态、网络、TLS、超时、压缩解码和 JSON 解析；业务异常必须保留安全的原因链供后端日志定位。页面和日志都不得输出 PEM、JWT、密码、Authorization 请求头或完整私有地址。
+
 ## 10. 验收标准
 
 - 设备、日志、标签和告警规则可以正常管理
