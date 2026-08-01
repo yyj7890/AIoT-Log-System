@@ -59,7 +59,7 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
             reading.primaryPollutant = text(index.path("primaryPollutant"), "name"); reading.observedAt = LocalDateTime.now();
             readings.insert(reading); evaluator.evaluate(reading); return toVO(reading);
         } catch (BusinessException exception) { throw exception; }
-        catch (Exception exception) { throw new BusinessException(ErrorCode.ENVIRONMENT_WEATHER_REQUEST_FAILED); }
+        catch (Exception exception) { throw new BusinessException(ErrorCode.ENVIRONMENT_WEATHER_REQUEST_FAILED, diagnostic(exception)); }
     }
 
     @Override public EnvironmentOutdoorReadingVO latest(Long spaceId) {
@@ -70,8 +70,11 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
     private JsonNode request(String url) throws Exception {
         HttpResponse<String> response = http.send(HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + jwt.createToken()).GET().build(), HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) throw new IllegalStateException("qweather_http_" + response.statusCode());
-        return json.readTree(response.body());
+        JsonNode body = json.readTree(response.body());
+        if (body.has("code") && !"200".equals(body.path("code").asText())) throw new IllegalStateException("qweather_api_" + body.path("code").asText());
+        return body;
     }
+    private String diagnostic(Exception exception) { String m=exception.getMessage()==null?"":exception.getMessage(); if(m.contains("qweather_jwt_generation_failed"))return "天气 JWT 私钥或凭证格式无效"; if(m.startsWith("qweather_http_"))return "天气服务 HTTP 状态："+m.substring(14); if(m.startsWith("qweather_api_"))return "天气服务业务状态："+m.substring(13); if(m.contains("UnknownHost")||m.contains("ConnectException")||m.contains("SSL"))return "天气服务网络、Host 或 TLS 连接失败"; return "天气服务请求失败，请检查私有配置"; }
     private BigDecimal decimal(JsonNode node, String key) { return node.hasNonNull(key) ? new BigDecimal(node.get(key).asText()) : null; }
     private Integer integer(JsonNode node, String key) { try { return node.hasNonNull(key) ? Integer.valueOf(node.get(key).asText()) : null; } catch (NumberFormatException e) { return null; } }
     private String text(JsonNode node, String key) { return node.hasNonNull(key) ? node.get(key).asText() : null; }
