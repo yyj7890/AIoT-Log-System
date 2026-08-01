@@ -17,7 +17,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+import java.net.SocketTimeoutException;
 import java.net.http.HttpClient;
+import java.net.http.HttpTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
@@ -74,7 +78,22 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
         if (body.has("code") && !"200".equals(body.path("code").asText())) throw new IllegalStateException("qweather_api_" + body.path("code").asText());
         return body;
     }
-    private String diagnostic(Exception exception) { String m=exception.getMessage()==null?"":exception.getMessage(); if(m.contains("qweather_jwt_generation_failed"))return "天气 JWT 私钥或凭证格式无效"; if(m.startsWith("qweather_http_"))return "天气服务 HTTP 状态："+m.substring(14); if(m.startsWith("qweather_api_"))return "天气服务业务状态："+m.substring(13); if(m.contains("UnknownHost")||m.contains("ConnectException")||m.contains("SSL"))return "天气服务网络、Host 或 TLS 连接失败"; return "天气服务请求失败，请检查私有配置"; }
+    private String diagnostic(Exception exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            String message = cause.getMessage() == null ? "" : cause.getMessage();
+            if (message.contains("qweather_jwt_generation_failed")) return "天气 JWT 私钥或凭证格式无效";
+            if (message.startsWith("qweather_http_")) return "天气服务 HTTP 状态：" + message.substring(14);
+            if (message.startsWith("qweather_api_")) return "天气服务业务状态：" + message.substring(13);
+            if (cause instanceof UnknownHostException || cause instanceof java.nio.channels.UnresolvedAddressException)
+                return "天气服务 Host 无法解析";
+            if (cause instanceof HttpTimeoutException || cause instanceof SocketTimeoutException)
+                return "天气服务请求超时";
+            if (cause instanceof ConnectException) return "天气服务连接失败";
+            if (cause instanceof javax.net.ssl.SSLException || message.contains("SSL"))
+                return "天气服务 TLS 连接失败";
+        }
+        return "天气服务请求失败，请检查后端运行日志";
+    }
     private BigDecimal decimal(JsonNode node, String key) { return node.hasNonNull(key) ? new BigDecimal(node.get(key).asText()) : null; }
     private Integer integer(JsonNode node, String key) { try { return node.hasNonNull(key) ? Integer.valueOf(node.get(key).asText()) : null; } catch (NumberFormatException e) { return null; } }
     private String text(JsonNode node, String key) { return node.hasNonNull(key) ? node.get(key).asText() : null; }

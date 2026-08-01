@@ -32,6 +32,7 @@
 
 | 固定标签 | 状态 | 前端/页面变化 | 后端/数据库变化 | 部署与兼容说明 |
 | --- | --- | --- | --- | --- |
+| `v1.3.5-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 天气请求安全遍历 HTTP 异常链，区分 Host、超时、连接与 TLS，未分类异常提示查看后端日志；无数据库变更 | 导入 `dist/aiot-remote-mqtt-v1.3.5-images.tar`，SHA-256 `1dea439f5b664ef137dc083cadcbccce4249730349876ba4a9ba4e1debab41d5`；复用项目名、MySQL 卷和整个 `docker/local` 升级，不得 `down -v` |
 | `v1.3.4-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 修复远程 Compose 遗漏 `IOT_CONFIG_DIR`，页面保存的天气配置和 PEM 持久化到已挂载私有目录；无数据库变更 | 导入 `dist/aiot-remote-mqtt-v1.3.4-images.tar`，SHA-256 `d031e330715bd3ccf0b501f06ea2ba000ad1309c7b7ab5d78f3f925de9830039`；必须复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v`；升级后在环境监测页重新保存天气配置一次 |
 | `v1.3.3-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 天气刷新失败安全区分 JWT/PEM 格式、HTTP 状态、业务状态和 Host/网络/TLS，不泄露机密 | 导入 `dist/aiot-remote-mqtt-v1.3.3-images.tar`，SHA-256 `7cc3180e3c29eb9f57e7b2fd49cd2f9a46f2838b4747437cec246092a61dce88`；若报 HTTP 401，应核对和风凭据 ID、项目 ID 与匹配私钥 |
 | `v1.3.2-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 天气 API Host 缺少协议时自动补全 HTTPS | 导入 `dist/aiot-remote-mqtt-v1.3.2-images.tar`，SHA-256 `b47772b0668d0d12ffb5e3bdf0013fe268200bdd26a7091484fc6cd08fb1b798`；复用私有天气配置，不得 `down -v` |

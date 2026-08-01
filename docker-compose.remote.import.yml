@@ -1,7 +1,7 @@
 name: aiot-log-system-remote
 
 # For Synology Container Manager after importing
-# dist/aiot-remote-mqtt-v1.3.4-images.tar. Keep the existing project name,
+# dist/aiot-remote-mqtt-v1.3.5-images.tar. Keep the existing project name,
 # docker/local/hivemq-remote.env and mysql-data volume unchanged.
 services:
   mysql:
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: local/aiot-log-backend:v1.3.4-remote-mqtt
+    image: local/aiot-log-backend:v1.3.5-remote-mqtt
     env_file:
       - ./docker/local/hivemq-remote.env
     environment:
@@ -53,7 +53,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: local/aiot-log-frontend:v1.3.4-remote-mqtt
+    image: local/aiot-log-frontend:v1.3.5-remote-mqtt
     ports:
       - "80:80"
     depends_on:

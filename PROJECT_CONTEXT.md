@@ -26,6 +26,8 @@
 - 2026-08-02 天气服务配置可直接在“环境监测”页面维护：Host、JWT kid、项目 ID 与首次/轮换 PEM 私钥由后端私有目录持久化，私钥不回显、不进数据库或 Git；远程 HiveMQ 编排已统一设置 `IOT_CONFIG_DIR=/app/private-config`，确保页面配置写入挂载的 `docker/local` 并跨容器重建保留。
 - 2026-08-02 修复天气配置 Host 既可填写专属域名也可填写完整 HTTPS URL；后端请求前会安全补全缺失的 `https://`。
 - 2026-08-02 修复远程 Compose 遗漏 `IOT_CONFIG_DIR` 导致页面天气配置在容器重建后丢失的问题，已构建私有离线包 `dist/aiot-remote-mqtt-v1.3.4-images.tar`（SHA-256 `d031e330715bd3ccf0b501f06ea2ba000ad1309c7b7ab5d78f3f925de9830039`）。升级必须复用项目名、MySQL 卷和整个 `docker/local`，随后在环境监测页重新保存一次天气配置。
+- 2026-08-02 已验证天气专属 Host 的 DNS/HTTPS 可达；修复 Java HTTP 底层异常被包装后回落为泛化“检查私有配置”的诊断缺口，下一版会安全显示 Host 解析、超时、连接或 TLS 的具体类别，仍不返回机密信息。
+- 2026-08-02 已构建 `dist/aiot-remote-mqtt-v1.3.5-images.tar`（SHA-256 `1dea439f5b664ef137dc083cadcbccce4249730349876ba4a9ba4e1debab41d5`），用于将天气失败从泛化提示改为可操作的安全诊断。
 - 2026-08-01 日志页面刷新收紧为 0.5 秒，并在慢请求结束后最多 50 毫秒补刷；已与环境监测一同构建为 `v1.2.8` 私有离线包。旧 `v1.2.7` 包保留用于回退；`v1.2.8` 尚待群晖导入和真实天气/小智播报验收。
 
 - `Local AI server discovered` 统一显示为“已发现本地 AI 服务”，仅表示发现成功，不能被翻译为已连接；只有 `local_ai_connected` / `Local AI server connected` 才显示为“已连接本地 AI 服务”。2026-07-12 曾实机验证设备在本机服务可用时建立 WebSocket 实际对话；本地服务不可用时固件应安全回退官方小智服务。
