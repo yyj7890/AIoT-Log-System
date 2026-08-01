@@ -63,7 +63,7 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
             reading.primaryPollutant = text(index.path("primaryPollutant"), "name"); reading.observedAt = LocalDateTime.now();
             readings.insert(reading); evaluator.evaluate(reading); return toVO(reading);
         } catch (BusinessException exception) { throw exception; }
-        catch (Exception exception) { throw new BusinessException(ErrorCode.ENVIRONMENT_WEATHER_REQUEST_FAILED, diagnostic(exception)); }
+        catch (Exception exception) { throw new BusinessException(ErrorCode.ENVIRONMENT_WEATHER_REQUEST_FAILED, diagnostic(exception), exception); }
     }
 
     @Override public EnvironmentOutdoorReadingVO latest(Long spaceId) {
