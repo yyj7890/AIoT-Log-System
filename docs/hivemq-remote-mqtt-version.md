@@ -32,6 +32,8 @@
 
 | 固定标签 | 状态 | 前端/页面变化 | 后端/数据库变化 | 部署与兼容说明 |
 | --- | --- | --- | --- | --- |
+| `v1.3.4-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 修复远程 Compose 遗漏 `IOT_CONFIG_DIR`，页面保存的天气配置和 PEM 持久化到已挂载私有目录；无数据库变更 | 导入 `dist/aiot-remote-mqtt-v1.3.4-images.tar`，SHA-256 `d031e330715bd3ccf0b501f06ea2ba000ad1309c7b7ab5d78f3f925de9830039`；必须复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v`；升级后在环境监测页重新保存天气配置一次 |
+| `v1.3.3-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 天气刷新失败安全区分 JWT/PEM 格式、HTTP 状态、业务状态和 Host/网络/TLS，不泄露机密 | 导入 `dist/aiot-remote-mqtt-v1.3.3-images.tar`，SHA-256 `7cc3180e3c29eb9f57e7b2fd49cd2f9a46f2838b4747437cec246092a61dce88`；若报 HTTP 401，应核对和风凭据 ID、项目 ID 与匹配私钥 |
 | `v1.3.2-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 天气 API Host 缺少协议时自动补全 HTTPS | 导入 `dist/aiot-remote-mqtt-v1.3.2-images.tar`，SHA-256 `b47772b0668d0d12ffb5e3bdf0013fe268200bdd26a7091484fc6cd08fb1b798`；复用私有天气配置，不得 `down -v` |
 | `v1.3.1-remote-mqtt` | **私有离线包已构建，待群晖导入验收** | 环境监测页增加天气服务配置对话框 | 私有天气配置/PEM 页面保存并跨重启持久化；不写数据库 | 导入 `dist/aiot-remote-mqtt-v1.3.1-images.tar`，SHA-256 `8b781487c38ee6f98547d1b925d1af53cfc60cb5120b9cc4fa0314c54a69e1a1`；复用项目名、MySQL 卷和私有目录，不得 `down -v` |
 | `v1.3.0-remote-mqtt` | **源码已验证；离线包待 Docker 恢复后构建** | 复用 v1.2.9 的环境空间编辑入口 | 修复和风实时天气端点为 `/v7/weather/now`；无数据库变更 | 当前不得导入；包生成后才可复用项目名、MySQL 卷、`hivemq-remote.env` 和 PEM 升级，且不得 `down -v` |

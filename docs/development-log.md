@@ -4,6 +4,16 @@
 
 完整早期过程保存在 `../history/docs-before-consolidation-2026-07-09.zip`，包括原始命令、长篇报错和逐步搭建过程。
 
+## 2026-08-02 天气私有配置持久化修复
+
+问题：群晖远程离线编排已将 `docker/local` 挂载为 `/app/private-config`，但遗漏 `IOT_CONFIG_DIR=/app/private-config`。环境监测页面保存天气 Host、JWT kid、项目 ID 和 PEM 后，后端会写入容器内未挂载的默认 `config/` 目录；容器重建后配置丢失，页面刷新退回为“天气服务请求失败，请检查私有配置”。
+
+根因：远程 MQTT 编排与本地 Docker 编排使用不同的私有目录挂载目标，而天气配置控制器按 `IOT_CONFIG_DIR` 选择持久化目录；远程编排没有同步该变量。
+
+处理：为源码远程编排、群晖离线导入编排、GHCR 和 TCR 远程编排统一设置 `IOT_CONFIG_DIR=/app/private-config`。新建或保存天气配置后，`environment-weather.properties` 和 `qweather-ed25519-private.pem` 均会位于已挂载、被 Git 忽略的 `docker/local` 私有目录；不记录或输出其中的机密值。
+
+验证：Compose 配置解析需确认四种远程编排的 `IOT_CONFIG_DIR`、私有目录挂载与 `MQTT_REMOTE_CREDENTIAL_FILE` 指向相同的 `/app/private-config`。群晖升级后需在环境监测页重新保存一次天气配置，再刷新室外数据；若仍返回 HTTP 401，则属于和风 JWT 凭据与私钥公钥对不匹配，和持久化路径无关。
+
 ## 2026-08-01 环境天气条件播报
 
 问题：旧对话留下了环境空间、天气读取和 V10 表结构的半成品，但规则实际只按阈值立即投递，未实现连续确认、变化判断、静音、冷却或前端规则管理；动态 TTS 未配置时还可能回退固定测试语音，不能用于真实天气告警。

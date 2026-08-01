@@ -32,6 +32,7 @@ services:
       MQTT_DISCOVERY_ENABLED: "false"
       MQTT_CLIENT_ID: aiot-log-backend-remote-local-source
       MQTT_REMOTE_CREDENTIAL_FILE: /app/private-config/hivemq-remote-credentials.properties
+      IOT_CONFIG_DIR: /app/private-config
       TZ: Asia/Shanghai
     ports:
       - "8080:8080"

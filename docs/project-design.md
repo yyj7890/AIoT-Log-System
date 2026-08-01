@@ -32,7 +32,7 @@ MQTT 认证设计：当前采用全局设备账号模式。MQTT 状态页注册�
 
 ## 环境天气与小智条件播报
 
-环境空间由 `environment_spaces` 保存名称、展示地址、经纬度和主小智设备。天气服务仅能通过后端私有 `ENVIRONMENT_WEATHER_*` 配置请求；`POST /api/environment-spaces/{id}/outdoor/refresh` 使用和风 `/v7/weather/now`（经度,纬度）和 `/airquality/v1/current/{纬度}/{经度}` 获取并保存真实天气/AQI，未配置时返回明确错误，页面不得生成模拟数据。
+环境空间由 `environment_spaces` 保存名称、展示地址、经纬度和主小智设备。天气服务可由环境监测页通过 `GET/PUT /api/environment-weather-config` 维护 Host、JWT kid、项目 ID 和 PEM 私钥；PEM 只写入后端私有目录、永不回显，不写数据库或仓库。启动时仍兼容后端私有 `ENVIRONMENT_WEATHER_*` 配置。`POST /api/environment-spaces/{id}/outdoor/refresh` 使用和风 `/v7/weather/now`（经度,纬度）和 `/airquality/v1/current/{纬度}/{经度}` 获取并保存真实天气/AQI，未配置时返回明确错误，页面不得生成模拟数据。
 
 `environment_announcement_rules` 支持温度或 AQI 的绝对阈值、相邻读数变化幅度、连续命中次数、冷却和静音时段（含跨午夜）。每次判定均在 `environment_announcement_events` 留痕：`CLEAR` 打断连续命中，`OBSERVED` 表示待确认，`SUPPRESSED` 表示被静音、冷却、未绑定设备或未启用动态 TTS 阻止，`PUBLISHED`/`FAILED` 关联既有播报任务。只有已启用空间、有效主设备、私有动态 TTS、连续确认且不在静音和冷却窗口内才允许投递；禁止退化为固定测试 Opus。
 
@@ -397,7 +397,7 @@ Docker 包含前端/Nginx、Spring Boot、MySQL 和 Mosquitto。Docker 不负责
 
 远程模式提供 `GET/PUT /api/mqtt/remote-credential`。GET 只返回用户名、密码是否已配置以及是否启用页面持久化覆盖；PUT 接收新用户名和密码，原子写入宿主机私有文件并让 Paho 订阅端立即关闭旧连接、使用新凭据重连。密码不通过响应返回、不写数据库、不写业务日志。
 
-远程 Compose 将 `docker/local` 挂载到后端 `/app/private-config`，运行时文件为 `hivemq-remote-credentials.properties`。首次运行仍可从 `hivemq-remote.env` 读取凭据；页面保存后私有运行时文件优先，容器和镜像更新继续复用。Broker 域名继续脱敏且不可在页面修改。由于 P1 登录权限仍暂停，此页面只允许在可信网络使用，系统不得直接暴露公网。
+远程 Compose 将 `docker/local` 挂载到后端 `/app/private-config`，并必须设置 `IOT_CONFIG_DIR=/app/private-config`；运行时文件为 `hivemq-remote-credentials.properties`，环境天气页面保存的 `environment-weather.properties` 和 `qweather-ed25519-private.pem` 也使用同一私有目录。首次运行仍可从 `hivemq-remote.env` 读取凭据；页面保存后私有运行时文件优先，容器和镜像更新继续复用。Broker 域名继续脱敏且不可在页面修改。由于 P1 登录权限仍暂停，此页面只允许在可信网络使用，系统不得直接暴露公网。
 
 ## 15. 两种运行架构
 
