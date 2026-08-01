@@ -46,6 +46,7 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
             throw new BusinessException(ErrorCode.ENVIRONMENT_WEATHER_NOT_CONFIGURED);
         try {
             String host = properties.getApiHost().replaceAll("/$", "");
+            if (!host.matches("^https?://.*")) host = "https://" + host;
             String lat = space.getLatitude().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
             String lon = space.getLongitude().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
             JsonNode weather = request(host + "/v7/weather/now?location=" + lon + "," + lat + "&lang=zh");

@@ -32,6 +32,7 @@
 
 | 固定标签 | 状态 | 前端/页面变化 | 后端/数据库变化 | 部署与兼容说明 |
 | --- | --- | --- | --- | --- |
+| `v1.3.2-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 天气 API Host 缺少协议时自动补全 HTTPS | 导入 `dist/aiot-remote-mqtt-v1.3.2-images.tar`，SHA-256 `b47772b0668d0d12ffb5e3bdf0013fe268200bdd26a7091484fc6cd08fb1b798`；复用私有天气配置，不得 `down -v` |
 | `v1.3.1-remote-mqtt` | **私有离线包已构建，待群晖导入验收** | 环境监测页增加天气服务配置对话框 | 私有天气配置/PEM 页面保存并跨重启持久化；不写数据库 | 导入 `dist/aiot-remote-mqtt-v1.3.1-images.tar`，SHA-256 `8b781487c38ee6f98547d1b925d1af53cfc60cb5120b9cc4fa0314c54a69e1a1`；复用项目名、MySQL 卷和私有目录，不得 `down -v` |
 | `v1.3.0-remote-mqtt` | **源码已验证；离线包待 Docker 恢复后构建** | 复用 v1.2.9 的环境空间编辑入口 | 修复和风实时天气端点为 `/v7/weather/now`；无数据库变更 | 当前不得导入；包生成后才可复用项目名、MySQL 卷、`hivemq-remote.env` 和 PEM 升级，且不得 `down -v` |
 | `v1.2.9-remote-mqtt` | **私有离线包已构建，待群晖导入与实机验收** | 环境监测可编辑已有空间，补填坐标无需删除重建 | 无数据库变更，复用 V8～V10 | 导入 `dist/aiot-remote-mqtt-v1.2.9-images.tar`，SHA-256 `0ebd377c551a491f1bd726bad0aae7991a64fba33cac99f6cb76a81cff0d3197`；复用项目名、MySQL 卷、`hivemq-remote.env` 和 PEM，不得 `down -v` |
