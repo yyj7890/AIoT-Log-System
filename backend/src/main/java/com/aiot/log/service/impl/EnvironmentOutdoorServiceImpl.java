@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
@@ -25,6 +27,9 @@ import java.net.http.HttpTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.zip.GZIPInputStream;
 
 @Service
 public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService {
@@ -72,11 +77,20 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
         return reading == null ? null : toVO(reading);
     }
     private JsonNode request(String url) throws Exception {
-        HttpResponse<String> response = http.send(HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + jwt.createToken()).GET().build(), HttpResponse.BodyHandlers.ofString());
+        HttpResponse<byte[]> response = http.send(HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + jwt.createToken()).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
         if (response.statusCode() != 200) throw new IllegalStateException("qweather_http_" + response.statusCode());
-        JsonNode body = json.readTree(response.body());
+        JsonNode body = json.readTree(responseText(response));
         if (body.has("code") && !"200".equals(body.path("code").asText())) throw new IllegalStateException("qweather_api_" + body.path("code").asText());
         return body;
+    }
+    private String responseText(HttpResponse<byte[]> response) throws Exception {
+        byte[] raw = response.body();
+        String encoding = response.headers().firstValue("Content-Encoding").orElse("").toLowerCase(Locale.ROOT);
+        boolean gzip = encoding.contains("gzip") || (raw.length >= 2 && raw[0] == (byte) 0x1f && raw[1] == (byte) 0x8b);
+        if (!gzip) return new String(raw, StandardCharsets.UTF_8);
+        try (InputStream input = new GZIPInputStream(new ByteArrayInputStream(raw))) {
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
     private String diagnostic(Exception exception) {
         for (Throwable cause = exception; cause != null; cause = cause.getCause()) {

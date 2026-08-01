@@ -10,6 +10,8 @@
 
 补充日志修复：上述未分类提示的 `BusinessException` 初始实现没有保留原始异常作为 cause，导致群晖日志只显示业务异常和 Tomcat 调用链，无法进一步定位。现使用带 cause 的业务异常构造函数保留原因链；页面仍仅显示安全诊断，容器日志中可通过 `Caused by:` 查看异常类型。不得将私钥、JWT 或认证请求头记录到页面或业务日志。
 
+补充响应兼容：群晖日志显示认证请求返回后，Jackson 在 JSON 解析阶段遇到 `CTRL-CHAR`。这说明响应已通过 HTTP 状态检查，但内容是 gzip 压缩字节而非明文 JSON；并非 JWT 或私有配置错误。天气客户端改为读取字节响应，根据 `Content-Encoding` 或 gzip 文件头自动解压并以 UTF-8 解析，兼容压缩和未压缩的和风响应。
+
 问题：群晖远程离线编排已将 `docker/local` 挂载为 `/app/private-config`，但遗漏 `IOT_CONFIG_DIR=/app/private-config`。环境监测页面保存天气 Host、JWT kid、项目 ID 和 PEM 后，后端会写入容器内未挂载的默认 `config/` 目录；容器重建后配置丢失，页面刷新退回为“天气服务请求失败，请检查私有配置”。
 
 根因：远程 MQTT 编排与本地 Docker 编排使用不同的私有目录挂载目标，而天气配置控制器按 `IOT_CONFIG_DIR` 选择持久化目录；远程编排没有同步该变量。
