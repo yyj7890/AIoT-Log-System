@@ -53,7 +53,7 @@ services:
   frontend:
     image: local/aiot-log-frontend:v1.3.7-remote-mqtt
     ports:
-      - "80:80"
+      - "${WEB_PORT:-18080}:80"
     depends_on:
       backend:
         condition: service_healthy
