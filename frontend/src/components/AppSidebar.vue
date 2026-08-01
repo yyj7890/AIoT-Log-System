@@ -16,6 +16,10 @@
         <el-icon><Cpu /></el-icon>
         <span>设备中心</span>
       </el-menu-item>
+      <el-menu-item index="/environment">
+        <el-icon><Sunny /></el-icon>
+        <span>环境监测</span>
+      </el-menu-item>
       <el-menu-item index="/alert-rules">
         <el-icon><Bell /></el-icon>
         <span>告警规则</span>
@@ -39,11 +43,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { AlarmClock, Bell, Connection, Cpu, DataAnalysis, PriceTag } from '@element-plus/icons-vue'
+import { AlarmClock, Bell, Connection, Cpu, DataAnalysis, PriceTag, Sunny } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activePath = computed(() => {
   if (route.path.startsWith('/devices')) return '/devices'
+  if (route.path.startsWith('/environment')) return '/environment'
   if (route.path.startsWith('/logs')) return '/logs'
   if (route.path.startsWith('/alert-rules')) return '/alert-rules'
   if (route.path.startsWith('/reminders')) return '/reminders'

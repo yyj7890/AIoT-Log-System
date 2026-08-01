@@ -1,0 +1,3 @@
+package com.aiot.log.entity;
+import com.baomidou.mybatisplus.annotation.TableName; import java.math.BigDecimal; import java.time.LocalDateTime;
+@TableName("environment_outdoor_readings") public class EnvironmentOutdoorReading { public Long id; public Long spaceId; public BigDecimal temperature; public BigDecimal humidity; public String weatherText; public Integer aqi; public BigDecimal pm2p5; public String primaryPollutant; public LocalDateTime observedAt; public LocalDateTime createdAt; public Long getId(){return id;} public Long getSpaceId(){return spaceId;} public LocalDateTime getObservedAt(){return observedAt;} }

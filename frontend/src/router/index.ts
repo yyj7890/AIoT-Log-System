@@ -12,6 +12,7 @@ const router = createRouter({
         { path: 'dashboard', name: 'dashboard', component: () => import('@/views/DashboardView.vue'), meta: { title: '首页统计' } },
         { path: 'devices', name: 'devices', component: () => import('@/views/DeviceListView.vue'), meta: { title: '设备管理' } },
         { path: 'devices/:id', name: 'device-detail', component: () => import('@/views/DeviceDetailView.vue'), meta: { title: '设备详情' } },
+        { path: 'environment', name: 'environment', component: () => import('@/views/EnvironmentMonitorView.vue'), meta: { title: '环境监测' } },
         { path: 'reminders', name: 'reminders', component: () => import('@/views/ReminderListView.vue'), meta: { title: '提醒管理' } },
         { path: 'logs', name: 'logs', component: () => import('@/views/LogListView.vue'), meta: { title: '日志管理' } },
         { path: 'alert-rules', name: 'alert-rules', component: () => import('@/views/AlertRuleListView.vue'), meta: { title: '告警规则' } },

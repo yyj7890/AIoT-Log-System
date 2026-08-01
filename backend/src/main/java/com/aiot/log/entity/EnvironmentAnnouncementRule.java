@@ -1,0 +1,3 @@
+package com.aiot.log.entity;
+import com.baomidou.mybatisplus.annotation.TableName; import java.math.BigDecimal; import java.time.LocalTime;
+@TableName("environment_announcement_rules") public class EnvironmentAnnouncementRule { public Long id; public Long spaceId; public String name; public String metric; public BigDecimal changeValue; public BigDecimal thresholdValue; public Integer consecutiveCount; public Integer cooldownMinutes; public LocalTime quietStart; public LocalTime quietEnd; public Boolean bypassQuietForSevere; public Boolean enabled; public Long getSpaceId(){return spaceId;} public Boolean getEnabled(){return enabled;} }

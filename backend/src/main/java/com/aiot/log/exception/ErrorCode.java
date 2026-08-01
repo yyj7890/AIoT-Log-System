@@ -33,6 +33,9 @@ public enum ErrorCode {
     ALERT_METRIC_INVALID(HttpStatus.BAD_REQUEST, "告警指标不合法"),
     ALERT_OPERATOR_INVALID(HttpStatus.BAD_REQUEST, "比较符不合法"),
     ALERT_LEVEL_INVALID(HttpStatus.BAD_REQUEST, "告警等级不合法"),
+    ENVIRONMENT_SPACE_NOT_FOUND(HttpStatus.NOT_FOUND, "环境空间不存在"),
+    ENVIRONMENT_WEATHER_NOT_CONFIGURED(HttpStatus.CONFLICT, "室外天气服务尚未配置或该空间未填写坐标"),
+    ENVIRONMENT_WEATHER_REQUEST_FAILED(HttpStatus.BAD_GATEWAY, "室外天气服务请求失败"),
 
     MQTT_REMOTE_CREDENTIAL_READ_ONLY(
             HttpStatus.BAD_REQUEST,

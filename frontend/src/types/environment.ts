@@ -1,0 +1,4 @@
+export interface EnvironmentSpace { id:number; name:string; address?:string; latitude?:number; longitude?:number; primarySpeakerDeviceId?:number; primarySpeakerName?:string; enabled:boolean; outdoorSourceConfigured:boolean; createdAt:string; updatedAt:string }
+export interface EnvironmentSpacePayload { name:string; address?:string; latitude?:number; longitude?:number; primarySpeakerDeviceId?:number; enabled?:boolean }
+export interface EnvironmentOutdoorReading { temperature?:number; humidity?:number; weatherText?:string; aqi?:number; pm2p5?:number; primaryPollutant?:string; observedAt?:string }
+export interface EnvironmentAnnouncementRule { id:number; spaceId:number; name:string; metric:'temperature'|'aqi'; changeValue?:number; thresholdValue?:number; consecutiveCount:number; cooldownMinutes:number; quietStart?:string; quietEnd?:string; enabled:boolean }

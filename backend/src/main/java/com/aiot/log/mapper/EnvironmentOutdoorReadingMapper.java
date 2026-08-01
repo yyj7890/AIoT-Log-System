@@ -1,0 +1,1 @@
+package com.aiot.log.mapper; import com.aiot.log.entity.EnvironmentOutdoorReading; import com.baomidou.mybatisplus.core.mapper.BaseMapper; public interface EnvironmentOutdoorReadingMapper extends BaseMapper<EnvironmentOutdoorReading> {}

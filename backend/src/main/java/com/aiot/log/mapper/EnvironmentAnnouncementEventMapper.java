@@ -1,0 +1,1 @@
+package com.aiot.log.mapper; import com.aiot.log.entity.EnvironmentAnnouncementEvent; import com.baomidou.mybatisplus.core.mapper.BaseMapper; public interface EnvironmentAnnouncementEventMapper extends BaseMapper<EnvironmentAnnouncementEvent> {}

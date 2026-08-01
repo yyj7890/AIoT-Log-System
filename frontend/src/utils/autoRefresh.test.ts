@@ -37,7 +37,7 @@ describe('createAutoRefreshController', () => {
     expect(refresh).toHaveBeenCalledTimes(2)
   })
 
-  it('skips overlapping requests and recovers on the next interval', () => {
+  it('skips overlapping requests and refreshes promptly after they finish', () => {
     let pending = true
     const refresh = vi.fn()
     const controller = createController({ refresh, isPending: () => pending })
@@ -47,7 +47,7 @@ describe('createAutoRefreshController', () => {
     expect(refresh).not.toHaveBeenCalled()
 
     pending = false
-    vi.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(50)
     expect(refresh).toHaveBeenCalledTimes(1)
   })
 

@@ -15,16 +15,33 @@ export interface AutoRefreshController {
 
 export function createAutoRefreshController(options: AutoRefreshOptions): AutoRefreshController {
   let timer: ReturnType<typeof setInterval> | undefined
+  let pendingRetryTimer: ReturnType<typeof setTimeout> | undefined
 
   function refreshNow() {
-    if (options.isHidden() || options.isPending()) return
+    if (options.isHidden()) return
+    if (options.isPending()) {
+      // 不并发请求，但不能因为一次较慢的响应错过整个刷新周期。
+      // 请求结束后的下一次检查最多延后 50 ms。
+      if (!pendingRetryTimer) {
+        pendingRetryTimer = setTimeout(() => {
+          pendingRetryTimer = undefined
+          refreshNow()
+        }, 50)
+      }
+      return
+    }
     options.refresh()
   }
 
   function stop() {
-    if (!timer) return
-    clearInterval(timer)
-    timer = undefined
+    if (timer) {
+      clearInterval(timer)
+      timer = undefined
+    }
+    if (pendingRetryTimer) {
+      clearTimeout(pendingRetryTimer)
+      pendingRetryTimer = undefined
+    }
   }
 
   function start() {

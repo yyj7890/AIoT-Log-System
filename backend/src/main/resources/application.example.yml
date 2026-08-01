@@ -79,6 +79,14 @@ mqtt:
 announcement:
   test-enabled: ${ANNOUNCEMENT_TEST_ENABLED:false}
   fixed-test-resource: ${ANNOUNCEMENT_FIXED_TEST_RESOURCE:classpath:announcements/fixed-test/manifest.json}
+environment:
+  weather:
+    enabled: ${ENVIRONMENT_WEATHER_ENABLED:false}
+    provider: ${ENVIRONMENT_WEATHER_PROVIDER:qweather}
+    api-host: ${ENVIRONMENT_WEATHER_API_HOST:}
+    jwt-kid: ${ENVIRONMENT_WEATHER_JWT_KID:}
+    jwt-project-id: ${ENVIRONMENT_WEATHER_JWT_PROJECT_ID:}
+    jwt-private-key-file: ${ENVIRONMENT_WEATHER_JWT_PRIVATE_KEY_FILE:}
 reminder:
   scheduler-enabled: ${REMINDER_SCHEDULER_ENABLED:false}
   poll-interval-ms: ${REMINDER_POLL_INTERVAL_MS:30000}

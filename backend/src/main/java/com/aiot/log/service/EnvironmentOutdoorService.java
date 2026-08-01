@@ -1,0 +1,1 @@
+package com.aiot.log.service; import com.aiot.log.vo.EnvironmentOutdoorReadingVO; public interface EnvironmentOutdoorService { EnvironmentOutdoorReadingVO refresh(Long spaceId); EnvironmentOutdoorReadingVO latest(Long spaceId); }
