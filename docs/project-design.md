@@ -397,7 +397,7 @@ Docker 包含前端/Nginx、Spring Boot、MySQL 和 Mosquitto。Docker 不负责
 
 远程模式提供 `GET/PUT /api/mqtt/remote-credential`。GET 只返回用户名、密码是否已配置以及是否启用页面持久化覆盖；PUT 接收新用户名和密码，原子写入宿主机私有文件并让 Paho 订阅端立即关闭旧连接、使用新凭据重连。密码不通过响应返回、不写数据库、不写业务日志。
 
-远程 Compose 将 `docker/local` 挂载到后端 `/app/private-config`，并必须设置 `IOT_CONFIG_DIR=/app/private-config`；运行时文件为 `hivemq-remote-credentials.properties`，环境天气页面保存的 `environment-weather.properties` 和 `qweather-ed25519-private.pem` 也使用同一私有目录。首次运行仍可从 `hivemq-remote.env` 读取凭据；页面保存后私有运行时文件优先，容器和镜像更新继续复用。Broker 域名继续脱敏且不可在页面修改。由于 P1 登录权限仍暂停，此页面只允许在可信网络使用，系统不得直接暴露公网。
+远程 Compose 将 `docker/local` 挂载到后端 `/app/private-config`，并必须设置 `IOT_CONFIG_DIR=/app/private-config`；运行时文件为 `hivemq-remote-credentials.properties`，环境天气页面保存的 `environment-weather.properties` 和 `qweather-ed25519-private.pem` 也使用同一私有目录。首次运行仍可从 `hivemq-remote.env` 读取凭据；页面保存后私有运行时文件优先，容器和镜像更新继续复用。远程后端不发布宿主机 `8080`，前端通过 Docker 内部服务名访问 `/api`，避免与群晖已有服务冲突。Broker 域名继续脱敏且不可在页面修改。由于 P1 登录权限仍暂停，此页面只允许在可信网络使用，系统不得直接暴露公网。
 
 ## 15. 两种运行架构
 
