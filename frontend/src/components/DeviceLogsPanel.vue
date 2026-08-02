@@ -102,7 +102,8 @@ const titleMap: Record<string, string> = {
 
 const contentMap: Record<string, string> = {
   'Firmware initialization started': '固件开始初始化',
-  'Firmware initialization completed': '固件初始化完成',
+  'Firmware initialization completed': '固件启动完成',
+  'Firmware startup completed': '固件启动完成',
   'Wi-Fi connected': 'Wi-Fi 已连接',
   'Log MQTT connected': '日志 MQTT 已连接',
   'Log MQTT connection failed and was retried': '日志 MQTT 连接失败，正在重试',

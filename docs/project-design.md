@@ -16,7 +16,7 @@
 
 本地 AI WebSocket 状态映射：`Local AI WebSocket hello completed` 与 `local_ai_websocket_hello_completed` 显示为“本地 AI WebSocket 握手完成”，表示设备已完成本地 AI WebSocket 的 hello 握手。
 
-运行日志汇总约定：设备端无需改变一条事件一条 MQTT 消息的发送方式。后端针对同一设备，在默认 30 秒窗口内将连续 `/log` 消息更新为同一条 `DEVICE` 日志，标题为“设备运行上报（n 条）”。每行仅保存事件标题与消息中较有信息量的一项，例如“Wi-Fi 已连接”只保留一次；前端详情将多行显示为带箭头的事件流程。`startup` 与 `firmware_started` 是固件启动批次边界，必须强制创建新日志，避免设备复位发生在窗口内时与前一轮事件混合。窗口由 `mqtt.runtime-log-merge-window-seconds`（环境变量 `MQTT_RUNTIME_LOG_MERGE_WINDOW_SECONDS`）配置；其余事件超过窗口会新建日志。
+运行日志汇总约定：设备端无需改变一条事件一条 MQTT 消息的发送方式。后端针对同一设备，在默认 30 秒窗口内将连续 `/log` 消息更新为同一条 `DEVICE` 日志，标题为“设备运行上报（n 条）”。每行仅保存事件标题与消息中较有信息量的一项，例如“Wi-Fi 已连接”只保留一次；前端详情将多行显示为带箭头的事件流程。仅 `startup` 是固件启动批次边界，必须强制创建新日志，避免设备复位发生在窗口内时与前一轮事件混合；紧随该事件的 `firmware_started` 属于同一次启动并追加到当前日志。若新版固件把 `startup` 延后上报，但当前批次更新时间不超过 2 秒，则将它视为同一次启动的乱序事件并合并；超过 2 秒仍创建新批次。窗口由 `mqtt.runtime-log-merge-window-seconds`（环境变量 `MQTT_RUNTIME_LOG_MERGE_WINDOW_SECONDS`）配置；其余事件超过窗口会新建日志。
 
 日志列表实时性：全局日志页和设备工作台日志在页面可见时每 0.5 秒重新请求当前筛选条件和当前分页。标签页隐藏、路由离开时停止定时器；返回标签页时立即刷新。自动刷新不改变筛选、分页、编辑框或详情框状态；若上一请求未完成，最多 50 毫秒后补试，避免慢请求连续跳过刷新周期。
 

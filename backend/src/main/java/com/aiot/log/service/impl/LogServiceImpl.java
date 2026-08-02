@@ -175,10 +175,13 @@ public class LogServiceImpl implements LogService {
         if (isMqttRecoveryEvent(request)) {
             resolveLatestPendingMqttIncident(device.getId());
         }
-        // A startup event starts a new firmware boot sequence. It must never be merged
-        // into the tail of the previous sequence, even when the reset happens within
-        // the normal runtime-event merge window.
-        LogRecord logRecord = isStartupEvent(request) ? null : findRecentRuntimeLog(device.getId());
+        LogRecord recentRuntimeLog = findRecentRuntimeLog(device.getId());
+        // `startup` normally starts a new boot batch. New XiaoZhi firmware can publish
+        // that event just after its other startup events, however. Only tolerate this
+        // transport reordering for two seconds; a later startup still marks a real reboot.
+        LogRecord logRecord = isBootBoundaryEvent(request) && !isDelayedStartupEvent(recentRuntimeLog)
+                ? null
+                : recentRuntimeLog;
         if (logRecord != null) {
             // QoS 1 may redeliver a message. Suppress only an immediately adjacent,
             // byte-for-byte identical normalized summary in the same boot batch.
@@ -480,8 +483,9 @@ public class LogServiceImpl implements LogService {
         if ("Firmware initialization started".equals(message)) {
             return "固件开始初始化";
         }
-        if ("Firmware initialization completed".equals(message)) {
-            return "固件初始化完成";
+        if ("Firmware initialization completed".equals(message)
+                || "Firmware startup completed".equals(message)) {
+            return "固件启动完成";
         }
         if ("Wi-Fi connected".equals(message)) {
             return "Wi-Fi 已连接";
@@ -531,9 +535,15 @@ public class LogServiceImpl implements LogService {
         return message;
     }
 
-    private boolean isStartupEvent(DeviceRuntimeLogCreateRequest request) {
-        return "startup".equals(request.getEventType())
-                || "firmware_started".equals(request.getEventType());
+    private boolean isBootBoundaryEvent(DeviceRuntimeLogCreateRequest request) {
+        return "startup".equals(request.getEventType());
+    }
+
+    private boolean isDelayedStartupEvent(LogRecord recentRuntimeLog) {
+        if (recentRuntimeLog == null || recentRuntimeLog.getUpdatedAt() == null) {
+            return false;
+        }
+        return !recentRuntimeLog.getUpdatedAt().isBefore(LocalDateTime.now().minusSeconds(2));
     }
 
     private boolean isMqttRecoveryEvent(DeviceRuntimeLogCreateRequest request) {

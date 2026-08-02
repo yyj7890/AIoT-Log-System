@@ -235,8 +235,63 @@ class LogServiceImplTest {
 
         assertEquals("设备运行上报（1 条）", result.getTitle());
         assertEquals("固件开始初始化", result.getContent());
-        verify(logRecordMapper, never()).selectOne(any());
+        verify(logRecordMapper).selectOne(any());
         verify(logRecordMapper).insert(any());
+    }
+
+    @Test
+    void delayedStartupWithinTwoSecondsAppendsToCurrentBatch() {
+        LogRecord existing = existingRuntimeLog(
+                "Wi-Fi 已连接\n日志 MQTT 已连接\n官方 AI 协议已连接",
+                3,
+                LogLevel.INFO,
+                LogType.RUNNING,
+                LogStatus.RESOLVED);
+        existing.setUpdatedAt(LocalDateTime.now());
+        stubExistingLog(existing);
+
+        LogVO result = logService.createDeviceRuntimeLog(runtimeRequest(
+                "startup",
+                "Firmware initialization started",
+                LogLevel.INFO,
+                LogType.RUNNING));
+
+        assertEquals("设备运行上报（4 条）", result.getTitle());
+        assertEquals("Wi-Fi 已连接\n日志 MQTT 已连接\n官方 AI 协议已连接\n固件开始初始化", result.getContent());
+        verify(logRecordMapper).updateById(existing);
+        verify(logRecordMapper, never()).insert(any());
+    }
+
+    @Test
+    void firmwareStartedAppendsToCurrentStartupBatch() {
+        LogRecord existing = existingRuntimeLog(
+                "固件开始初始化",
+                1,
+                LogLevel.INFO,
+                LogType.RUNNING,
+                LogStatus.RESOLVED);
+        stubExistingLog(existing);
+
+        LogVO result = logService.createDeviceRuntimeLog(runtimeRequest(
+                "firmware_started",
+                "Firmware initialization completed",
+                LogLevel.INFO,
+                LogType.RUNNING));
+
+        assertEquals("设备运行上报（2 条）", result.getTitle());
+        assertEquals("固件开始初始化\n固件启动完成", result.getContent());
+        verify(logRecordMapper).updateById(existing);
+    }
+
+    @Test
+    void localizesFirmwareStartupCompletedMessage() {
+        LogVO result = createNewRuntimeLog(runtimeRequest(
+                "firmware_started",
+                "Firmware startup completed",
+                LogLevel.INFO,
+                LogType.RUNNING));
+
+        assertEquals("固件启动完成", result.getContent());
     }
 
     @Test
@@ -340,8 +395,7 @@ class LogServiceImplTest {
     }
 
     private LogVO createNewRuntimeLog(DeviceRuntimeLogCreateRequest request) {
-        if (!"startup".equals(request.getEventType())
-                && !"firmware_started".equals(request.getEventType())) {
+        if (!"startup".equals(request.getEventType())) {
             when(logRecordMapper.selectOne(any())).thenReturn(null);
         }
         final LogRecord[] inserted = new LogRecord[1];

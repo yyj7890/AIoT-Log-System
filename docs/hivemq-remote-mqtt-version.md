@@ -32,7 +32,9 @@
 
 | 固定标签 | 状态 | 前端/页面变化 | 后端/数据库变化 | 部署与兼容说明 |
 | --- | --- | --- | --- | --- |
-| `v1.3.8-remote-mqtt` | **源码已验证，离线包待 Docker 引擎启动后构建** | 环境监测卡片新增“查看室外天气详情”，并格式化更新时间 | Flyway V11 追加实时天气详情、常见污染物、健康建议和监测站字段；刷新使用中文空气质量说明并继续兼容 gzip | 不得部署或导入尚不存在的包；构建完成后才提供 tar 与 SHA-256。届时复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
+| `v1.4.0-remote-mqtt` | **私有离线包已构建，待群晖验收** | 日志历史兼容显示 `Firmware startup completed` 为“固件启动完成” | 新版小智迟到不超过 2 秒的 `startup` 合并到当前批次；超过窗口仍视为真实重启，且新日志写入“固件启动完成” | 导入 `dist/aiot-remote-mqtt-v1.4.0-images.tar`，SHA-256 `B8FCFA8EEF25423305E52B8E2C8988356902252FE09DC5BCB54B5E6F701CF9D1`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
+| `v1.3.9-remote-mqtt` | **私有离线包已构建，待群晖验收** | 设备详情的 MCP 操作记录改为独立即时加载，页签可见时 0.5 秒刷新 | 修复新版小智将同一次启动拆为多条：仅 `startup` 开新批次，紧随的 `firmware_started` 合并；无数据库/MQTT 协议变更 | 导入 `dist/aiot-remote-mqtt-v1.3.9-images.tar`，SHA-256 `AF87AB4BA931D53803995112F12D1D8ED6BC3BA49B487F2B6AE234C23CD5A12A`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
+| `v1.3.8-remote-mqtt` | **私有离线包已构建，待群晖验收** | 环境监测卡片新增“查看室外天气详情”，并格式化更新时间 | Flyway V11 追加实时天气详情、常见污染物、健康建议和监测站字段；刷新使用中文空气质量说明并继续兼容 gzip | 导入 `dist/aiot-remote-mqtt-v1.3.8-images.tar`，SHA-256 `4caa8680b1fbbcc0ce78008daebfc3b45b33f523ff23528436393af960797e21`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
 | `v1.3.7-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 和风天气/AQI 响应按 `Content-Encoding` 或 gzip 文件头自动解压，再解析 JSON；无数据库变更 | 导入 `dist/aiot-remote-mqtt-v1.3.7-images.tar`，SHA-256 `579aa17e37656eb1de791c180e62890b4768dfe45461ad8e97dadbe2899f27f2`；最新版远程 Compose 移除后端 `8080` 宿主机映射，前端改为 `${WEB_PORT:-18080}:80`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
 | `v1.3.6-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 保留天气请求失败的原始异常 cause，使群晖后端日志可显示 `Caused by:` 根因；页面保持脱敏 | 导入 `dist/aiot-remote-mqtt-v1.3.6-images.tar`，SHA-256 `78a7f6281d02be5b45154ed35dd3542a8b54c3df478853e79a64b17b46422f98`；复用项目名、MySQL 卷和整个 `docker/local` 升级，不得 `down -v` |
 | `v1.3.5-remote-mqtt` | **私有离线包已构建，待群晖验收** | 无页面变化 | 天气请求安全遍历 HTTP 异常链，区分 Host、超时、连接与 TLS，未分类异常提示查看后端日志；无数据库变更 | 导入 `dist/aiot-remote-mqtt-v1.3.5-images.tar`，SHA-256 `1dea439f5b664ef137dc083cadcbccce4249730349876ba4a9ba4e1debab41d5`；复用项目名、MySQL 卷和整个 `docker/local` 升级，不得 `down -v` |
@@ -249,7 +251,7 @@ MQTT_PASSWORD=<private-password>
 
 - MQTT 继续使用 QoS 1，不通过降低 QoS 规避重复。
 - 仅当事件位于同一启动批次、同一 30 秒汇总窗口、紧邻上一事件，且标准化后的摘要完全相同时，后端不再重复追加、增加计数或改变状态。
-- 不相邻的相同事件不会被全局删除；内容不同的事件正常追加；`startup` 和 `firmware_started` 始终开始新的启动批次。
+- 不相邻的相同事件不会被全局删除；内容不同的事件正常追加；仅 `startup` 开始新的启动批次，紧随的 `firmware_started` 合并到该批次。
 - 不单独依赖 MQTT DUP 标志，因为首次业务处理失败后的合法重投仍需要被处理。
 
 ### 兼容性与状态

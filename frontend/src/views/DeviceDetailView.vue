@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { Back, DocumentAdd } from '@element-plus/icons-vue'
@@ -178,8 +178,8 @@ import type { Device } from '@/types/device'
 import type { DeviceReport } from '@/types/report'
 import type { DeviceComponent, DeviceComponentPayload } from '@/types/component'
 import { createDeviceComponent, deleteDeviceComponent, getDeviceComponents, updateDeviceComponent } from '@/api/components'
-import { PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
-import { usePageAutoRefresh } from '@/utils/autoRefresh'
+import { LIVE_REFRESH_INTERVAL_MS, PAGE_REFRESH_INTERVAL_MS } from '@/constants/refresh'
+import { createAutoRefreshController, usePageAutoRefresh } from '@/utils/autoRefresh'
 
 const route = useRoute()
 const router = useRouter()
@@ -199,6 +199,7 @@ const editingComponent = ref<DeviceComponent>()
 const componentForm = reactive<DeviceComponentPayload>({ name: '', category: '', model: '', quantity: 1, notes: '' })
 const latestReport = computed(() => device.value?.recentReports?.[0])
 let requestPending = false
+let mcpRequestPending = false
 
 async function loadData(showLoading = true) {
   if (requestPending) return
@@ -206,9 +207,12 @@ async function loadData(showLoading = true) {
   if (showLoading) loading.value = true
   try {
     const deviceId = Number(route.params.id)
-    device.value = await getDeviceDetail(deviceId)
-    components.value = await getDeviceComponents(deviceId)
-    mcpExecutions.value = await getMcpToolExecutions()
+    const [loadedDevice, loadedComponents] = await Promise.all([
+      getDeviceDetail(deviceId),
+      getDeviceComponents(deviceId)
+    ])
+    device.value = loadedDevice
+    components.value = loadedComponents
     if (device.value.monitoringMode === 'TELEMETRY') {
       await loadReports()
     }
@@ -219,6 +223,29 @@ async function loadData(showLoading = true) {
 }
 
 usePageAutoRefresh({ intervalMs: PAGE_REFRESH_INTERVAL_MS, isHidden: () => document.hidden, isPending: () => requestPending, refresh: () => void loadData(false) })
+
+async function loadMcpExecutions() {
+  if (mcpRequestPending) return
+  mcpRequestPending = true
+  try {
+    mcpExecutions.value = await getMcpToolExecutions()
+  } finally {
+    mcpRequestPending = false
+  }
+}
+
+const mcpAutoRefresh = createAutoRefreshController({
+  intervalMs: LIVE_REFRESH_INTERVAL_MS,
+  isHidden: () => document.hidden || activeTab.value !== 'mcp',
+  isPending: () => mcpRequestPending,
+  refresh: () => void loadMcpExecutions()
+})
+
+watch(activeTab, (tab) => {
+  if (tab === 'mcp') {
+    mcpAutoRefresh.resume()
+  }
+})
 
 async function loadReports() {
   const deviceId = Number(route.params.id)
@@ -267,7 +294,14 @@ function formatMetric(value: number | undefined, unit: string) {
   return value === undefined || value === null ? '-' : `${value}${unit}`
 }
 
-onMounted(loadData)
+onMounted(() => {
+  mcpAutoRefresh.start()
+  void loadData()
+})
+
+onBeforeUnmount(() => {
+  mcpAutoRefresh.stop()
+})
 </script>
 
 <style scoped>
