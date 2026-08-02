@@ -428,3 +428,11 @@ Docker 版：
 `device_reports` 新增可选的 `batteryPercent`（0-100）和 `charging` 字段。设备经既有 HTTP `POST /api/device-reports` 或 MQTT `aiot/device/{deviceCode}/report` 上报时，系统自动持久化电压、电量和充电状态，设备工作台显示最新一条已保存的真实上报数据。
 
 通用平台不能仅凭网络扫描可靠判断物理零件；因此不伪造自动检测结果。若固件以后能读取 ADC、电量计或硬件清单，应主动在既有 report 消息中上报电压/电量/充电状态，并通过专用硬件清单协议将零件来源标为 `DEVICE`。在此之前，零件由人工确认录入。
+
+## 17. 室外天气详情（2026-08-02）
+
+环境空间继续通过既有 `POST /api/environment-spaces/{id}/outdoor/refresh` 刷新实时读数，不新增私有凭据、前端直连或额外人工配置。后端使用同一份 JWT 分别读取和风实时天气和实时空气质量，并以 `lang=zh` 请求空气质量说明；响应按 gzip/非 gzip 自动解码后入库。
+
+`environment_outdoor_readings` 的 V11 迁移在已有摘要字段上增加体感温度、风向/风力/风速、近一小时降水、气压、能见度、云量、露点、AQI 等级、六项常见污染物及其响应原始单位、健康建议和关联监测站。页面默认仅显示天气、温湿度和 AQI；用户可展开“查看室外天气详情”。旧历史读数不回填、不丢失，新增字段为空时显示“−”。
+
+接口不返回也不保存 JWT、PEM、Authorization、完整私有 API Host 或原始响应；健康建议仅作为天气供应商返回的公开环境文本展示，不替代医疗建议。和风实时天气字段及实时空气质量字段以其官方文档为准：[实时天气](https://dev.qweather.com/docs/api/weather/weather-now/)、[实时空气质量](https://dev.qweather.com/docs/api/air-quality/air-current/)。

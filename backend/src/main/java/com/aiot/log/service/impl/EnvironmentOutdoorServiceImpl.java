@@ -59,13 +59,25 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
             String lat = space.getLatitude().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
             String lon = space.getLongitude().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
             JsonNode weather = request(host + "/v7/weather/now?location=" + lon + "," + lat + "&lang=zh");
-            JsonNode air = request(host + "/airquality/v1/current/" + lat + "/" + lon);
+            JsonNode air = request(host + "/airquality/v1/current/" + lat + "/" + lon + "?lang=zh");
             JsonNode now = weather.path("now");
             JsonNode index = air.path("indexes").isArray() && !air.path("indexes").isEmpty() ? air.path("indexes").get(0) : json.createObjectNode();
             EnvironmentOutdoorReading reading = new EnvironmentOutdoorReading();
             reading.spaceId = spaceId; reading.temperature = decimal(now, "temp"); reading.humidity = decimal(now, "humidity");
-            reading.weatherText = text(now, "text"); reading.aqi = integer(index, "aqi");
-            reading.primaryPollutant = text(index.path("primaryPollutant"), "name"); reading.observedAt = LocalDateTime.now();
+            reading.weatherText = text(now, "text"); reading.feelsLike = decimal(now, "feelsLike");
+            reading.windDir = text(now, "windDir"); reading.windScale = text(now, "windScale"); reading.windSpeed = decimal(now, "windSpeed");
+            reading.precip = decimal(now, "precip"); reading.pressure = decimal(now, "pressure"); reading.visibility = decimal(now, "vis");
+            reading.cloud = integer(now, "cloud"); reading.dew = decimal(now, "dew");
+            reading.aqi = integer(index, "aqi"); reading.aqiCategory = text(index, "category");
+            reading.primaryPollutant = text(index.path("primaryPollutant"), "name");
+            reading.healthAdviceGeneral = text(index.path("health").path("advice"), "generalPopulation");
+            reading.healthAdviceSensitive = text(index.path("health").path("advice"), "sensitivePopulation");
+            reading.pm2p5 = pollutant(air, "pm2p5"); reading.pm10 = pollutant(air, "pm10"); reading.no2 = pollutant(air, "no2");
+            reading.o3 = pollutant(air, "o3"); reading.so2 = pollutant(air, "so2"); reading.co = pollutant(air, "co");
+            reading.pm2p5Unit = pollutantUnit(air, "pm2p5"); reading.pm10Unit = pollutantUnit(air, "pm10"); reading.no2Unit = pollutantUnit(air, "no2");
+            reading.o3Unit = pollutantUnit(air, "o3"); reading.so2Unit = pollutantUnit(air, "so2"); reading.coUnit = pollutantUnit(air, "co");
+            reading.stationName = air.path("stations").isArray() && !air.path("stations").isEmpty() ? text(air.path("stations").get(0), "name") : null;
+            reading.observedAt = LocalDateTime.now();
             readings.insert(reading); evaluator.evaluate(reading); return toVO(reading);
         } catch (BusinessException exception) { throw exception; }
         catch (Exception exception) { throw new BusinessException(ErrorCode.ENVIRONMENT_WEATHER_REQUEST_FAILED, diagnostic(exception), exception); }
@@ -111,5 +123,7 @@ public class EnvironmentOutdoorServiceImpl implements EnvironmentOutdoorService 
     private BigDecimal decimal(JsonNode node, String key) { return node.hasNonNull(key) ? new BigDecimal(node.get(key).asText()) : null; }
     private Integer integer(JsonNode node, String key) { try { return node.hasNonNull(key) ? Integer.valueOf(node.get(key).asText()) : null; } catch (NumberFormatException e) { return null; } }
     private String text(JsonNode node, String key) { return node.hasNonNull(key) ? node.get(key).asText() : null; }
-    private EnvironmentOutdoorReadingVO toVO(EnvironmentOutdoorReading r) { EnvironmentOutdoorReadingVO v = new EnvironmentOutdoorReadingVO(); v.temperature=r.temperature; v.humidity=r.humidity; v.weatherText=r.weatherText; v.aqi=r.aqi; v.pm2p5=r.pm2p5; v.primaryPollutant=r.primaryPollutant; v.observedAt=r.observedAt; return v; }
+    private BigDecimal pollutant(JsonNode air, String code) { for (JsonNode item : air.path("pollutants")) if (code.equals(item.path("code").asText())) return decimal(item.path("concentration"), "value"); return null; }
+    private String pollutantUnit(JsonNode air, String code) { for (JsonNode item : air.path("pollutants")) if (code.equals(item.path("code").asText())) return text(item.path("concentration"), "unit"); return null; }
+    private EnvironmentOutdoorReadingVO toVO(EnvironmentOutdoorReading r) { EnvironmentOutdoorReadingVO v = new EnvironmentOutdoorReadingVO(); v.temperature=r.temperature; v.humidity=r.humidity; v.weatherText=r.weatherText; v.feelsLike=r.feelsLike; v.windDir=r.windDir; v.windScale=r.windScale; v.windSpeed=r.windSpeed; v.precip=r.precip; v.pressure=r.pressure; v.visibility=r.visibility; v.cloud=r.cloud; v.dew=r.dew; v.aqi=r.aqi; v.aqiCategory=r.aqiCategory; v.pm2p5=r.pm2p5; v.pm2p5Unit=r.pm2p5Unit; v.pm10=r.pm10; v.pm10Unit=r.pm10Unit; v.no2=r.no2; v.no2Unit=r.no2Unit; v.o3=r.o3; v.o3Unit=r.o3Unit; v.so2=r.so2; v.so2Unit=r.so2Unit; v.co=r.co; v.coUnit=r.coUnit; v.primaryPollutant=r.primaryPollutant; v.healthAdviceGeneral=r.healthAdviceGeneral; v.healthAdviceSensitive=r.healthAdviceSensitive; v.stationName=r.stationName; v.observedAt=r.observedAt; return v; }
 }
