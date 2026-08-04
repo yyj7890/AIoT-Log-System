@@ -24,7 +24,7 @@ import java.util.Set;
 public class AlertRuleServiceImpl implements AlertRuleService {
 
     private static final Set<String> METRICS = new HashSet<String>(Arrays.asList(
-            "temperature", "humidity", "voltage", "signalStrength"
+            "temperature", "humidity", "pressure", "illuminance", "voltage", "signalStrength"
     ));
     private static final Set<String> OPERATORS = new HashSet<String>(Arrays.asList(
             "GT", "LT", "GTE", "LTE", "EQ"

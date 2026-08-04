@@ -89,6 +89,8 @@ class MqttDeviceReportSubscriberTest {
                           "deviceCode": "DEVICE-002",
                           "temperature": 25.5,
                           "humidity": 60,
+                          "pressure": 1008.4,
+                          "illuminance": 312.5,
                           "status": "NORMAL"
                         }
                         """, 1));
@@ -98,6 +100,8 @@ class MqttDeviceReportSubscriberTest {
         verify(deviceReportService).createReport(request.capture());
         verify(logService, never()).createDeviceRuntimeLog(org.mockito.ArgumentMatchers.any());
         assertEquals("DEVICE-002", request.getValue().getDeviceCode());
+        assertEquals(new java.math.BigDecimal("1008.4"), request.getValue().getPressure());
+        assertEquals(new java.math.BigDecimal("312.5"), request.getValue().getIlluminance());
         assertEquals(1, subscriber.getHandledCount());
         assertEquals(0, subscriber.getFailedCount());
     }

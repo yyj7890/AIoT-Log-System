@@ -228,6 +228,8 @@ public class DeviceServiceImpl implements DeviceService {
             }
             vo.setTemperature(report.getTemperature());
             vo.setHumidity(report.getHumidity());
+            vo.setPressure(report.getPressure());
+            vo.setIlluminance(report.getIlluminance());
             vo.setVoltage(report.getVoltage());
             vo.setBatteryPercent(report.getBatteryPercent());
             vo.setCharging(report.getCharging());

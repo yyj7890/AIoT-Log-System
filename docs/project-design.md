@@ -36,7 +36,7 @@ MQTT 认证设计：当前采用全局设备账号模式。MQTT 状态页注册�
 
 `environment_announcement_rules` 支持温度或 AQI 的绝对阈值、相邻读数变化幅度、连续命中次数、冷却和静音时段（含跨午夜）。每次判定均在 `environment_announcement_events` 留痕：`CLEAR` 打断连续命中，`OBSERVED` 表示待确认，`SUPPRESSED` 表示被静音、冷却、未绑定设备或未启用动态 TTS 阻止，`PUBLISHED`/`FAILED` 关联既有播报任务。只有已启用空间、有效主设备、私有动态 TTS、连续确认且不在静音和冷却窗口内才允许投递；禁止退化为固定测试 Opus。
 
-规则管理接口为 `GET/POST/PUT/DELETE /api/environment-announcement-rules`；环境监测页面可在各空间中创建、查看和删除规则。室内传感器尚未接入。
+规则管理接口为 `GET/POST/PUT/DELETE /api/environment-announcement-rules`；环境监测页面可在各空间中创建、查看和删除规则。Flyway V13 为空间绑定可选室内传感器，设备报告支持 `indoor_temperature`、`indoor_humidity`、`indoor_pressure`、`indoor_illuminance` 阈值；室外规则新增 `precipitation` 与 `weather_change`。触发消息通过同空间的主播报小智和既有动态 TTS/MQTT 交付，仍受连续命中、冷却和静音约束。
 
 ## 2. 系统架构
 
@@ -64,7 +64,7 @@ MQTT 认证设计：当前采用全局设备账号模式。MQTT 状态页注册�
 - 标签管理：标签及日志标签关联
 - 设备上报：HTTP、MQTT、数据存储和最近上报
 - 告警：阈值规则、启停和异常日志自动生成
-- 可视化：温度、湿度、电压和信号趋势
+- 可视化：温度、湿度、气压、光照、电压和信号趋势；无该指标的数据不会显示空图表。
 - MQTT 状态：连接状态、消息统计和最近错误
 
 ## 4. 数据库设计
@@ -185,6 +185,8 @@ POST http://<服务器IP>:8080/api/device-reports
   "status": "NORMAL",
   "temperature": 28,
   "humidity": 55,
+  "pressure": 1008.4,
+  "illuminance": 312.5,
   "voltage": 222,
   "signalStrength": -70,
   "message": "normal report",

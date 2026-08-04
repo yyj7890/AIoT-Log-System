@@ -18,9 +18,11 @@ import com.aiot.log.mapper.DeviceMapper;
 import com.aiot.log.mapper.DeviceReportMapper;
 import com.aiot.log.mapper.LogRecordMapper;
 import com.aiot.log.service.DeviceReportService;
+import com.aiot.log.service.EnvironmentAnnouncementRuleEvaluator;
 import com.aiot.log.vo.DeviceReportVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -40,16 +42,18 @@ public class DeviceReportServiceImpl implements DeviceReportService {
     private final DeviceMapper deviceMapper;
     private final LogRecordMapper logRecordMapper;
     private final AlertRuleMapper alertRuleMapper;
+    private final EnvironmentAnnouncementRuleEvaluator environmentAnnouncementRuleEvaluator;
 
     public DeviceReportServiceImpl(
             DeviceReportMapper deviceReportMapper,
             DeviceMapper deviceMapper,
             LogRecordMapper logRecordMapper,
-            AlertRuleMapper alertRuleMapper) {
+            AlertRuleMapper alertRuleMapper, @Lazy EnvironmentAnnouncementRuleEvaluator environmentAnnouncementRuleEvaluator) {
         this.deviceReportMapper = deviceReportMapper;
         this.deviceMapper = deviceMapper;
         this.logRecordMapper = logRecordMapper;
         this.alertRuleMapper = alertRuleMapper;
+        this.environmentAnnouncementRuleEvaluator = environmentAnnouncementRuleEvaluator;
     }
 
     @Override
@@ -62,6 +66,8 @@ public class DeviceReportServiceImpl implements DeviceReportService {
         report.setDeviceId(device.getId());
         report.setTemperature(request.getTemperature());
         report.setHumidity(request.getHumidity());
+        report.setPressure(request.getPressure());
+        report.setIlluminance(request.getIlluminance());
         report.setVoltage(request.getVoltage());
         report.setBatteryPercent(request.getBatteryPercent());
         report.setCharging(request.getCharging());
@@ -70,6 +76,7 @@ public class DeviceReportServiceImpl implements DeviceReportService {
         report.setMessage(request.getMessage());
         report.setReportedAt(request.getReportedAt() == null ? LocalDateTime.now() : request.getReportedAt());
         deviceReportMapper.insert(report);
+        environmentAnnouncementRuleEvaluator.evaluateIndoor(report);
 
         List<AlertRule> triggeredRules = findTriggeredRules(report);
         boolean abnormal = DeviceStatus.ABNORMAL.equals(report.getStatus()) || !triggeredRules.isEmpty();
@@ -203,6 +210,12 @@ public class DeviceReportServiceImpl implements DeviceReportService {
         if ("humidity".equals(metric)) {
             return report.getHumidity();
         }
+        if ("pressure".equals(metric)) {
+            return report.getPressure();
+        }
+        if ("illuminance".equals(metric)) {
+            return report.getIlluminance();
+        }
         if ("voltage".equals(metric)) {
             return report.getVoltage();
         }
@@ -243,6 +256,12 @@ public class DeviceReportServiceImpl implements DeviceReportService {
         if (report.getHumidity() != null) {
             builder.append(" 湿度=").append(report.getHumidity()).append("%。");
         }
+        if (report.getPressure() != null) {
+            builder.append(" 气压=").append(report.getPressure()).append("hPa。");
+        }
+        if (report.getIlluminance() != null) {
+            builder.append(" 光照=").append(report.getIlluminance()).append("lux。");
+        }
         if (report.getVoltage() != null) {
             builder.append(" 电压=").append(report.getVoltage()).append("V。");
         }
@@ -275,6 +294,8 @@ public class DeviceReportServiceImpl implements DeviceReportService {
         }
         vo.setTemperature(report.getTemperature());
         vo.setHumidity(report.getHumidity());
+        vo.setPressure(report.getPressure());
+        vo.setIlluminance(report.getIlluminance());
         vo.setVoltage(report.getVoltage());
         vo.setBatteryPercent(report.getBatteryPercent());
         vo.setCharging(report.getCharging());

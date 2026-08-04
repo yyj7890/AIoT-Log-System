@@ -127,9 +127,11 @@
               <el-table-column label="状态" width="110"><template #default="{ row }"><StatusTag group="deviceStatus" :value="row.status" /></template></el-table-column>
               <el-table-column label="温度" width="100"><template #default="{ row }">{{ formatMetric(row.temperature, '℃') }}</template></el-table-column>
               <el-table-column label="湿度" width="100"><template #default="{ row }">{{ formatMetric(row.humidity, '%') }}</template></el-table-column>
+              <el-table-column label="气压" width="110"><template #default="{ row }">{{ formatMetric(row.pressure, 'hPa') }}</template></el-table-column>
+              <el-table-column label="光照" width="110"><template #default="{ row }">{{ formatMetric(row.illuminance, 'lux') }}</template></el-table-column>
               <el-table-column label="电压" width="100"><template #default="{ row }">{{ formatMetric(row.voltage, 'V') }}</template></el-table-column>
               <el-table-column label="信号" width="110"><template #default="{ row }">{{ formatMetric(row.signalStrength, 'dBm') }}</template></el-table-column>
-              <el-table-column prop="message" label="整理说明" min-width="180" show-overflow-tooltip />
+              <el-table-column v-if="reports.some((report) => report.message)" prop="message" label="说明" min-width="180" show-overflow-tooltip />
             </el-table>
             <div class="section-body page-actions">
               <el-pagination

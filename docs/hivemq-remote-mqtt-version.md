@@ -1,6 +1,6 @@
 # HiveMQ Cloud 远程 MQTT 接入版本
 
-更新时间：2026-08-01
+更新时间：2026-08-04
 
 ## 1. 目的与状态
 
@@ -32,6 +32,8 @@
 
 | 固定标签 | 状态 | 前端/页面变化 | 后端/数据库变化 | 部署与兼容说明 |
 | --- | --- | --- | --- | --- |
+| `v1.4.2-remote-mqtt` | **私有离线包已构建，待群晖导入验收** | 环境空间可绑定室内传感器；规则支持室内温湿度、气压、光照，室外降水和天气变化 | Flyway V13 为环境空间增加室内传感器绑定；真实传感器上报和天气刷新可触发既有动态 TTS/MQTT 主动播报 | 导入 `dist/aiot-remote-mqtt-v1.4.2-images.tar`，SHA-256 `87773733C37FD7F623E61F560C1B492DAEB67A0A134444B9A421EFC7CD8523FA`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
+| `v1.4.1-remote-mqtt` | **私有离线包已构建，待群晖导入验收** | 环境监测设备详情将气压、光照显示为独立采集列；趋势卡仅展示实际有读数的指标，不再展示空电压图 | Flyway V12 为 `device_reports` 增加 `pressure`（hPa）与 `illuminance`（lux）；MQTT/HTTP 上报及告警规则均支持两项结构化指标 | 导入 `dist/aiot-remote-mqtt-v1.4.1-images.tar`，SHA-256 `D6603199AFB17CB1CBCDBFF82D1A3B9C76C9C36EE6C785DEF42798090DA7A1D2`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
 | `v1.4.0-remote-mqtt` | **私有离线包已构建，待群晖验收** | 日志历史兼容显示 `Firmware startup completed` 为“固件启动完成” | 新版小智迟到不超过 2 秒的 `startup` 合并到当前批次；超过窗口仍视为真实重启，且新日志写入“固件启动完成” | 导入 `dist/aiot-remote-mqtt-v1.4.0-images.tar`，SHA-256 `B8FCFA8EEF25423305E52B8E2C8988356902252FE09DC5BCB54B5E6F701CF9D1`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
 | `v1.3.9-remote-mqtt` | **私有离线包已构建，待群晖验收** | 设备详情的 MCP 操作记录改为独立即时加载，页签可见时 0.5 秒刷新 | 修复新版小智将同一次启动拆为多条：仅 `startup` 开新批次，紧随的 `firmware_started` 合并；无数据库/MQTT 协议变更 | 导入 `dist/aiot-remote-mqtt-v1.3.9-images.tar`，SHA-256 `AF87AB4BA931D53803995112F12D1D8ED6BC3BA49B487F2B6AE234C23CD5A12A`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |
 | `v1.3.8-remote-mqtt` | **私有离线包已构建，待群晖验收** | 环境监测卡片新增“查看室外天气详情”，并格式化更新时间 | Flyway V11 追加实时天气详情、常见污染物、健康建议和监测站字段；刷新使用中文空气质量说明并继续兼容 gzip | 导入 `dist/aiot-remote-mqtt-v1.3.8-images.tar`，SHA-256 `4caa8680b1fbbcc0ce78008daebfc3b45b33f523ff23528436393af960797e21`；复用项目名、MySQL 卷和整个 `docker/local`，不得 `down -v` |

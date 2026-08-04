@@ -83,6 +83,8 @@ public class EnumController {
         return Arrays.asList(
                 new EnumOptionVO("温度", "temperature"),
                 new EnumOptionVO("湿度", "humidity"),
+                new EnumOptionVO("气压", "pressure"),
+                new EnumOptionVO("光照", "illuminance"),
                 new EnumOptionVO("电压", "voltage"),
                 new EnumOptionVO("信号强度", "signalStrength")
         );

@@ -11,6 +11,8 @@ public class DeviceReportVO {
     private String deviceCode;
     private BigDecimal temperature;
     private BigDecimal humidity;
+    private BigDecimal pressure;
+    private BigDecimal illuminance;
     private BigDecimal voltage;
     private BigDecimal batteryPercent;
     private Boolean charging;
@@ -69,6 +71,11 @@ public class DeviceReportVO {
     public void setHumidity(BigDecimal humidity) {
         this.humidity = humidity;
     }
+
+    public BigDecimal getPressure() { return pressure; }
+    public void setPressure(BigDecimal pressure) { this.pressure = pressure; }
+    public BigDecimal getIlluminance() { return illuminance; }
+    public void setIlluminance(BigDecimal illuminance) { this.illuminance = illuminance; }
 
     public BigDecimal getVoltage() {
         return voltage;

@@ -1,6 +1,6 @@
 # 群晖 NAS 实际部署记录
 
-更新时间：2026-07-22
+更新时间：2026-08-04
 
 本文记录一次已完成的群晖 DSM Container Manager 实机部署，用于后续同类 NAS 部署排障。文中不包含真实 IP、域名、账号、密码、Token、设备 MAC 或运行数据。
 
@@ -64,6 +64,18 @@ MQTT 状态页保存的全局凭证会写入 NAS 的 Broker 配置，但不会�
 - TLS、每设备凭证及最小权限 ACL。
 
 ## 7. HiveMQ 远程版本（实机验收通过）
+
+### 2026-08-04 环境监测遥测更新包（待 NAS 导入）
+
+### 2026-08-05 室内环境与天气变化主动播报包（待 NAS 导入）
+
+- 离线镜像包：`dist/aiot-remote-mqtt-v1.4.2-images.tar`；SHA-256：`87773733C37FD7F623E61F560C1B492DAEB67A0A134444B9A421EFC7CD8523FA`。
+- 该包含 Flyway V13、室内传感器与主播报小智绑定、室内阈值及室外降水/天气变化的主动播报规则。导入后必须在环境监测页保存空间绑定和规则，且私有动态 TTS 必须保持已启用。
+- 保留同一远程项目名、`mysql-data` 和 `docker/local/hivemq-remote.env`，不得执行 `down -v`；正式 NAS 是否升级须以 Container Manager 服务重建和后端 Flyway 日志为准。
+
+- 离线镜像包：`dist/aiot-remote-mqtt-v1.4.1-images.tar`；SHA-256：`D6603199AFB17CB1CBCDBFF82D1A3B9C76C9C36EE6C785DEF42798090DA7A1D2`。
+- 包内固定标签为 `local/aiot-log-backend:v1.4.1-remote-mqtt` 与 `local/aiot-log-frontend:v1.4.1-remote-mqtt`，包含 Flyway V12 和环境监测的 `pressure`、`illuminance` 独立入库、列表及趋势图展示。
+- 在 Container Manager 导入 TAR 后，使用同名远程项目更新前后端镜像标签；继续复用既有 `mysql-data` 数据卷和 `docker/local/hivemq-remote.env`，不得执行 `down -v`。正式 NAS 尚未升级；本机验证结果不代表 NAS 状态。
 
 `Remote-Hivemq` 分支提供远程GHCR/TCR编排，群晖当前最终运行版本为`v1.2.0-remote-mqtt`。群晖已完成1.1.9→1.1.8→1.1.9双向演练，并完成1.2.0原地升级验收，全过程复用原MySQL数据卷和私有环境文件。编排只启动 `mysql`、`backend` 和 `frontend`：群晖后端主动通过 HiveMQ 域名的 TLS `8883` 订阅日志，**不**启动 Mosquitto，**不**暴露 `1883` 或 UDP `19830`。旧远程标签保留用于回退。局域网版可固定拉取 `v1.0.0-lan`，`latest` 也保持局域网语义并且只由 `main` 分支更新，两种模式不会混用。
 

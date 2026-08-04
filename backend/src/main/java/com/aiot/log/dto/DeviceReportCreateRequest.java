@@ -23,6 +23,14 @@ public class DeviceReportCreateRequest {
     @DecimalMax(value = "100.0", message = "湿度不能高于 100")
     private BigDecimal humidity;
 
+    @DecimalMin(value = "300.0", message = "气压不能低于 300")
+    @DecimalMax(value = "1200.0", message = "气压不能高于 1200")
+    private BigDecimal pressure;
+
+    @DecimalMin(value = "0.0", message = "光照度不能低于 0")
+    @DecimalMax(value = "200000.0", message = "光照度不能高于 200000")
+    private BigDecimal illuminance;
+
     @DecimalMin(value = "0.0", message = "电压不能低于 0")
     @DecimalMax(value = "1000.0", message = "电压不能高于 1000")
     private BigDecimal voltage;
@@ -67,6 +75,11 @@ public class DeviceReportCreateRequest {
     public void setHumidity(BigDecimal humidity) {
         this.humidity = humidity;
     }
+
+    public BigDecimal getPressure() { return pressure; }
+    public void setPressure(BigDecimal pressure) { this.pressure = pressure; }
+    public BigDecimal getIlluminance() { return illuminance; }
+    public void setIlluminance(BigDecimal illuminance) { this.illuminance = illuminance; }
 
     public BigDecimal getVoltage() {
         return voltage;

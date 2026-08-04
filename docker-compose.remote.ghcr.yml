@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/yyj7890/aiot-log-backend:v1.2.0-remote-mqtt
+    image: ghcr.io/yyj7890/aiot-log-backend:v1.4.2-remote-mqtt
     env_file:
       - ./docker/local/hivemq-remote.env
     environment:
@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/yyj7890/aiot-log-frontend:v1.2.0-remote-mqtt
+    image: ghcr.io/yyj7890/aiot-log-frontend:v1.4.2-remote-mqtt
     ports:
       - "${WEB_PORT:-18080}:80"
     depends_on:

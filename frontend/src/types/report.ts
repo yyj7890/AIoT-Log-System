@@ -7,6 +7,8 @@ export interface DeviceReport {
   deviceCode?: string
   temperature?: number
   humidity?: number
+  pressure?: number
+  illuminance?: number
   voltage?: number
   batteryPercent?: number
   charging?: boolean
@@ -23,6 +25,8 @@ export interface DeviceReportPayload {
   deviceCode: string
   temperature?: number
   humidity?: number
+  pressure?: number
+  illuminance?: number
   voltage?: number
   batteryPercent?: number
   charging?: boolean

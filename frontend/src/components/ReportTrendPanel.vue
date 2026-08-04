@@ -1,6 +1,6 @@
 <template>
   <div class="trend-grid">
-    <div v-for="metric in metrics" :key="metric.key" class="trend-item">
+    <div v-for="metric in availableMetrics" :key="metric.key" class="trend-item">
       <div class="trend-head">
         <span class="trend-name">{{ metric.name }}</span>
         <span class="trend-current">{{ latestValue(metric.key, metric.unit) }}</span>
@@ -18,9 +18,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { DeviceReport } from '@/types/report'
 
-type MetricKey = 'temperature' | 'humidity' | 'voltage' | 'signalStrength'
+type MetricKey = 'temperature' | 'humidity' | 'pressure' | 'illuminance' | 'voltage' | 'signalStrength'
 
 const props = defineProps<{
   reports: DeviceReport[]
@@ -29,9 +30,13 @@ const props = defineProps<{
 const metrics: Array<{ key: MetricKey; name: string; unit: string }> = [
   { key: 'temperature', name: '温度', unit: '℃' },
   { key: 'humidity', name: '湿度', unit: '%' },
+  { key: 'pressure', name: '气压', unit: 'hPa' },
+  { key: 'illuminance', name: '光照', unit: 'lux' },
   { key: 'voltage', name: '电压', unit: 'V' },
   { key: 'signalStrength', name: '信号', unit: 'dBm' }
 ]
+
+const availableMetrics = computed(() => metrics.filter((metric) => values(metric.key).length > 0))
 
 function values(key: MetricKey) {
   return props.reports

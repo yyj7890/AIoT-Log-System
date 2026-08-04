@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-backend:v1.2.0-remote-mqtt
+    image: ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-backend:v1.4.2-remote-mqtt
     env_file:
       - ./docker/local/hivemq-remote.env
     environment:
@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-frontend:v1.2.0-remote-mqtt
+    image: ccr.ccs.tencentyun.com/aiot-log-system/aiot-log-frontend:v1.4.2-remote-mqtt
     ports:
       - "${WEB_PORT:-18080}:80"
     depends_on:
